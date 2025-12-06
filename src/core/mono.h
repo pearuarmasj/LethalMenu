@@ -93,6 +93,9 @@ namespace core
         MonoClass* GetObjectClass(MonoObject* obj);
         void* Unbox(MonoObject* obj);
 
+        // Debug utilities
+        void EnumerateClassFields(MonoClass* klass);
+
         // Thread attachment (required for calling Mono from native threads)
         MonoThread* AttachThread();
         void DetachThread(MonoThread* thread);
@@ -136,8 +139,9 @@ namespace core
         using mono_class_get_property_from_name_t = MonoProperty* (*)(MonoClass*, const char*);
         using mono_field_get_value_t = void (*)(MonoObject*, MonoClassField*, void*);
         using mono_field_set_value_t = void (*)(MonoObject*, MonoClassField*, void*);
-        using mono_field_static_get_value_t = void (*)(MonoClass*, MonoClassField*, void*);
-        using mono_field_static_set_value_t = void (*)(MonoClass*, MonoClassField*, void*);
+        using mono_class_vtable_t = void* (*)(MonoDomain*, MonoClass*);
+        using mono_field_static_get_value_t = void (*)(void*, MonoClassField*, void*);  // Takes VTable, not class
+        using mono_field_static_set_value_t = void (*)(void*, MonoClassField*, void*);  // Takes VTable, not class
         using mono_property_get_get_method_t = MonoMethod* (*)(MonoProperty*);
         using mono_runtime_invoke_t = MonoObject* (*)(MonoMethod*, void*, void**, MonoObject**);
         using mono_string_to_utf8_t = char* (*)(MonoString*);
@@ -153,6 +157,7 @@ namespace core
         using mono_class_get_fields_t = MonoClassField* (*)(MonoClass*, void**);
         using mono_field_get_name_t = const char* (*)(MonoClassField*);
         using mono_field_get_offset_t = uint32_t (*)(MonoClassField*);
+        using mono_vtable_get_static_field_data_t = void* (*)(void*);
 
         mono_get_root_domain_t fn_mono_get_root_domain = nullptr;
         mono_domain_assembly_open_t fn_mono_domain_assembly_open = nullptr;
@@ -163,6 +168,7 @@ namespace core
         mono_class_get_property_from_name_t fn_mono_class_get_property_from_name = nullptr;
         mono_field_get_value_t fn_mono_field_get_value = nullptr;
         mono_field_set_value_t fn_mono_field_set_value = nullptr;
+        mono_class_vtable_t fn_mono_class_vtable = nullptr;
         mono_field_static_get_value_t fn_mono_field_static_get_value = nullptr;
         mono_field_static_set_value_t fn_mono_field_static_set_value = nullptr;
         mono_property_get_get_method_t fn_mono_property_get_get_method = nullptr;
@@ -180,5 +186,6 @@ namespace core
         mono_class_get_fields_t fn_mono_class_get_fields = nullptr;
         mono_field_get_name_t fn_mono_field_get_name = nullptr;
         mono_field_get_offset_t fn_mono_field_get_offset = nullptr;
+        mono_vtable_get_static_field_data_t fn_mono_vtable_get_static_field_data = nullptr;
     };
 }

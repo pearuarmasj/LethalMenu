@@ -3,6 +3,7 @@
 #include "hooks.h"
 #include "exception.h"
 #include "gui/menu.h"
+#include "features/features.h"
 #include "utils/logger.h"
 
 #include <imgui.h>
@@ -285,6 +286,22 @@ namespace core
                     if (!logged)
                     {
                         LOG_ERROR("Exception in Menu::Render() - code: 0x%X", GetExceptionCode());
+                        logged = true;
+                    }
+                }
+
+                // Update features (god mode, infinite stamina, etc.)
+                __try
+                {
+                    features::PlayerFeatures::Get().Update();
+                    features::MiscFeatures::Get().Update();
+                }
+                __except (EXCEPTION_EXECUTE_HANDLER)
+                {
+                    static bool logged = false;
+                    if (!logged)
+                    {
+                        LOG_ERROR("Exception in Features::Update() - code: 0x%X", GetExceptionCode());
                         logged = true;
                     }
                 }

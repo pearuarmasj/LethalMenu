@@ -15,6 +15,10 @@ namespace sdk
         bool Initialize();
         bool IsInitialized() const { return m_initialized; }
 
+        // Check if we're actually in a game (not main menu)
+        // This is the FIRST thing to check before any game object access
+        bool IsInGame();
+
         // Get singleton instances
         MonoObject* GetStartOfRound();
         MonoObject* GetGameNetworkManager();
@@ -86,6 +90,12 @@ namespace sdk
         float GetFearLevel();
         void SetFearLevel(float level);
 
+        // God Mode support
+        bool GetAllowLocalPlayerDeath();
+        void SetAllowLocalPlayerDeath(bool allow);
+        bool GetCriticallyInjured(MonoObject* player);
+        void SetCriticallyInjured(MonoObject* player, bool value);
+
     private:
         GameBindings() = default;
 
@@ -93,6 +103,7 @@ namespace sdk
         bool CacheFields();
 
         bool m_initialized = false;
+        bool m_inGame = false;  // Cached in-game state to avoid repeated checks
 
         // Cached MonoImage for Assembly-CSharp
         MonoImage* m_gameImage = nullptr;
@@ -130,6 +141,8 @@ namespace sdk
         MonoClassField* m_field_isSprinting = nullptr;
         MonoClassField* m_field_isExhausted = nullptr;
         MonoClassField* m_field_isPlayerControlled = nullptr;
+        MonoClassField* m_field_criticallyInjured = nullptr;
+        MonoClassField* m_field_bleedingHeavily = nullptr;
 
         // StartOfRound fields
         MonoClassField* m_field_allPlayerScripts = nullptr;
@@ -141,6 +154,7 @@ namespace sdk
         MonoClassField* m_field_fearLevel = nullptr;
         MonoClassField* m_field_fearLevelIncreasing = nullptr;
         MonoClassField* m_field_spectateCamera = nullptr;
+        MonoClassField* m_field_allowLocalPlayerDeath = nullptr;
 
         // GameNetworkManager fields
         MonoClassField* m_field_gnm_localPlayerController = nullptr;
@@ -153,10 +167,14 @@ namespace sdk
         MonoClassField* m_field_isEnemyDead = nullptr;
         MonoClassField* m_field_enemyType = nullptr;
 
-        // Singleton property getters
+        // Singleton static backing fields (safer than property getters)
+        MonoClassField* m_field_StartOfRound_Instance = nullptr;
+        MonoClassField* m_field_GameNetworkManager_Instance = nullptr;
+        MonoClassField* m_field_HUDManager_Instance = nullptr;
+        MonoClassField* m_field_RoundManager_Instance = nullptr;
+
+        // Singleton properties (fallback if backing fields don't exist)
         MonoProperty* m_prop_StartOfRound_Instance = nullptr;
         MonoProperty* m_prop_GameNetworkManager_Instance = nullptr;
-        MonoProperty* m_prop_HUDManager_Instance = nullptr;
-        MonoProperty* m_prop_RoundManager_Instance = nullptr;
     };
 }

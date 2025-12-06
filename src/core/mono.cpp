@@ -126,6 +126,7 @@ namespace core
         LOAD_MONO_FUNC(mono_class_get_property_from_name);
         LOAD_MONO_FUNC(mono_field_get_value);
         LOAD_MONO_FUNC(mono_field_set_value);
+        LOAD_MONO_FUNC(mono_class_vtable);
         LOAD_MONO_FUNC(mono_field_static_get_value);
         LOAD_MONO_FUNC(mono_field_static_set_value);
         LOAD_MONO_FUNC(mono_property_get_get_method);
@@ -148,6 +149,14 @@ namespace core
         LOAD_MONO_FUNC(mono_field_get_offset);
 
 #undef LOAD_MONO_FUNC
+
+        // Optional function - may not exist in all Mono versions
+        fn_mono_vtable_get_static_field_data = reinterpret_cast<mono_vtable_get_static_field_data_t>(
+            GetProcAddress(m_monoModule, "mono_vtable_get_static_field_data"));
+        if (fn_mono_vtable_get_static_field_data)
+            LOG_INFO("mono_vtable_get_static_field_data found");
+        else
+            LOG_WARN("mono_vtable_get_static_field_data not found, using fallback");
 
         return true;
     }
@@ -220,7 +229,14 @@ namespace core
         if (!obj || !field)
             return;
 
-        fn_mono_field_get_value(obj, field, value);
+        __try
+        {
+            fn_mono_field_get_value(obj, field, value);
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            // Leave value as-is on failure
+        }
     }
 
     void Mono::SetFieldValueInternal(MonoObject* obj, MonoClassField* field, void* value)
@@ -228,7 +244,14 @@ namespace core
         if (!obj || !field)
             return;
 
-        fn_mono_field_set_value(obj, field, value);
+        __try
+        {
+            fn_mono_field_set_value(obj, field, value);
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            // Silently fail on exception
+        }
     }
 
     void* Mono::GetFieldValue(MonoObject* obj, MonoClassField* field)
@@ -245,13 +268,38 @@ namespace core
 
     void Mono::GetStaticFieldValueInternal(MonoClass* klass, MonoClassField* field, void* value)
     {
-        if (!klass || !field)
+        if (!klass || !field || !m_rootDomain)
             return;
 
-        // For static fields, we need the VTable, but mono_field_static_get_value 
-        // takes the MonoVTable* as first param in some versions
-        // In Unity's Mono, it might just work with the class
-        fn_mono_field_static_get_value(klass, field, value);
+        // SEH protection - Mono can throw internal exceptions if field access fails
+        __try
+        {
+            // Get the VTable for the class - required for static field access
+            void* vtable = fn_mono_class_vtable(m_rootDomain, klass);
+            if (!vtable)
+                return;
+
+            // Try mono_vtable_get_static_field_data if available (more reliable)
+            if (fn_mono_vtable_get_static_field_data)
+            {
+                void* staticData = fn_mono_vtable_get_static_field_data(vtable);
+                if (staticData)
+                {
+                    uint32_t offset = fn_mono_field_get_offset(field);
+                    // Static field offsets are relative to the static data block
+                    void** fieldPtr = reinterpret_cast<void**>(static_cast<char*>(staticData) + offset);
+                    *static_cast<void**>(value) = *fieldPtr;
+                    return;
+                }
+            }
+
+            // Fallback to standard method
+            fn_mono_field_static_get_value(vtable, field, value);
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            // Mono threw - leave value as-is (nullptr by default)
+        }
     }
 
     void* Mono::GetStaticFieldValue(MonoClass* klass, MonoClassField* field)
@@ -263,10 +311,21 @@ namespace core
 
     void Mono::SetStaticFieldValue(MonoClass* klass, MonoClassField* field, void* value)
     {
-        if (!klass || !field)
+        if (!klass || !field || !m_rootDomain)
             return;
 
-        fn_mono_field_static_set_value(klass, field, &value);
+        __try
+        {
+            void* vtable = fn_mono_class_vtable(m_rootDomain, klass);
+            if (!vtable)
+                return;
+
+            fn_mono_field_static_set_value(vtable, field, &value);
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
+            // Silently fail on exception
+        }
     }
 
     MonoProperty* Mono::GetProperty(MonoClass* klass, const char* name)
@@ -294,12 +353,17 @@ namespace core
         if (!method)
             return nullptr;
 
-        MonoObject* exception = nullptr;
-        auto* result = fn_mono_runtime_invoke(method, obj, params, &exception);
-
-        if (exception)
+        MonoObject* result = nullptr;
+        __try
         {
-            LOG_ERROR("Mono method invocation threw an exception");
+            MonoObject* exception = nullptr;
+            result = fn_mono_runtime_invoke(method, obj, params, &exception);
+
+            if (exception)
+                return nullptr;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER)
+        {
             return nullptr;
         }
 
@@ -360,6 +424,30 @@ namespace core
             return nullptr;
 
         return fn_mono_object_unbox(obj);
+    }
+
+    void Mono::EnumerateClassFields(MonoClass* klass)
+    {
+        if (!klass)
+        {
+            LOG_INFO("EnumerateClassFields: null class");
+            return;
+        }
+
+        LOG_INFO("Enumerating fields for class %p:", klass);
+
+        void* iter = nullptr;
+        MonoClassField* field;
+        int count = 0;
+
+        while ((field = fn_mono_class_get_fields(klass, &iter)) != nullptr)
+        {
+            const char* name = fn_mono_field_get_name(field);
+            LOG_INFO("  Field %d: '%s' (%p)", count, name ? name : "<null>", field);
+            count++;
+        }
+
+        LOG_INFO("Total fields enumerated: %d", count);
     }
 
     MonoThread* Mono::AttachThread()

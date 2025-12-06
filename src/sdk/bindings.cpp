@@ -107,6 +107,8 @@ namespace sdk
         m_field_isSprinting = mono.GetField(m_playerControllerClass, "isSprinting");
         m_field_isExhausted = mono.GetField(m_playerControllerClass, "isExhausted");
         m_field_isPlayerControlled = mono.GetField(m_playerControllerClass, "isPlayerControlled");
+        m_field_criticallyInjured = mono.GetField(m_playerControllerClass, "criticallyInjured");
+        m_field_bleedingHeavily = mono.GetField(m_playerControllerClass, "bleedingHeavily");
 
         // StartOfRound fields
         m_field_allPlayerScripts = mono.GetField(m_startOfRoundClass, "allPlayerScripts");
@@ -118,6 +120,7 @@ namespace sdk
         m_field_fearLevel = mono.GetField(m_startOfRoundClass, "fearLevel");
         m_field_fearLevelIncreasing = mono.GetField(m_startOfRoundClass, "fearLevelIncreasing");
         m_field_spectateCamera = mono.GetField(m_startOfRoundClass, "spectateCamera");
+        m_field_allowLocalPlayerDeath = mono.GetField(m_startOfRoundClass, "allowLocalPlayerDeath");
 
         // GameNetworkManager fields
         m_field_gnm_localPlayerController = mono.GetField(m_gameNetworkManagerClass, "localPlayerController");
@@ -136,14 +139,38 @@ namespace sdk
             m_field_enemyType = mono.GetField(m_enemyAIClass, "enemyType");
         }
 
-        // Singleton properties (Instance getters)
+        // Field enumeration available for debugging if needed
+        // mono.EnumerateClassFields(m_gameNetworkManagerClass);
+        // mono.EnumerateClassFields(m_startOfRoundClass);
+
+        // Singleton static backing fields (C# auto-property backing field naming convention)
+        // These are static fields, so we read them with GetStaticFieldValue
+        m_field_StartOfRound_Instance = mono.GetField(m_startOfRoundClass, "<Instance>k__BackingField");
+        m_field_GameNetworkManager_Instance = mono.GetField(m_gameNetworkManagerClass, "<Instance>k__BackingField");
+
+        // Debug: log if backing fields were found
+        if (!m_field_StartOfRound_Instance)
+            LOG_WARN("StartOfRound Instance backing field not found - will use property getter");
+        else
+            LOG_INFO("StartOfRound.<Instance>k__BackingField found: %p", m_field_StartOfRound_Instance);
+        if (!m_field_GameNetworkManager_Instance)
+            LOG_WARN("GameNetworkManager Instance backing field not found - will use property getter");
+        else
+            LOG_INFO("GameNetworkManager.<Instance>k__BackingField found: %p", m_field_GameNetworkManager_Instance);
+
+        // Cache property getters as fallback
         m_prop_StartOfRound_Instance = mono.GetProperty(m_startOfRoundClass, "Instance");
         m_prop_GameNetworkManager_Instance = mono.GetProperty(m_gameNetworkManagerClass, "Instance");
 
+        if (m_prop_StartOfRound_Instance)
+            LOG_INFO("StartOfRound.Instance property found");
+        if (m_prop_GameNetworkManager_Instance)
+            LOG_INFO("GameNetworkManager.Instance property found");
+
         if (m_hudManagerClass)
-            m_prop_HUDManager_Instance = mono.GetProperty(m_hudManagerClass, "Instance");
+            m_field_HUDManager_Instance = mono.GetField(m_hudManagerClass, "<Instance>k__BackingField");
         if (m_roundManagerClass)
-            m_prop_RoundManager_Instance = mono.GetProperty(m_roundManagerClass, "Instance");
+            m_field_RoundManager_Instance = mono.GetField(m_roundManagerClass, "<Instance>k__BackingField");
 
         // Validate essential fields
         if (!m_field_health || !m_field_sprintMeter || !m_field_isPlayerDead)
@@ -156,25 +183,111 @@ namespace sdk
         return true;
     }
 
-    // Singleton accessors
+    // Check if we're in game by seeing if GameNetworkManager.Instance.localPlayerController exists
+    // This caches the result to avoid expensive checks every frame
+    // All Mono calls are now SEH-protected in mono.cpp, so this should never crash
+    bool GameBindings::IsInGame()
+    {
+        if (!m_initialized)
+            return false;
+
+        // Try to get the GNM singleton via backing field first, then property getter
+        MonoObject* gnm = nullptr;
+
+        if (m_field_GameNetworkManager_Instance && m_gameNetworkManagerClass)
+        {
+            gnm = static_cast<MonoObject*>(
+                core::Mono::Get().GetStaticFieldValue(m_gameNetworkManagerClass, m_field_GameNetworkManager_Instance));
+        }
+
+        // Fallback to property getter if backing field didn't work
+        if (!gnm && m_prop_GameNetworkManager_Instance)
+        {
+            gnm = core::Mono::Get().GetPropertyValue(nullptr, m_prop_GameNetworkManager_Instance);
+        }
+        
+        if (!gnm)
+        {
+            if (m_inGame)
+            {
+                LOG_INFO("Left game");
+                m_inGame = false;
+            }
+            return false;
+        }
+
+        // GNM exists, check if localPlayerController is set
+        if (!m_field_gnm_localPlayerController)
+        {
+            if (m_inGame)
+            {
+                LOG_INFO("Left game");
+                m_inGame = false;
+            }
+            return false;
+        }
+
+        auto* player = static_cast<MonoObject*>(core::Mono::Get().GetFieldValue(gnm, m_field_gnm_localPlayerController));
+
+        bool wasInGame = m_inGame;
+        m_inGame = (player != nullptr);
+        
+        // Log transitions
+        if (m_inGame && !wasInGame)
+        {
+            LOG_INFO("Entered game");
+        }
+        else if (!m_inGame && wasInGame)
+        {
+            LOG_INFO("Left game");
+        }
+        
+        return m_inGame;
+    }
+
+    // Singleton accessors - use static field reads instead of property invocations
     MonoObject* GameBindings::GetStartOfRound()
     {
-        if (!m_prop_StartOfRound_Instance)
-            return nullptr;
+        // Try backing field first
+        if (m_field_StartOfRound_Instance && m_startOfRoundClass)
+        {
+            auto* result = static_cast<MonoObject*>(
+                core::Mono::Get().GetStaticFieldValue(m_startOfRoundClass, m_field_StartOfRound_Instance));
+            if (result)
+                return result;
+        }
 
-        return core::Mono::Get().GetPropertyValue(nullptr, m_prop_StartOfRound_Instance);
+        // Fallback to property getter
+        if (m_prop_StartOfRound_Instance)
+            return core::Mono::Get().GetPropertyValue(nullptr, m_prop_StartOfRound_Instance);
+
+        return nullptr;
     }
 
     MonoObject* GameBindings::GetGameNetworkManager()
     {
-        if (!m_prop_GameNetworkManager_Instance)
-            return nullptr;
+        // Try backing field first
+        if (m_field_GameNetworkManager_Instance && m_gameNetworkManagerClass)
+        {
+            auto* result = static_cast<MonoObject*>(
+                core::Mono::Get().GetStaticFieldValue(m_gameNetworkManagerClass, m_field_GameNetworkManager_Instance));
+            if (result)
+                return result;
+        }
 
-        return core::Mono::Get().GetPropertyValue(nullptr, m_prop_GameNetworkManager_Instance);
+        // Fallback to property getter
+        if (m_prop_GameNetworkManager_Instance)
+            return core::Mono::Get().GetPropertyValue(nullptr, m_prop_GameNetworkManager_Instance);
+
+        return nullptr;
     }
 
     MonoObject* GameBindings::GetLocalPlayerController()
     {
+        // Fast path: if we know we're not in game, don't even try
+        if (!m_inGame && !IsInGame())
+            return nullptr;
+
         auto* gnm = GetGameNetworkManager();
         if (!gnm || !m_field_gnm_localPlayerController)
             return nullptr;
@@ -184,18 +297,20 @@ namespace sdk
 
     MonoObject* GameBindings::GetHUDManager()
     {
-        if (!m_prop_HUDManager_Instance)
+        if (!m_field_HUDManager_Instance || !m_hudManagerClass)
             return nullptr;
 
-        return core::Mono::Get().GetPropertyValue(nullptr, m_prop_HUDManager_Instance);
+        return static_cast<MonoObject*>(
+            core::Mono::Get().GetStaticFieldValue(m_hudManagerClass, m_field_HUDManager_Instance));
     }
 
     MonoObject* GameBindings::GetRoundManager()
     {
-        if (!m_prop_RoundManager_Instance)
+        if (!m_field_RoundManager_Instance || !m_roundManagerClass)
             return nullptr;
 
-        return core::Mono::Get().GetPropertyValue(nullptr, m_prop_RoundManager_Instance);
+        return static_cast<MonoObject*>(
+            core::Mono::Get().GetStaticFieldValue(m_roundManagerClass, m_field_RoundManager_Instance));
     }
 
     // Player field accessors
@@ -529,5 +644,40 @@ namespace sdk
             return;
 
         core::Mono::Get().SetFieldValue(sor, m_field_fearLevel, level);
+    }
+
+    // God Mode support
+    bool GameBindings::GetAllowLocalPlayerDeath()
+    {
+        auto* sor = GetStartOfRound();
+        if (!sor || !m_field_allowLocalPlayerDeath)
+            return true;
+
+        return core::Mono::Get().GetFieldValue<bool>(sor, m_field_allowLocalPlayerDeath);
+    }
+
+    void GameBindings::SetAllowLocalPlayerDeath(bool allow)
+    {
+        auto* sor = GetStartOfRound();
+        if (!sor || !m_field_allowLocalPlayerDeath)
+            return;
+
+        core::Mono::Get().SetFieldValue(sor, m_field_allowLocalPlayerDeath, allow);
+    }
+
+    bool GameBindings::GetCriticallyInjured(MonoObject* player)
+    {
+        if (!player || !m_field_criticallyInjured)
+            return false;
+
+        return core::Mono::Get().GetFieldValue<bool>(player, m_field_criticallyInjured);
+    }
+
+    void GameBindings::SetCriticallyInjured(MonoObject* player, bool value)
+    {
+        if (!player || !m_field_criticallyInjured)
+            return;
+
+        core::Mono::Get().SetFieldValue(player, m_field_criticallyInjured, value);
     }
 }
