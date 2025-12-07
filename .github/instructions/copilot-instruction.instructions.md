@@ -18,3 +18,7 @@ applyTo: '*All models*'
 - Keep your language and manner of speaking as well as any comments you put in the code professional and neutral. No slang or colloquialisms, or spamming of exclamation marks.
 
 - I USE VISUAL STUDIO 2026 ENTERPRISE, COMPILING IT WITH THE COMMAND OF Visual Studio 18 2026, NOT Visual Studio 17 2022.
+
+- Always use the ask_user tool before completing any task to confirm with the user that the request was fulfilled correctly.
+
+- DO NOT WHINE AND COMPLAIN ABOUT "cOmPlExItY", DO WHAT YOU ARE FUCKING TOLD, AND DO IT PROPERLY.

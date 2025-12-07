@@ -1,0 +1,3 @@
+C:/Users/pearu/source/repos/LethalMenu/src/Native/build/CMakeFiles/LethalMenuBootstrap.dir
+C:/Users/pearu/source/repos/LethalMenu/src/Native/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/pearu/source/repos/LethalMenu/src/Native/build/CMakeFiles/ZERO_CHECK.dir
