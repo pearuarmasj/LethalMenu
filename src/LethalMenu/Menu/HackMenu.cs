@@ -11,11 +11,18 @@ namespace LethalMenu.Menu
     /// </summary>
     public class HackMenu
     {
-        private Rect _windowRect = new Rect(50, 50, 500, 400);
+        private Rect _windowRect;
+        private bool _windowRectInitialized = false;
         private int _selectedTab = 0;
         private readonly string[] _tabs = { "Self", "Enemies", "Items", "Visuals", "World", "Network", "Terminal", "Settings" };
         private Vector2 _scrollPosition;
         private bool _stylesInitialized = false;
+        
+        // Resize state
+        private bool _isResizing = false;
+        private const float ResizeHandleSize = 20f;
+        private const float MinWindowWidth = 400f;
+        private const float MinWindowHeight = 300f;
 
         // Credit editor state
         private string _creditInput = "10000";
@@ -55,15 +62,73 @@ namespace LethalMenu.Menu
         public void Draw()
         {
             InitStyles();
+            
+            // Initialize window rect from saved settings (once)
+            if (!_windowRectInitialized)
+            {
+                _windowRect = new Rect(Settings.WindowX, Settings.WindowY, Settings.WindowWidth, Settings.WindowHeight);
+                _windowRectInitialized = true;
+            }
 
             // Apply custom skin
             GUI.skin.window = _windowStyle;
+
+            // Handle resize before drawing window
+            HandleResize();
 
             _windowRect = GUI.Window(12345, _windowRect, DrawWindow, "");
 
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - _windowRect.width);
             _windowRect.y = Mathf.Clamp(_windowRect.y, 0, Screen.height - _windowRect.height);
+            
+            // Update settings with current window state
+            Settings.WindowX = _windowRect.x;
+            Settings.WindowY = _windowRect.y;
+            Settings.WindowWidth = _windowRect.width;
+            Settings.WindowHeight = _windowRect.height;
+        }
+        
+        private void HandleResize()
+        {
+            // Resize handle rect (bottom-right corner)
+            Rect resizeHandle = new Rect(
+                _windowRect.x + _windowRect.width - ResizeHandleSize,
+                _windowRect.y + _windowRect.height - ResizeHandleSize,
+                ResizeHandleSize,
+                ResizeHandleSize
+            );
+
+            Event e = Event.current;
+            
+            // Start resize on mouse down in handle area
+            if (e.type == EventType.MouseDown && e.button == 0 && resizeHandle.Contains(e.mousePosition))
+            {
+                _isResizing = true;
+                e.Use();
+            }
+            
+            // Continue resize while dragging
+            if (_isResizing)
+            {
+                if (e.type == EventType.MouseDrag || e.type == EventType.MouseDown)
+                {
+                    float newWidth = e.mousePosition.x - _windowRect.x;
+                    float newHeight = e.mousePosition.y - _windowRect.y;
+                    
+                    _windowRect.width = Mathf.Max(MinWindowWidth, newWidth);
+                    _windowRect.height = Mathf.Max(MinWindowHeight, newHeight);
+                    
+                    e.Use();
+                }
+                
+                // Stop resize on mouse up
+                if (e.type == EventType.MouseUp)
+                {
+                    _isResizing = false;
+                    e.Use();
+                }
+            }
         }
 
         private void InitStyles()
@@ -221,6 +286,13 @@ namespace LethalMenu.Menu
             }
 
             GUILayout.EndScrollView();
+            
+            // Draw resize handle indicator (bottom-right corner)
+            Rect handleRect = new Rect(_windowRect.width - ResizeHandleSize, _windowRect.height - ResizeHandleSize, ResizeHandleSize, ResizeHandleSize);
+            GUI.DrawTexture(handleRect, _buttonHoverTexture);
+            // Draw diagonal lines to indicate resize
+            var handleStyle = new GUIStyle(_labelStyle) { fontSize = 10, alignment = TextAnchor.LowerRight };
+            GUI.Label(handleRect, "◢", handleStyle);
 
             // Make window draggable from title bar
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 30));
@@ -1354,6 +1426,62 @@ namespace LethalMenu.Menu
         private Vector2 _suitScrollPos;
         private Vector2 _decorScrollPos;
         private int _selectedSuitIndex;
+        
+        // All moons (bypass rotation) state
+        private bool _showAllMoons = false;
+        private int _selectedAllMoonIndex = 0;
+        private Vector2 _allMoonsScrollPos;
+
+        /// <summary>
+        /// Checks if a scene exists in the game's build.
+        /// </summary>
+        private bool SceneExists(string sceneName)
+        {
+            if (string.IsNullOrEmpty(sceneName)) return false;
+            
+            int sceneCount = UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings;
+            for (int i = 0; i < sceneCount; i++)
+            {
+                string scenePath = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
+                string name = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+                if (name == sceneName) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Injects a moon into the terminal's moonsCatalogueList so it becomes a valid routing destination.
+        /// This allows landing on moons that aren't in the current rotation.
+        /// </summary>
+        private void InjectMoonIntoCatalogue(Terminal terminal, SelectableLevel level)
+        {
+            if (terminal == null || level == null) return;
+            
+            // Check if already in catalogue
+            if (terminal.moonsCatalogueList != null)
+            {
+                foreach (var moon in terminal.moonsCatalogueList)
+                {
+                    if (moon != null && moon.levelID == level.levelID)
+                    {
+                        Loader.Log($"[Terminal] Moon {level.PlanetName} already in catalogue");
+                        return;
+                    }
+                }
+            }
+            
+            // Create new array with the moon added
+            var oldList = terminal.moonsCatalogueList ?? new SelectableLevel[0];
+            var newList = new SelectableLevel[oldList.Length + 1];
+            for (int i = 0; i < oldList.Length; i++)
+            {
+                newList[i] = oldList[i];
+            }
+            newList[oldList.Length] = level;
+            terminal.moonsCatalogueList = newList;
+            
+            Loader.Log($"[Terminal] Injected {level.PlanetName} (scene={level.sceneName}) into moonsCatalogueList (now {newList.Length} moons)");
+        }
 
         private void DrawTerminalTab()
         {
@@ -1515,6 +1643,117 @@ namespace LethalMenu.Menu
                 }
                 GUILayout.EndHorizontal();
 
+                // Collapsible All Moons section (bypass rotation)
+                GUILayout.Space(5);
+                GUILayout.BeginHorizontal();
+                _showAllMoons = GUILayout.Toggle(_showAllMoons, "", GUILayout.Width(20));
+                GUILayout.Label("Hidden Moons (Not in Rotation)", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.yellow } });
+                GUILayout.EndHorizontal();
+                
+                if (_showAllMoons)
+                {
+                    // Show ONLY levels NOT in current catalogue (hidden moons)
+                    var allLevels = startOfRound.levels;
+                    var hiddenMoons = new System.Collections.Generic.List<(int index, SelectableLevel level, bool sceneExists)>();
+                    
+                    if (allLevels != null)
+                    {
+                        for (int i = 0; i < allLevels.Length; i++)
+                        {
+                            var level = allLevels[i];
+                            if (level == null) continue;
+                            
+                            bool inRotation = moonCatalogue?.Any(m => m != null && m.levelID == level.levelID) ?? false;
+                            if (!inRotation)
+                            {
+                                bool sceneExists = SceneExists(level.sceneName);
+                                hiddenMoons.Add((i, level, sceneExists));
+                            }
+                        }
+                    }
+                    
+                    _allMoonsScrollPos = GUILayout.BeginScrollView(_allMoonsScrollPos, GUILayout.Height(150));
+                    if (hiddenMoons.Count > 0)
+                    {
+                        for (int i = 0; i < hiddenMoons.Count; i++)
+                        {
+                            var (levelIndex, level, sceneExists) = hiddenMoons[i];
+
+                            string weather = level.currentWeather.ToString();
+                            string weatherTag = weather != "None" ? $" [{weather}]" : "";
+                            string riskTag = !string.IsNullOrEmpty(level.riskLevel) ? $" ({level.riskLevel})" : "";
+                            string sceneTag = sceneExists ? "" : " [NO SCENE]";
+
+                            GUILayout.BeginHorizontal();
+                            bool isSelected = (levelIndex == _selectedAllMoonIndex);
+                            if (GUILayout.Toggle(isSelected, "", GUILayout.Width(20)))
+                                _selectedAllMoonIndex = levelIndex;
+                            
+                            var labelStyle = new GUIStyle(_labelStyle);
+                            labelStyle.normal.textColor = sceneExists ? Color.green : Color.red;
+                            GUILayout.Label($"{level.PlanetName}{riskTag}{weatherTag}{sceneTag}", labelStyle);
+                            GUILayout.EndHorizontal();
+                        }
+                    }
+                    else
+                    {
+                        GUILayout.Label("All moons are in current rotation", _labelStyle);
+                    }
+                    GUILayout.EndScrollView();;
+                    
+                    // Get selected level from all levels
+                    SelectableLevel? selectedAllLevel = null;
+                    int selectedAllLevelID = -1;
+                    if (startOfRound.levels != null && _selectedAllMoonIndex >= 0 && _selectedAllMoonIndex < startOfRound.levels.Length)
+                    {
+                        selectedAllLevel = startOfRound.levels[_selectedAllMoonIndex];
+                        selectedAllLevelID = _selectedAllMoonIndex; // levels array index = levelID for routing
+                    }
+                    
+                    // Check if selected moon is in catalogue (it shouldn't be if shown here, but double check)
+                    bool selectedInCatalogue = moonCatalogue?.Any(m => m != null && m.levelID == selectedAllLevelID) ?? false;
+                    
+                    GUILayout.BeginHorizontal();
+                    GUI.enabled = selectedAllLevelID >= 0 && selectedAllLevel != null;
+                    if (GUILayout.Button($"Route to {selectedAllLevel?.PlanetName ?? "?"}", _buttonStyle))
+                    {
+                        // Inject moon into catalogue if not present (makes scene load work)
+                        if (!selectedInCatalogue && selectedAllLevel != null)
+                        {
+                            InjectMoonIntoCatalogue(terminal, selectedAllLevel);
+                        }
+                        startOfRound.ChangeLevelServerRpc(selectedAllLevelID, terminal.groupCredits);
+                        Loader.Log($"[Terminal] Routed (ALL) to {selectedAllLevel?.PlanetName} (levelID={selectedAllLevelID}) [injected={!selectedInCatalogue}]");
+                    }
+                    if (GUILayout.Button("Route FREE", _buttonStyle))
+                    {
+                        // Inject moon into catalogue if not present
+                        if (!selectedInCatalogue && selectedAllLevel != null)
+                        {
+                            InjectMoonIntoCatalogue(terminal, selectedAllLevel);
+                        }
+                        startOfRound.ChangeLevelServerRpc(selectedAllLevelID, 999999);
+                        Loader.Log($"[Terminal] Routed FREE (ALL) to {selectedAllLevel?.PlanetName} (levelID={selectedAllLevelID}) [injected={!selectedInCatalogue}]");
+                    }
+                    GUI.enabled = true;
+                    GUILayout.EndHorizontal();
+                    
+                    // Scene status info
+                    if (hiddenMoons.Count > 0 && selectedAllLevel != null)
+                    {
+                        bool selectedSceneExists = SceneExists(selectedAllLevel.sceneName);
+                        if (selectedSceneExists)
+                        {
+                            GUILayout.Label($"* Green = Scene exists, will inject into rotation", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Italic, normal = { textColor = Color.green } });
+                        }
+                        else
+                        {
+                            GUILayout.Label($"* Red = NO SCENE - Will get stuck (DLC/unreleased)", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Italic, normal = { textColor = Color.red } });
+                        }
+                    }
+                }
+                GUILayout.Space(5);
+
                 // Land buttons
                 GUILayout.BeginHorizontal();
                 
@@ -1594,8 +1833,75 @@ namespace LethalMenu.Menu
                         
                         Loader.Log("[Terminal] Skipped landing animation - ship now landed");
                     }
+                    
+                    // Force all players marked as loaded - use when stuck on "Waiting for crew..."
+                    if (GUILayout.Button("Force Loaded", _buttonStyle))
+                    {
+                        // Add all connected players to fullyLoadedPlayers
+                        if (startOfRound.fullyLoadedPlayers != null)
+                        {
+                            startOfRound.fullyLoadedPlayers.Clear();
+                            for (int i = 0; i <= startOfRound.connectedPlayersAmount; i++)
+                            {
+                                var player = startOfRound.allPlayerScripts[i];
+                                if (player != null)
+                                {
+                                    startOfRound.fullyLoadedPlayers.Add(player.playerClientId);
+                                }
+                            }
+                        }
+                        Loader.Log($"[Terminal] Force marked all {startOfRound.fullyLoadedPlayers?.Count} players as loaded");
+                    }
                 }
                 GUILayout.EndHorizontal();
+                
+                // Reset to orbit button - use when stuck in loading
+                if (isHost)
+                {
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Reset to Orbit (Stuck Fix)", _buttonStyle))
+                    {
+                        Loader.Log("[Terminal] Resetting to orbit...");
+                        
+                        // Stop all coroutines that might be waiting
+                        startOfRound.StopAllCoroutines();
+                        
+                        // Reset all ship state to orbit
+                        startOfRound.inShipPhase = true;
+                        startOfRound.travellingToNewLevel = false;
+                        startOfRound.shipHasLanded = false;
+                        startOfRound.shipIsLeaving = false;
+                        startOfRound.shipLeftAutomatically = false;
+                        startOfRound.shipDoorsEnabled = true;
+                        
+                        // Clear player loading state
+                        if (startOfRound.fullyLoadedPlayers != null)
+                            startOfRound.fullyLoadedPlayers.Clear();
+                        
+                        // Re-enable lever
+                        var lever = Object.FindObjectOfType<StartMatchLever>();
+                        if (lever != null)
+                        {
+                            lever.leverHasBeenPulled = false;
+                            lever.triggerScript.interactable = true;
+                            lever.singlePlayerEnabled = true;
+                        }
+                        
+                        // Reset animations
+                        if (startOfRound.shipAnimator != null)
+                        {
+                            startOfRound.shipAnimator.ResetTrigger("ShipLeave");
+                            startOfRound.shipAnimator.ResetTrigger("OpenShip");
+                        }
+                        
+                        // Hide loading screen
+                        HUDManager.Instance.loadingText.enabled = false;
+                        HUDManager.Instance.loadingDarkenScreen.enabled = false;
+                        
+                        Loader.Log("[Terminal] Reset complete - should be back in orbit");
+                    }
+                    GUILayout.EndHorizontal();
+                }
             });
 
             // Big Store section with all purchasable items

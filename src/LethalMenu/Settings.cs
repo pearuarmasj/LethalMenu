@@ -166,6 +166,12 @@ namespace LethalMenu
         
         // UI - Collapsed sections (persisted)
         public static System.Collections.Generic.HashSet<string> CollapsedSections { get; set; } = new System.Collections.Generic.HashSet<string>();
+        
+        // UI - Window size/position (persisted)
+        public static float WindowX { get; set; } = 50f;
+        public static float WindowY { get; set; } = 50f;
+        public static float WindowWidth { get; set; } = 500f;
+        public static float WindowHeight { get; set; } = 400f;
 
         #region Config Save/Load
         public static void SaveConfig()
@@ -279,6 +285,10 @@ namespace LethalMenu
                     
                     // UI
                     ["CollapsedSections"] = new JArray(CollapsedSections),
+                    ["WindowX"] = WindowX,
+                    ["WindowY"] = WindowY,
+                    ["WindowWidth"] = WindowWidth,
+                    ["WindowHeight"] = WindowHeight,
                 };
 
                 File.WriteAllText(ConfigPath, config.ToString(Formatting.Indented));
@@ -407,6 +417,12 @@ namespace LethalMenu
                         collapsedArray.Select(t => t.Value<string>()).Where(s => !string.IsNullOrEmpty(s))!
                     );
                 }
+                
+                // Window position/size
+                WindowX = config["WindowX"]?.Value<float>() ?? WindowX;
+                WindowY = config["WindowY"]?.Value<float>() ?? WindowY;
+                WindowWidth = config["WindowWidth"]?.Value<float>() ?? WindowWidth;
+                WindowHeight = config["WindowHeight"]?.Value<float>() ?? WindowHeight;
 
                 Loader.Log($"Config loaded from {ConfigPath}");
             }
