@@ -51,6 +51,7 @@ namespace LethalMenu
         public static List<Turret> Turrets { get; } = new();
         public static List<EntranceTeleport> Entrances { get; } = new();
         public static List<ShipTeleporter> Teleporters { get; } = new();
+        public static List<BreakerBox> BreakerBoxes { get; } = new();
 
         private void Awake()
         {

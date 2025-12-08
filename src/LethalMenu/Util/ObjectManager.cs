@@ -37,6 +37,7 @@ namespace LethalMenu.Util
             CollectTurrets();
             CollectEntrances();
             CollectTeleporters();
+            CollectBreakerBoxes();
         }
 
         private static void CollectPlayers()
@@ -147,6 +148,20 @@ namespace LethalMenu.Util
                 if (teleporter != null)
                 {
                     LethalMenuMod.Teleporters.Add(teleporter);
+                }
+            }
+        }
+
+        private static void CollectBreakerBoxes()
+        {
+            LethalMenuMod.BreakerBoxes.Clear();
+
+            var boxes = Object.FindObjectsOfType<BreakerBox>();
+            foreach (var box in boxes)
+            {
+                if (box != null)
+                {
+                    LethalMenuMod.BreakerBoxes.Add(box);
                 }
             }
         }

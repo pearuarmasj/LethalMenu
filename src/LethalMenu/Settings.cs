@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -143,6 +144,7 @@ namespace LethalMenu
         public static bool DoorESP { get; set; } = false;
         public static bool MineESP { get; set; } = true;
         public static bool TurretESP { get; set; } = true;
+        public static bool FuseboxESP { get; set; } = true;
         public static bool NoFog { get; set; } = false;
         public static bool PlayerHealthBars { get; set; } = true;
 
@@ -157,12 +159,15 @@ namespace LethalMenu
         public static UnityEngine.Color DoorColor { get; set; } = UnityEngine.Color.cyan;
         public static UnityEngine.Color MineColor { get; set; } = new UnityEngine.Color(1f, 0.5f, 0f); // Orange
         public static UnityEngine.Color TurretColor { get; set; } = UnityEngine.Color.magenta;
+        public static UnityEngine.Color FuseboxColor { get; set; } = new UnityEngine.Color(1f, 1f, 0.5f); // Light yellow
 
         // Debug
         public static string DebugMessage { get; set; } = "";
+        
+        // UI - Collapsed sections (persisted)
+        public static System.Collections.Generic.HashSet<string> CollapsedSections { get; set; } = new System.Collections.Generic.HashSet<string>();
 
         #region Config Save/Load
-
         public static void SaveConfig()
         {
             try
@@ -258,6 +263,7 @@ namespace LethalMenu
                     ["DoorESP"] = DoorESP,
                     ["MineESP"] = MineESP,
                     ["TurretESP"] = TurretESP,
+                    ["FuseboxESP"] = FuseboxESP,
                     ["PlayerHealthBars"] = PlayerHealthBars,
                     
                     // Night vision
@@ -270,6 +276,9 @@ namespace LethalMenu
                     ["Invisibility"] = Invisibility,
                     ["DeathNotifications"] = DeathNotifications,
                     ["HearDeadPeople"] = HearDeadPeople,
+                    
+                    // UI
+                    ["CollapsedSections"] = new JArray(CollapsedSections),
                 };
 
                 File.WriteAllText(ConfigPath, config.ToString(Formatting.Indented));
@@ -280,7 +289,6 @@ namespace LethalMenu
                 Loader.Log($"Failed to save config: {ex.Message}");
             }
         }
-
         public static void LoadConfig()
         {
             try
@@ -377,6 +385,7 @@ namespace LethalMenu
                 DoorESP = config["DoorESP"]?.Value<bool>() ?? DoorESP;
                 MineESP = config["MineESP"]?.Value<bool>() ?? MineESP;
                 TurretESP = config["TurretESP"]?.Value<bool>() ?? TurretESP;
+                FuseboxESP = config["FuseboxESP"]?.Value<bool>() ?? FuseboxESP;
                 PlayerHealthBars = config["PlayerHealthBars"]?.Value<bool>() ?? PlayerHealthBars;
                 
                 // Night vision
@@ -389,6 +398,15 @@ namespace LethalMenu
                 Invisibility = config["Invisibility"]?.Value<bool>() ?? Invisibility;
                 DeathNotifications = config["DeathNotifications"]?.Value<bool>() ?? DeathNotifications;
                 HearDeadPeople = config["HearDeadPeople"]?.Value<bool>() ?? HearDeadPeople;
+                
+                // UI
+                var collapsedArray = config["CollapsedSections"] as JArray;
+                if (collapsedArray != null)
+                {
+                    CollapsedSections = new System.Collections.Generic.HashSet<string>(
+                        collapsedArray.Select(t => t.Value<string>()).Where(s => !string.IsNullOrEmpty(s))!
+                    );
+                }
 
                 Loader.Log($"Config loaded from {ConfigPath}");
             }

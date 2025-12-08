@@ -62,8 +62,28 @@ namespace LethalMenu.Cheats
                     var itemName = item.itemProperties?.itemName ?? "Item";
                     var scrapValue = item.scrapValue;
 
-                    var label = scrapValue > 0 ? $"{itemName} (${scrapValue})" : itemName;
-                    DrawESP(camera, item.transform.position, label, Settings.ItemColor, 1f);
+                    // Color-code items by value
+                    Color itemColor;
+                    string label;
+                    if (scrapValue > 0)
+                    {
+                        label = $"{itemName}\n${scrapValue}";
+                        // Color gradient: gray ($0-20), white ($20-50), green ($50-100), yellow ($100-200), orange ($200+)
+                        if (scrapValue >= 200)
+                            itemColor = new Color(1f, 0.5f, 0f); // Orange - high value
+                        else if (scrapValue >= 100)
+                            itemColor = new Color(1f, 1f, 0f); // Yellow - good value
+                        else if (scrapValue >= 50)
+                            itemColor = new Color(0.4f, 1f, 0.4f); // Green - decent value
+                        else
+                            itemColor = Settings.ItemColor; // Default
+                    }
+                    else
+                    {
+                        label = itemName;
+                        itemColor = new Color(0.6f, 0.6f, 0.6f); // Gray for non-scrap items
+                    }
+                    DrawESP(camera, item.transform.position, label, itemColor, 1f);
                 }
             }
 
@@ -108,6 +128,19 @@ namespace LethalMenu.Cheats
                     };
 
                     DrawESP(camera, turret.transform.position, mode, Settings.TurretColor, 1.5f);
+                }
+            }
+
+            // Draw fusebox/breaker box ESP
+            if (Settings.FuseboxESP)
+            {
+                foreach (var box in LethalMenuMod.BreakerBoxes)
+                {
+                    if (box == null) continue;
+
+                    string status = box.isPowerOn ? "POWER ON" : $"FUSEBOX\n{box.leversSwitchedOff} OFF";
+                    Color boxColor = box.isPowerOn ? new Color(0.4f, 1f, 0.4f) : Settings.FuseboxColor;
+                    DrawESP(camera, box.transform.position, status, boxColor, 1.5f);
                 }
             }
         }
@@ -175,10 +208,21 @@ namespace LethalMenu.Cheats
                 var content = new GUIContent(fullLabel);
                 var size = _labelStyle.CalcSize(content);
 
-                // Center the label on screen position
+                // Draw box first (at the object's position)
+                float boxWidth = 30f * scale;
+                float boxHeight = height * 40f * scale;
+                Rect boxRect = new Rect(
+                    screenPos.x - boxWidth / 2,
+                    screenPos.y - boxHeight / 2,  // Center the box on the object
+                    boxWidth,
+                    boxHeight
+                );
+                DrawBox(boxRect, color);
+
+                // Position label ABOVE the box
                 Rect labelRect = new Rect(
                     screenPos.x - size.x / 2,
-                    screenPos.y - size.y / 2,
+                    boxRect.y - size.y - 4f,  // Above the box with small gap
                     size.x,
                     size.y
                 );
@@ -191,16 +235,6 @@ namespace LethalMenu.Cheats
                 // Draw colored label
                 _labelStyle.normal.textColor = color;
                 GUI.Label(labelRect, fullLabel, _labelStyle);
-
-                // Draw box outline
-                float boxWidth = 30f * scale;
-                float boxHeight = height * 40f * scale;
-                DrawBox(new Rect(
-                    screenPos.x - boxWidth / 2,
-                    screenPos.y - boxHeight,
-                    boxWidth,
-                    boxHeight
-                ), color);
             }
         }
 
@@ -218,7 +252,17 @@ namespace LethalMenu.Cheats
 
             string playerName = player.playerUsername ?? "Player";
             int health = player.health;
-            string fullLabel = $"{playerName}\n{distance:F0}m";
+            
+            // Distance color: green (far) to red (close)
+            Color distColor;
+            if (distance < 10f)
+                distColor = new Color(1f, 0.3f, 0.3f); // Red - very close
+            else if (distance < 30f)
+                distColor = new Color(1f, 0.7f, 0.3f); // Orange - close
+            else if (distance < 60f)
+                distColor = new Color(1f, 1f, 0.3f); // Yellow - medium
+            else
+                distColor = new Color(0.5f, 1f, 0.5f); // Green - far
 
             // Scale based on distance
             float scale = Mathf.Clamp(200f / distance, 0.3f, 2f);
@@ -227,24 +271,35 @@ namespace LethalMenu.Cheats
             if (_labelStyle != null)
             {
                 _labelStyle.fontSize = fontSize;
-                var content = new GUIContent(fullLabel);
-                var size = _labelStyle.CalcSize(content);
+                
+                // Draw name and distance as separate lines with different colors
+                string nameLine = playerName;
+                string distLine = $"[{distance:F0}m]";
+                
+                var nameContent = new GUIContent(nameLine);
+                var distContent = new GUIContent(distLine);
+                var nameSize = _labelStyle.CalcSize(nameContent);
+                var distSize = _labelStyle.CalcSize(distContent);
+                
+                float totalWidth = Mathf.Max(nameSize.x, distSize.x);
+                float totalHeight = nameSize.y + distSize.y;
+                
+                float baseX = screenPos.x - totalWidth / 2;
+                float baseY = screenPos.y - totalHeight / 2;
 
-                Rect labelRect = new Rect(
-                    screenPos.x - size.x / 2,
-                    screenPos.y - size.y / 2,
-                    size.x,
-                    size.y
-                );
-
-                // Shadow
+                // Shadow for name
                 var shadowStyle = new GUIStyle(_labelStyle);
                 shadowStyle.normal.textColor = Color.black;
-                GUI.Label(new Rect(labelRect.x + 1, labelRect.y + 1, labelRect.width, labelRect.height), fullLabel, shadowStyle);
-
-                // Label
+                GUI.Label(new Rect(baseX + 1 + (totalWidth - nameSize.x) / 2, baseY + 1, nameSize.x, nameSize.y), nameLine, shadowStyle);
+                // Name label
                 _labelStyle.normal.textColor = Settings.PlayerColor;
-                GUI.Label(labelRect, fullLabel, _labelStyle);
+                GUI.Label(new Rect(baseX + (totalWidth - nameSize.x) / 2, baseY, nameSize.x, nameSize.y), nameLine, _labelStyle);
+                
+                // Shadow for distance
+                GUI.Label(new Rect(baseX + 1 + (totalWidth - distSize.x) / 2, baseY + nameSize.y + 1, distSize.x, distSize.y), distLine, shadowStyle);
+                // Distance label with color-coded distance
+                _labelStyle.normal.textColor = distColor;
+                GUI.Label(new Rect(baseX + (totalWidth - distSize.x) / 2, baseY + nameSize.y, distSize.x, distSize.y), distLine, _labelStyle);
 
                 // Box
                 float boxWidth = 30f * scale;

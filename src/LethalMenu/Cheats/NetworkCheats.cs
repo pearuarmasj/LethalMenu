@@ -1181,6 +1181,7 @@ namespace LethalMenu.Cheats
         /// <summary>
         /// Opens or closes the ship doors.
         /// Uses StartOfRound.SetDoorsClosedServerRpc - RequireOwnership = false.
+        /// Also plays the local animation via HangarShipDoor.
         /// </summary>
         public static void SetShipDoors(bool closed)
         {
@@ -1191,7 +1192,17 @@ namespace LethalMenu.Cheats
                 return;
             }
 
+            // Call the server RPC to sync state across network
             startOfRound.SetDoorsClosedServerRpc(closed);
+            
+            // Also play the animation locally (the RPC only sets the state, not the visual)
+            var hangarDoor = UnityEngine.Object.FindObjectOfType<HangarShipDoor>();
+            if (hangarDoor != null)
+            {
+                // PlayDoorAnimation requires buttonsEnabled, so set animator directly
+                hangarDoor.shipDoorsAnimator?.SetBool("Closed", closed);
+            }
+            
             Debug.Log($"[NetworkCheats] Ship doors {(closed ? "closed" : "opened")}.");
         }
 
@@ -1210,10 +1221,14 @@ namespace LethalMenu.Cheats
         {
             var startOfRound = StartOfRound.Instance;
             if (startOfRound == null) yield break;
+            
+            var hangarDoor = UnityEngine.Object.FindObjectOfType<HangarShipDoor>();
 
             for (int i = 0; i < iterations; i++)
             {
-                startOfRound.SetDoorsClosedServerRpc(i % 2 == 0);
+                bool closed = (i % 2 == 0);
+                startOfRound.SetDoorsClosedServerRpc(closed);
+                hangarDoor?.shipDoorsAnimator?.SetBool("Closed", closed);
                 yield return new WaitForSeconds(0.5f);
             }
 
@@ -1785,28 +1800,35 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Terminal Sound Spam (every 0.1s) - Both beeping AND earrape
-            if (Settings.TerminalSoundSpam && time - _lastTerminalSpam > 0.1f)
+            // Terminal Sound Spam (every 0.08s) - FULL combo: index 0 (cash register) + index 1 (beep) + invalid indices
+            if (Settings.TerminalSoundSpam && time - _lastTerminalSpam > 0.08f)
             {
                 _lastTerminalSpam = time;
                 _spamCounter++;
                 if (terminal != null)
                 {
-                    // Normal terminal beep
+                    // Index 0 = cash register sound (the one Terminal Crash button uses)
+                    terminal.PlayTerminalAudioServerRpc(0);
+                    // Index 1 = beep
                     terminal.PlayTerminalAudioServerRpc(1);
-                    // Earrape (cash register) - invalid index
+                    // Invalid indices = earrape
                     terminal.PlayTerminalAudioServerRpc(-1);
                     terminal.PlayTerminalAudioServerRpc(-99999);
                 }
             }
 
-            // Terminal Earrape Spam (every 0.05s) - Pure invalid index spam
-            if (Settings.TerminalEarrapeSpam && time - _lastEarrapeSpam > 0.05f)
+            // Terminal Earrape Spam (every 0.03s) - Pure invalid index spam + index 0 for max noise
+            if (Settings.TerminalEarrapeSpam && time - _lastEarrapeSpam > 0.03f)
             {
                 _lastEarrapeSpam = time;
                 _spamCounter++;
                 if (terminal != null)
                 {
+                    // Index 0 = cash register (the actual sound)
+                    terminal.PlayTerminalAudioServerRpc(0);
+                    terminal.PlayTerminalAudioServerRpc(0);
+                    terminal.PlayTerminalAudioServerRpc(0);
+                    // Invalid indices
                     terminal.PlayTerminalAudioServerRpc(-1);
                     terminal.PlayTerminalAudioServerRpc(-99999);
                     terminal.PlayTerminalAudioServerRpc(int.MaxValue);

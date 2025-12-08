@@ -49,6 +49,9 @@ namespace LethalMenu.Menu
         private Texture2D? _buttonHoverTexture;
         private Texture2D? _toggleOnTexture;
 
+        // Collapsible section style
+        private GUIStyle? _collapseButtonStyle;
+
         public void Draw()
         {
             InitStyles();
@@ -153,6 +156,17 @@ namespace LethalMenu.Menu
                 normal = { background = _headerTexture, textColor = _textColor },
                 padding = new RectOffset(8, 8, 8, 8),
                 margin = new RectOffset(0, 0, 5, 5)
+            };
+
+            // Collapse button style (invisible button for header)
+            _collapseButtonStyle = new GUIStyle()
+            {
+                normal = { textColor = _accentColor },
+                hover = { textColor = Color.white },
+                fontSize = 14,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(0, 0, 5, 5)
             };
         }
 
@@ -500,6 +514,7 @@ namespace LethalMenu.Menu
                     Settings.DoorESP = DrawToggle("  Door ESP", Settings.DoorESP);
                     Settings.MineESP = DrawToggle("  Mine ESP", Settings.MineESP);
                     Settings.TurretESP = DrawToggle("  Turret ESP", Settings.TurretESP);
+                    Settings.FuseboxESP = DrawToggle("  Fusebox ESP", Settings.FuseboxESP);
                 }
             });
 
@@ -624,42 +639,6 @@ namespace LethalMenu.Menu
             }
         }
 
-        private void ExplodeAllMines()
-        {
-            int count = 0;
-            foreach (var mine in LethalMenuMod.Landmines)
-            {
-                if (mine == null || mine.hasExploded) continue;
-                mine.ExplodeMineServerRpc();
-                count++;
-            }
-            Loader.Log($"Exploded {count} mines");
-        }
-
-        private void DisableAllTurrets()
-        {
-            int count = 0;
-            foreach (var turret in LethalMenuMod.Turrets)
-            {
-                if (turret == null) continue;
-                turret.ToggleTurretServerRpc(false);
-                count++;
-            }
-            Loader.Log($"Disabled {count} turrets");
-        }
-
-        private void BerserkAllTurrets()
-        {
-            int count = 0;
-            foreach (var turret in LethalMenuMod.Turrets)
-            {
-                if (turret == null) continue;
-                turret.EnterBerserkModeServerRpc(-1);
-                count++;
-            }
-            Loader.Log($"Set {count} turrets to berserk mode");
-        }
-
         private void DrawPlayersTab()
         {
             DrawSection("Players", () =>
@@ -755,6 +734,68 @@ namespace LethalMenu.Menu
                 Settings.OpenShipDoorSpace = DrawToggle("Ship Door In Space", Settings.OpenShipDoorSpace, "Open ship door in space");
             });
 
+            DrawSection("Fusebox Control", () =>
+            {
+                var breakerBoxes = LethalMenuMod.BreakerBoxes;
+                if (breakerBoxes == null || breakerBoxes.Count == 0)
+                {
+                    GUILayout.Label("No fuseboxes found", _labelStyle);
+                    return;
+                }
+
+                for (int boxIndex = 0; boxIndex < breakerBoxes.Count; boxIndex++)
+                {
+                    var box = breakerBoxes[boxIndex];
+                    if (box == null) continue;
+
+                    // Box header with power status and master controls
+                    string powerStatus = box.isPowerOn ? "POWER ON" : "POWER OFF";
+                    
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(powerStatus, _labelStyle, GUILayout.Width(90));
+                    GUILayout.FlexibleSpace();
+                    if (GUILayout.Button("All ON", _buttonStyle, GUILayout.Height(24), GUILayout.Width(55)))
+                    {
+                        SetAllSwitches(box, true);
+                    }
+                    if (GUILayout.Button("All OFF", _buttonStyle, GUILayout.Height(24), GUILayout.Width(55)))
+                    {
+                        SetAllSwitches(box, false);
+                    }
+                    GUILayout.EndHorizontal();
+
+                    // Individual switches
+                    if (box.breakerSwitches != null && box.breakerSwitches.Length > 0)
+                    {
+                        GUILayout.Space(4);
+                        
+                        for (int i = 0; i < box.breakerSwitches.Length; i++)
+                        {
+                            var switchAnimator = box.breakerSwitches[i];
+                            if (switchAnimator == null) continue;
+
+                            var trigger = switchAnimator.gameObject.GetComponent<AnimatedObjectTrigger>();
+                            if (trigger == null) continue;
+
+                            bool isOn = trigger.boolValue;
+
+                            GUILayout.BeginHorizontal();
+                            GUILayout.Label($"Switch {i + 1}", _labelStyle, GUILayout.Width(60));
+                            GUILayout.Label(isOn ? "ON" : "OFF", _labelStyle, GUILayout.Width(30));
+                            GUILayout.FlexibleSpace();
+                            if (GUILayout.Button(isOn ? "OFF" : "ON", _buttonStyle, GUILayout.Height(22), GUILayout.Width(40)))
+                            {
+                                ToggleSwitch(box, i);
+                            }
+                            GUILayout.EndHorizontal();
+                        }
+                        
+                        GUILayout.Space(2);
+                        GUILayout.Label($"Off: {box.leversSwitchedOff}/{box.breakerSwitches.Length}", _labelStyle);
+                    }
+                }
+            });
+
             DrawSection("Environment", () =>
             {
                 Settings.BridgeNeverFalls = DrawToggle("Bridge Never Falls", Settings.BridgeNeverFalls, "Bridges don't collapse");
@@ -765,40 +806,7 @@ namespace LethalMenu.Menu
                 Settings.BuildAnywhere = DrawToggle("Build Anywhere", Settings.BuildAnywhere, "Place furniture outside ship");
                 Settings.InstantInteract = DrawToggle("Instant Interact", Settings.InstantInteract, "No hold-to-interact delay");
             });
-
-            DrawSection("Hazards", () =>
-            {
-                int mineCount = 0;
-                int turretCount = 0;
-
-                foreach (var mine in LethalMenuMod.Landmines)
-                {
-                    if (mine != null && !mine.hasExploded) mineCount++;
-                }
-
-                foreach (var turret in LethalMenuMod.Turrets)
-                {
-                    if (turret != null) turretCount++;
-                }
-
-                GUILayout.Label($"Landmines: {mineCount}  |  Turrets: {turretCount}", _labelStyle);
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Explode All Mines", _buttonStyle, GUILayout.Height(28)))
-                {
-                    ExplodeAllMines();
-                }
-                if (GUILayout.Button("Disable All Turrets", _buttonStyle, GUILayout.Height(28)))
-                {
-                    DisableAllTurrets();
-                }
-                GUILayout.EndHorizontal();
-
-                if (GUILayout.Button("Berserk All Turrets", _buttonStyle, GUILayout.Height(28)))
-                {
-                    BerserkAllTurrets();
-                }
-            });
+            // Hazard controls moved to Network tab -> Hazard Control section
         }
 
         // Network tab state
@@ -1253,6 +1261,19 @@ namespace LethalMenu.Menu
             // More trolling features
             DrawSection("Hazard Control", () =>
             {
+                // Count active hazards
+                int mineCount = 0;
+                int turretCount = 0;
+                foreach (var mine in LethalMenuMod.Landmines)
+                {
+                    if (mine != null && !mine.hasExploded) mineCount++;
+                }
+                foreach (var turret in LethalMenuMod.Turrets)
+                {
+                    if (turret != null) turretCount++;
+                }
+                GUILayout.Label($"Landmines: {mineCount}  |  Turrets: {turretCount}", _labelStyle);
+
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Blow Up All Mines", _buttonStyle))
                 {
@@ -1333,14 +1354,10 @@ namespace LethalMenu.Menu
                 }
                 GUILayout.EndHorizontal();
 
-                GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Explode Jetpacks", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ExplodeAllJetpacks();
                 }
-                Settings.TerminalSoundSpam = DrawToggle("Terminal Spam", Settings.TerminalSoundSpam);
-                Settings.DeskDoorSpam = DrawToggle("Desk Door", Settings.DeskDoorSpam);
-                GUILayout.EndHorizontal();
             });
         }
 
@@ -1564,13 +1581,31 @@ namespace LethalMenu.Menu
             });
         }
 
-        // Helper: Draw a section with header
+        // Helper: Draw a collapsible section with header (state persisted in Settings)
         private void DrawSection(string title, System.Action content)
         {
-            GUILayout.Label(title, _headerStyle);
-            GUILayout.BeginVertical(_boxStyle);
-            content?.Invoke();
-            GUILayout.EndVertical();
+            bool isCollapsed = Settings.CollapsedSections.Contains(title);
+            string arrow = isCollapsed ? "▶" : "▼";
+            string headerText = $"{arrow} {title}";
+
+            // Clickable header
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(headerText, _collapseButtonStyle, GUILayout.Height(24)))
+            {
+                if (isCollapsed)
+                    Settings.CollapsedSections.Remove(title);
+                else
+                    Settings.CollapsedSections.Add(title);
+            }
+            GUILayout.EndHorizontal();
+
+            // Only draw content if not collapsed
+            if (!isCollapsed)
+            {
+                GUILayout.BeginVertical(_boxStyle);
+                content?.Invoke();
+                GUILayout.EndVertical();
+            }
             GUILayout.Space(5);
         }
 
@@ -1773,6 +1808,72 @@ namespace LethalMenu.Menu
                 }
             }
         }
+
+        #region Fusebox Control Helpers
+
+        private string GetSwitchName(int index)
+        {
+            // Lethal Company fuseboxes typically have 5 switches controlling different areas
+            string[] switchNames = new[]
+            {
+                "Switch 1 (Main Hall)",
+                "Switch 2 (Back Rooms)",
+                "Switch 3 (Storage)",
+                "Switch 4 (Offices)",
+                "Switch 5 (Basement)"
+            };
+            
+            if (index >= 0 && index < switchNames.Length)
+                return switchNames[index];
+            return $"Switch {index + 1}";
+        }
+
+        private void ToggleSwitch(BreakerBox box, int switchIndex)
+        {
+            if (box == null || box.breakerSwitches == null) return;
+            if (switchIndex < 0 || switchIndex >= box.breakerSwitches.Length) return;
+
+            var switchAnimator = box.breakerSwitches[switchIndex];
+            if (switchAnimator == null) return;
+
+            var trigger = switchAnimator.gameObject.GetComponent<AnimatedObjectTrigger>();
+            if (trigger == null) return;
+
+            bool wasOn = trigger.boolValue;
+            
+            // Toggle the switch - TriggerAnimationNonPlayer handles animation, boolValue, audio,
+            // AND fires onTriggerBool event which calls BreakerBox.SwitchBreaker automatically
+            trigger.TriggerAnimationNonPlayer(false, false, false);
+            
+            Loader.Log($"[LethalMenu] Toggled switch {switchIndex}: {(wasOn ? "ON->OFF" : "OFF->ON")}");
+        }
+
+        private void SetAllSwitches(BreakerBox box, bool targetState)
+        {
+            if (box == null || box.breakerSwitches == null) return;
+
+            for (int i = 0; i < box.breakerSwitches.Length; i++)
+            {
+                var switchAnimator = box.breakerSwitches[i];
+                if (switchAnimator == null) continue;
+
+                var trigger = switchAnimator.gameObject.GetComponent<AnimatedObjectTrigger>();
+                if (trigger == null) continue;
+
+                bool currentState = trigger.boolValue;
+                
+                // Only toggle if current state differs from target
+                if (currentState != targetState)
+                {
+                    // TriggerAnimationNonPlayer handles everything including the BreakerBox counter update
+                    trigger.TriggerAnimationNonPlayer(false, false, false);
+                }
+            }
+
+            Loader.Log($"[LethalMenu] Set all switches to {(targetState ? "ON" : "OFF")}");
+        }
+
+        #endregion
 
         private void AddCredits(int amount)
         {
