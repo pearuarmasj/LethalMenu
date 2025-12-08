@@ -170,6 +170,9 @@ namespace LethalMenu
             // Update new runtime features
             UpdateRuntimeFeatures();
 
+            // Process continuous spam toggles
+            Cheats.NetworkCheats.ProcessSpamToggles();
+
             // Collect game objects periodically
             ObjectManager.CollectObjects();
         }

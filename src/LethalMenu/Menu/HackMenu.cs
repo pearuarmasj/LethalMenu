@@ -1123,35 +1123,49 @@ namespace LethalMenu.Menu
             {
                 GUILayout.Label("These can ruin other players' experience.", new GUIStyle(_labelStyle) { normal = { textColor = Color.red } });
 
-                // Audio/Visual Spam
+                // SPAM TOGGLES - Continuous spam while enabled
+                GUILayout.Label("--- Continuous Spam Toggles ---", _labelStyle);
+                
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Horn Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamShipHorn(15);
-                }
+                Settings.HornSpam = DrawToggle("Horn Spam", Settings.HornSpam);
+                Settings.DoorSpam = DrawToggle("Door Spam", Settings.DoorSpam);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                Settings.SignalSpam = DrawToggle("Signal Spam", Settings.SignalSpam);
+                Settings.RPCLagSpam = DrawToggle("RPC Lag", Settings.RPCLagSpam);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                Settings.TerminalSoundSpam = DrawToggle("Terminal Spam", Settings.TerminalSoundSpam);
+                Settings.TerminalEarrapeSpam = DrawToggle("EARRAPE", Settings.TerminalEarrapeSpam);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                Settings.ChatSpamLoop = DrawToggle("Chat Spam", Settings.ChatSpamLoop);
+                Settings.CarHornSpam = DrawToggle("Car Horns", Settings.CarHornSpam);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                Settings.DeskDoorSpam = DrawToggle("Desk Door", Settings.DeskDoorSpam);
                 if (GUILayout.Button("Flicker Lights", _buttonStyle))
                 {
                     Cheats.NetworkCheats.FlickerShipLights();
                 }
-                if (GUILayout.Button("Door Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamShipDoors(10);
-                }
                 GUILayout.EndHorizontal();
 
-                // Signal Translator
+                GUILayout.Space(5);
+                GUILayout.Label("--- One-Shot Actions ---", _labelStyle);
+
+                // One-shot chaos buttons
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Signal Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamSignalTranslator(20);
-                }
-                if (GUILayout.Button("RPC Lag Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.LagAllPlayers(50);
-                }
                 if (GUILayout.Button("MAX CHAOS", _buttonStyle))
                 {
                     Cheats.NetworkCheats.MaxChaos();
+                }
+                if (GUILayout.Button("Terminal Crash", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.AttemptTerminalCrash();
                 }
                 GUILayout.EndHorizontal();
 
@@ -1161,21 +1175,21 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.BrackenLagAllPlayers();
                 }
-                GUILayout.EndHorizontal();
-
-                // Chat spam and terminal
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Chat Spam x50", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamChatMax("SPAM");
-                }
-                if (GUILayout.Button("Terminal Crash", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.AttemptTerminalCrash();
-                }
                 if (GUILayout.Button("Kill All Players", _buttonStyle))
                 {
                     Cheats.NetworkCheats.MassKillPlayers();
+                }
+                GUILayout.EndHorizontal();
+
+                // Chat spam one-shot
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Chat Spam x50", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.SpamChatMax(Settings.SpamMessage);
+                }
+                if (GUILayout.Button("Earrape x30", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.SpamTerminalEarrape(30);
                 }
                 GUILayout.EndHorizontal();
 
@@ -1298,10 +1312,7 @@ namespace LethalMenu.Menu
             DrawSection("Vehicle Trolling", () =>
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Car Horn Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamCarHorns(15);
-                }
+                Settings.CarHornSpam = DrawToggle("Car Horn Spam", Settings.CarHornSpam);
                 if (GUILayout.Button("Explode Vehicles", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ExplodeAllVehicles();
@@ -1327,14 +1338,8 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.ExplodeAllJetpacks();
                 }
-                if (GUILayout.Button("Terminal Sound Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamTerminalSound(20);
-                }
-                if (GUILayout.Button("Desk Door Spam", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamDepositDeskDoor(20);
-                }
+                Settings.TerminalSoundSpam = DrawToggle("Terminal Spam", Settings.TerminalSoundSpam);
+                Settings.DeskDoorSpam = DrawToggle("Desk Door", Settings.DeskDoorSpam);
                 GUILayout.EndHorizontal();
             });
         }

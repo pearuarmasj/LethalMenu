@@ -123,6 +123,18 @@ namespace LethalMenu
         internal static bool HostQuit { get; set; } = false;
         public static ulong CurrentLobbyId { get; set; } = 0;
 
+        // Spam/Troll toggles (continuous while enabled)
+        public static bool HornSpam { get; set; } = false;
+        public static bool DoorSpam { get; set; } = false;
+        public static bool SignalSpam { get; set; } = false;
+        public static bool RPCLagSpam { get; set; } = false;
+        public static bool TerminalSoundSpam { get; set; } = false;
+        public static bool TerminalEarrapeSpam { get; set; } = false;
+        public static bool ChatSpamLoop { get; set; } = false;
+        public static bool CarHornSpam { get; set; } = false;
+        public static bool DeskDoorSpam { get; set; } = false;
+        public static string SpamMessage { get; set; } = "SPAM";
+
         // Visual cheats
         public static bool ESP { get; set; } = false;
         public static bool PlayerESP { get; set; } = true;

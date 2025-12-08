@@ -1643,7 +1643,7 @@ namespace LethalMenu.Cheats
         #region Terminal Sound Spam
 
         /// <summary>
-        /// Spam terminal sounds.
+        /// Spam terminal sounds (includes earrape invalid indices).
         /// </summary>
         public static void SpamTerminalSound(int iterations = 20)
         {
@@ -1660,10 +1660,169 @@ namespace LethalMenu.Cheats
 
             for (int i = 0; i < iterations; i++)
             {
+                // Normal sound
                 terminal.PlayTerminalAudioServerRpc(1);
+                // Earrape invalid index (cash register sound)
+                terminal.PlayTerminalAudioServerRpc(-1);
                 yield return new WaitForSeconds(0.1f);
             }
-            Debug.Log($"[NetworkCheats] Spammed terminal sound {iterations} times.");
+            Debug.Log($"[NetworkCheats] Spammed terminal sound + earrape {iterations} times.");
+        }
+
+        /// <summary>
+        /// Pure earrape spam - only invalid indices.
+        /// </summary>
+        public static void SpamTerminalEarrape(int iterations = 30)
+        {
+            if (LethalMenuMod.Instance != null)
+            {
+                LethalMenuMod.Instance.StartCoroutine(SpamTerminalEarrapeCoroutine(iterations));
+            }
+        }
+
+        private static IEnumerator SpamTerminalEarrapeCoroutine(int iterations)
+        {
+            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            if (terminal == null) yield break;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                terminal.PlayTerminalAudioServerRpc(-1);
+                terminal.PlayTerminalAudioServerRpc(-99999);
+                terminal.PlayTerminalAudioServerRpc(int.MaxValue);
+                yield return new WaitForSeconds(0.05f);
+            }
+            Debug.Log($"[NetworkCheats] Earrape spam {iterations} times.");
+        }
+
+        #endregion
+
+        #region Continuous Spam Toggles
+        
+        // Timers for continuous spam (to avoid spamming every frame)
+        private static float _lastHornSpam = 0f;
+        private static float _lastDoorSpam = 0f;
+        private static float _lastSignalSpam = 0f;
+        private static float _lastRPCSpam = 0f;
+        private static float _lastTerminalSpam = 0f;
+        private static float _lastEarrapeSpam = 0f;
+        private static float _lastChatSpam = 0f;
+        private static float _lastCarHornSpam = 0f;
+        private static float _lastDeskDoorSpam = 0f;
+        private static int _spamCounter = 0;
+
+        /// <summary>
+        /// Call this every frame from Update() to process continuous spam toggles.
+        /// </summary>
+        public static void ProcessSpamToggles()
+        {
+            float time = Time.time;
+            var hud = HUDManager.Instance;
+            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+
+            // Horn Spam (every 0.15s)
+            if (Settings.HornSpam && time - _lastHornSpam > 0.15f)
+            {
+                _lastHornSpam = time;
+                hud?.AlarmHornServerRpc();
+            }
+
+            // Door Spam (every 0.2s)
+            if (Settings.DoorSpam && time - _lastDoorSpam > 0.2f)
+            {
+                _lastDoorSpam = time;
+                _spamCounter++;
+                var startOfRound = StartOfRound.Instance;
+                if (startOfRound != null)
+                {
+                    bool closed = (_spamCounter % 2 == 0);
+                    startOfRound.SetDoorsClosedServerRpc(closed);
+                }
+            }
+
+            // Signal Translator Spam (every 0.3s - has cooldown but we try anyway)
+            if (Settings.SignalSpam && time - _lastSignalSpam > 0.3f)
+            {
+                _lastSignalSpam = time;
+                _spamCounter++;
+                hud?.UseSignalTranslatorServerRpc($"S{_spamCounter % 100:D2}");
+            }
+
+            // RPC Lag Spam (every 0.05s - aggressive)
+            if (Settings.RPCLagSpam && time - _lastRPCSpam > 0.05f)
+            {
+                _lastRPCSpam = time;
+                _spamCounter++;
+                
+                if (hud != null)
+                {
+                    hud.UseSignalTranslatorServerRpc($"L{_spamCounter % 100:D2}");
+                    hud.AddTextToChatOnServer($"<size=0>{_spamCounter}</size>");
+                    if (_spamCounter % 3 == 0)
+                    {
+                        hud.AlarmHornServerRpc();
+                    }
+                }
+                if (terminal != null)
+                {
+                    terminal.PlayTerminalAudioServerRpc(0);
+                }
+                
+                var localPlayer = LethalMenuMod.LocalPlayer;
+                if (localPlayer != null && !localPlayer.isPlayerDead && _spamCounter % 5 == 0)
+                {
+                    localPlayer.DamagePlayerFromOtherClientServerRpc(0, UnityEngine.Vector3.zero, -1);
+                }
+            }
+
+            // Terminal Sound Spam (every 0.1s)
+            if (Settings.TerminalSoundSpam && time - _lastTerminalSpam > 0.1f)
+            {
+                _lastTerminalSpam = time;
+                terminal?.PlayTerminalAudioServerRpc(1);
+            }
+
+            // Terminal Earrape Spam (every 0.05s)
+            if (Settings.TerminalEarrapeSpam && time - _lastEarrapeSpam > 0.05f)
+            {
+                _lastEarrapeSpam = time;
+                terminal?.PlayTerminalAudioServerRpc(-1);
+            }
+
+            // Chat Spam Loop (every 0.5s)
+            if (Settings.ChatSpamLoop && time - _lastChatSpam > 0.5f)
+            {
+                _lastChatSpam = time;
+                _spamCounter++;
+                string msg = Settings.SpamMessage;
+                if (msg.Length > 45) msg = msg.Substring(0, 45);
+                hud?.AddTextToChatOnServer($"{msg}[{_spamCounter % 1000}]");
+            }
+
+            // Car Horn Spam (every 0.15s)
+            if (Settings.CarHornSpam && time - _lastCarHornSpam > 0.15f)
+            {
+                _lastCarHornSpam = time;
+                _spamCounter++;
+                var cars = UnityEngine.Object.FindObjectsOfType<VehicleController>();
+                var localPlayer = LethalMenuMod.LocalPlayer;
+                int playerId = localPlayer != null ? (int)localPlayer.playerClientId : -1;
+                foreach (var car in cars)
+                {
+                    if (car != null)
+                    {
+                        car.SetHonkServerRpc(_spamCounter % 2 == 0, playerId);
+                    }
+                }
+            }
+
+            // Desk Door Spam (every 0.2s)
+            if (Settings.DeskDoorSpam && time - _lastDeskDoorSpam > 0.2f)
+            {
+                _lastDeskDoorSpam = time;
+                var desk = UnityEngine.Object.FindObjectOfType<DepositItemsDesk>();
+                desk?.OpenShutDoorClientRpc();
+            }
         }
 
         #endregion
