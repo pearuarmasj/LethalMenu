@@ -35,6 +35,12 @@ namespace LethalMenu
         private LocalVolumetricFog[]? _fogObjects;
         private bool _fogWasDisabled = false;
 
+        // Cached GameObjects to avoid repeated Find() calls
+        private GameObject? _cachedClockObject;
+        private GameObject? _cachedVisorObject;
+        private float _lastGameObjectCacheTime = 0f;
+        private const float GameObjectCacheRefreshInterval = 5f; // Refresh cache every 5 seconds
+
         // Game state references
         public static PlayerControllerB? LocalPlayer { get; set; }
         public static StartOfRound? GameInstance { get; set; }
@@ -179,12 +185,17 @@ namespace LethalMenu
 
         private void UpdateRuntimeFeatures()
         {
-            // AlwaysShowClock - Find and enable the clock UI
-            if (Settings.AlwaysShowClock)
+            // Refresh GameObject cache periodically
+            if (Time.time - _lastGameObjectCacheTime > GameObjectCacheRefreshInterval)
             {
-                // The clock is typically hidden in certain states - we need to find it in the HUD hierarchy
-                var clockObj = GameObject.Find("Systems/UI/Canvas/IngamePlayerHUD/TopLeftCorner/Clock");
-                if (clockObj != null) clockObj.SetActive(true);
+                RefreshGameObjectCache();
+                _lastGameObjectCacheTime = Time.time;
+            }
+
+            // AlwaysShowClock - Use cached clock object
+            if (Settings.AlwaysShowClock && _cachedClockObject != null)
+            {
+                _cachedClockObject.SetActive(true);
             }
 
             // FOV
@@ -204,11 +215,10 @@ namespace LethalMenu
                 }
             }
 
-            // NoVisor
-            var visor = GameObject.Find("Systems/Rendering/PlayerHUDHelmetModel/");
-            if (visor != null)
+            // NoVisor - Use cached visor object
+            if (_cachedVisorObject != null)
             {
-                visor.SetActive(!Settings.NoVisor);
+                _cachedVisorObject.SetActive(!Settings.NoVisor);
             }
 
             // Unlimited TZP
@@ -353,14 +363,17 @@ namespace LethalMenu
             {
                 // Find and disable all fog
                 _fogObjects = UnityEngine.Object.FindObjectsOfType<LocalVolumetricFog>();
-                foreach (var fog in _fogObjects)
+                if (_fogObjects != null && _fogObjects.Length > 0)
                 {
-                    if (fog != null)
+                    foreach (var fog in _fogObjects)
                     {
-                        fog.enabled = false;
+                        if (fog != null)
+                        {
+                            fog.enabled = false;
+                        }
                     }
+                    _fogWasDisabled = true;
                 }
-                _fogWasDisabled = true;
             }
             else if (!Settings.NoFog && _fogWasDisabled)
             {
@@ -374,8 +387,9 @@ namespace LethalMenu
                             fog.enabled = true;
                         }
                     }
+                    _fogWasDisabled = false;
+                    _fogObjects = null; // Clear the array after re-enabling
                 }
-                _fogWasDisabled = false;
             }
         }
 
@@ -483,7 +497,26 @@ namespace LethalMenu
 
             LocalPlayer = GameInstance.localPlayerController;
             QuickMenu = LocalPlayer?.quickMenuManager;
-            GameTerminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            
+            // Cache Terminal reference instead of finding it every frame
+            if (GameTerminal == null)
+            {
+                GameTerminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            }
+        }
+
+        private void RefreshGameObjectCache()
+        {
+            // Only find objects if they're null (expensive operation)
+            if (_cachedClockObject == null)
+            {
+                _cachedClockObject = GameObject.Find("Systems/UI/Canvas/IngamePlayerHUD/TopLeftCorner/Clock");
+            }
+            
+            if (_cachedVisorObject == null)
+            {
+                _cachedVisorObject = GameObject.Find("Systems/Rendering/PlayerHUDHelmetModel/");
+            }
         }
 
         private void ToggleCursor(bool show)
@@ -541,7 +574,12 @@ namespace LethalMenu
             var camera = LocalPlayer?.gameplayCamera;
             if (camera == null) return;
 
-            for (int i = 0; i < _breadcrumbs.Count; i++)
+            // Optimization: Only draw recent breadcrumbs to reduce iteration
+            int startIndex = Mathf.Max(0, _breadcrumbs.Count - 100); // Only draw last 100 breadcrumbs
+            int visibleCount = 0;
+            const int maxVisibleBreadcrumbs = 50; // Further limit visible breadcrumbs for performance
+
+            for (int i = startIndex; i < _breadcrumbs.Count && visibleCount < maxVisibleBreadcrumbs; i++)
             {
                 var worldPos = _breadcrumbs[i];
                 
@@ -569,6 +607,7 @@ namespace LethalMenu
                 // Draw the number
                 GUI.color = Color.black;
                 GUI.Label(new Rect(screenX - 15, screenY - 10, 30, 20), i.ToString(), _breadcrumbStyle);
+                visibleCount++;
             }
             GUI.color = Color.white;
         }

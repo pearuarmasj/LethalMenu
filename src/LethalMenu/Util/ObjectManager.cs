@@ -11,6 +11,16 @@ namespace LethalMenu.Util
     {
         private static float _lastCollectTime;
         private const float CollectInterval = 2f; // Collect every 2 seconds
+        
+        // Cache arrays to avoid repeated allocations
+        private static PlayerControllerB[] _playerCache = System.Array.Empty<PlayerControllerB>();
+        private static EnemyAI[] _enemyCache = System.Array.Empty<EnemyAI>();
+        private static GrabbableObject[] _itemCache = System.Array.Empty<GrabbableObject>();
+        private static DoorLock[] _doorCache = System.Array.Empty<DoorLock>();
+        private static Landmine[] _mineCache = System.Array.Empty<Landmine>();
+        private static Turret[] _turretCache = System.Array.Empty<Turret>();
+        private static EntranceTeleport[] _entranceCache = System.Array.Empty<EntranceTeleport>();
+        private static ShipTeleporter[] _teleporterCache = System.Array.Empty<ShipTeleporter>();
 
         /// <summary>
         /// Force immediate collection of all objects.
@@ -43,9 +53,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Players.Clear();
 
-            var players = Object.FindObjectsOfType<PlayerControllerB>();
-            foreach (var player in players)
+            // Reuse cached array to reduce allocations
+            _playerCache = Object.FindObjectsOfType<PlayerControllerB>();
+            for (int i = 0; i < _playerCache.Length; i++)
             {
+                var player = _playerCache[i];
                 if (player != null && player.isPlayerControlled)
                 {
                     LethalMenuMod.Players.Add(player);
@@ -57,9 +69,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Enemies.Clear();
 
-            var enemies = Object.FindObjectsOfType<EnemyAI>();
-            foreach (var enemy in enemies)
+            // Reuse cached array to reduce allocations
+            _enemyCache = Object.FindObjectsOfType<EnemyAI>();
+            for (int i = 0; i < _enemyCache.Length; i++)
             {
+                var enemy = _enemyCache[i];
                 if (enemy != null && !enemy.isEnemyDead)
                 {
                     LethalMenuMod.Enemies.Add(enemy);
@@ -71,9 +85,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Items.Clear();
 
-            var items = Object.FindObjectsOfType<GrabbableObject>();
-            foreach (var item in items)
+            // Reuse cached array to reduce allocations
+            _itemCache = Object.FindObjectsOfType<GrabbableObject>();
+            for (int i = 0; i < _itemCache.Length; i++)
             {
+                var item = _itemCache[i];
                 if (item != null)
                 {
                     LethalMenuMod.Items.Add(item);
@@ -85,9 +101,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.DoorLocks.Clear();
 
-            var doors = Object.FindObjectsOfType<DoorLock>();
-            foreach (var door in doors)
+            // Reuse cached array to reduce allocations
+            _doorCache = Object.FindObjectsOfType<DoorLock>();
+            for (int i = 0; i < _doorCache.Length; i++)
             {
+                var door = _doorCache[i];
                 if (door != null)
                 {
                     LethalMenuMod.DoorLocks.Add(door);
@@ -99,9 +117,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Landmines.Clear();
 
-            var mines = Object.FindObjectsOfType<Landmine>();
-            foreach (var mine in mines)
+            // Reuse cached array to reduce allocations
+            _mineCache = Object.FindObjectsOfType<Landmine>();
+            for (int i = 0; i < _mineCache.Length; i++)
             {
+                var mine = _mineCache[i];
                 if (mine != null)
                 {
                     LethalMenuMod.Landmines.Add(mine);
@@ -113,9 +133,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Turrets.Clear();
 
-            var turrets = Object.FindObjectsOfType<Turret>();
-            foreach (var turret in turrets)
+            // Reuse cached array to reduce allocations
+            _turretCache = Object.FindObjectsOfType<Turret>();
+            for (int i = 0; i < _turretCache.Length; i++)
             {
+                var turret = _turretCache[i];
                 if (turret != null)
                 {
                     LethalMenuMod.Turrets.Add(turret);
@@ -127,9 +149,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Entrances.Clear();
 
-            var entrances = Object.FindObjectsOfType<EntranceTeleport>();
-            foreach (var entrance in entrances)
+            // Reuse cached array to reduce allocations
+            _entranceCache = Object.FindObjectsOfType<EntranceTeleport>();
+            for (int i = 0; i < _entranceCache.Length; i++)
             {
+                var entrance = _entranceCache[i];
                 if (entrance != null)
                 {
                     LethalMenuMod.Entrances.Add(entrance);
@@ -141,9 +165,11 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Teleporters.Clear();
 
-            var teleporters = Object.FindObjectsOfType<ShipTeleporter>();
-            foreach (var teleporter in teleporters)
+            // Reuse cached array to reduce allocations
+            _teleporterCache = Object.FindObjectsOfType<ShipTeleporter>();
+            for (int i = 0; i < _teleporterCache.Length; i++)
             {
+                var teleporter = _teleporterCache[i];
                 if (teleporter != null)
                 {
                     LethalMenuMod.Teleporters.Add(teleporter);

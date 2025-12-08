@@ -407,7 +407,7 @@ namespace LethalMenu.Menu
                     {
                         if (item == null) continue;
                         if (item.isHeld || item.isHeldByEnemy) continue;
-                        if (item.scrapValue <= 0 && !item.itemProperties.isScrap) continue;
+                        if (item.scrapValue <= 0 && !(item.itemProperties?.isScrap ?? false)) continue;
 
                         totalItems++;
                         if (shipBounds.bounds.Contains(item.transform.position))
@@ -1748,54 +1748,51 @@ namespace LethalMenu.Menu
             }
         }
 
-        private void SetCredits()
+        // Helper method to reduce duplication in credit operations
+        private Terminal? GetOrCacheTerminal()
         {
             if (_cachedTerminal == null)
             {
                 _cachedTerminal = Object.FindObjectOfType<Terminal>();
             }
-
-            if (_cachedTerminal == null) return;
-
-            if (int.TryParse(_creditInput, out int credits))
-            {
-                credits = Mathf.Clamp(credits, 0, 10000000);
-                _cachedTerminal.groupCredits = credits;
-                
-                // Try to sync with server if we're the host
-                try
-                {
-                    _cachedTerminal.SyncGroupCreditsServerRpc(credits, _cachedTerminal.numberOfItemsInDropship);
-                }
-                catch
-                {
-                    // Not host or sync failed, local change only
-                }
-            }
+            return _cachedTerminal;
         }
 
-        private void AddCredits(int amount)
+        private void SetCreditsInternal(int credits)
         {
-            if (_cachedTerminal == null)
-            {
-                _cachedTerminal = Object.FindObjectOfType<Terminal>();
-            }
+            var terminal = GetOrCacheTerminal();
+            if (terminal == null) return;
 
-            if (_cachedTerminal == null) return;
-
-            int newCredits = Mathf.Clamp(_cachedTerminal.groupCredits + amount, 0, 10000000);
-            _cachedTerminal.groupCredits = newCredits;
-            _creditInput = newCredits.ToString();
-
+            credits = Mathf.Clamp(credits, 0, 10000000);
+            terminal.groupCredits = credits;
+            
             // Try to sync with server if we're the host
             try
             {
-                _cachedTerminal.SyncGroupCreditsServerRpc(newCredits, _cachedTerminal.numberOfItemsInDropship);
+                terminal.SyncGroupCreditsServerRpc(credits, terminal.numberOfItemsInDropship);
             }
             catch
             {
                 // Not host or sync failed, local change only
             }
+        }
+
+        private void SetCredits()
+        {
+            if (int.TryParse(_creditInput, out int credits))
+            {
+                SetCreditsInternal(credits);
+            }
+        }
+
+        private void AddCredits(int amount)
+        {
+            var terminal = GetOrCacheTerminal();
+            if (terminal == null) return;
+
+            int newCredits = terminal.groupCredits + amount;
+            _creditInput = newCredits.ToString();
+            SetCreditsInternal(newCredits);
         }
 
         private void SpawnItem(Item item)
