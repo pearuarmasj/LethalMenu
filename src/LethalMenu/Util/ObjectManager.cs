@@ -12,7 +12,9 @@ namespace LethalMenu.Util
         private static float _lastCollectTime;
         private const float CollectInterval = 2f; // Collect every 2 seconds
         
-        // Cache arrays to avoid repeated allocations
+        // Store FindObjectsOfType results to reduce allocation frequency
+        // Note: These are updated every collection cycle (2 sec) but reusing the
+        // reference helps with garbage collector pressure vs allocating in local scope
         private static PlayerControllerB[] _playerCache = System.Array.Empty<PlayerControllerB>();
         private static EnemyAI[] _enemyCache = System.Array.Empty<EnemyAI>();
         private static GrabbableObject[] _itemCache = System.Array.Empty<GrabbableObject>();

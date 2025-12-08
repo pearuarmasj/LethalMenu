@@ -45,6 +45,8 @@ namespace LethalMenu
         private const float ShotgunPositionOffset = 0.45f;
         private const float BreadcrumbHeightOffset = 0.5f;
         private const int MaxBreadcrumbs = 1000;
+        private const int MaxRecentBreadcrumbs = 100; // Only consider last 100 for rendering
+        private const int MaxVisibleBreadcrumbs = 50; // Limit visible breadcrumbs for performance
         private const int DefaultFieldOfView = 66;
         private const float ItemSpawnHeight = 1.5f;
 
@@ -582,11 +584,10 @@ namespace LethalMenu
             if (camera == null) return;
 
             // Optimization: Only draw recent breadcrumbs to reduce iteration
-            int startIndex = Mathf.Max(0, _breadcrumbs.Count - 100); // Only draw last 100 breadcrumbs
+            int startIndex = Mathf.Max(0, _breadcrumbs.Count - MaxRecentBreadcrumbs);
             int visibleCount = 0;
-            const int maxVisibleBreadcrumbs = 50; // Further limit visible breadcrumbs for performance
 
-            for (int i = startIndex; i < _breadcrumbs.Count && visibleCount < maxVisibleBreadcrumbs; i++)
+            for (int i = startIndex; i < _breadcrumbs.Count && visibleCount < MaxVisibleBreadcrumbs; i++)
             {
                 var worldPos = _breadcrumbs[i];
                 
