@@ -1,9 +1,0 @@
-{
-  "extends": ["github>winstxnhdw/renovate"],
-  "packageRules": [
-    {
-      "matchPackageNames": ["LethalCompany.GameLibs.Steam"],
-      "ignoreUnstable": false
-    }
-  ]
-}
