@@ -32,6 +32,7 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+[Bb]uild/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -365,9 +366,9 @@ FodyWeavers.xsd
 
 
 .github
-Additional sources for help
-LCSource
+/Additional sources for help
+/LCSource
 docs
 .vscode
-Old garbage, ignore
+/Old garbage, ignore
 deps
