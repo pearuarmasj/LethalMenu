@@ -588,6 +588,8 @@ namespace LethalMenu
                 };
             }
 
+            if (LocalPlayer == null) return;
+            
             GUI.color = Color.green;
             if (LocalPlayer.health < 50) GUI.color = Color.yellow;
             if (LocalPlayer.health < 25) GUI.color = Color.red;

@@ -36,7 +36,7 @@ namespace LethalMenu.Util
                     Debug.LogWarning($"[ReflectionUtil] Field '{fieldName}' not found on type '{_type.Name}'");
                     return default;
                 }
-                return (TResult)field.GetValue(isStatic ? null : (object)_object);
+                return (TResult)field.GetValue(isStatic ? null : (object?)_object)!;
             }
             catch (Exception ex)
             {
@@ -59,7 +59,7 @@ namespace LethalMenu.Util
                     Debug.LogWarning($"[ReflectionUtil] Field '{fieldName}' not found on type '{_type.Name}'");
                     return this;
                 }
-                field.SetValue(isStatic ? null : (object)_object, value);
+                field.SetValue(isStatic ? null : (object?)_object, value);
             }
             catch (Exception ex)
             {
@@ -82,7 +82,7 @@ namespace LethalMenu.Util
                     Debug.LogWarning($"[ReflectionUtil] Property '{propertyName}' not found on type '{_type.Name}'");
                     return default;
                 }
-                return (TResult)prop.GetValue(isStatic ? null : (object)_object);
+                return (TResult)prop.GetValue(isStatic ? null : (object?)_object)!;
             }
             catch (Exception ex)
             {
@@ -105,7 +105,7 @@ namespace LethalMenu.Util
                     Debug.LogWarning($"[ReflectionUtil] Property '{propertyName}' not found on type '{_type.Name}'");
                     return this;
                 }
-                prop.SetValue(isStatic ? null : (object)_object, value);
+                prop.SetValue(isStatic ? null : (object?)_object, value);
             }
             catch (Exception ex)
             {
@@ -128,7 +128,7 @@ namespace LethalMenu.Util
                     Debug.LogWarning($"[ReflectionUtil] Method '{methodName}' not found on type '{_type.Name}'");
                     return default;
                 }
-                return (TResult)method.Invoke(isStatic ? null : (object)_object, args);
+                return (TResult)method.Invoke(isStatic ? null : (object?)_object, args)!;
             }
             catch (Exception ex)
             {

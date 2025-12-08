@@ -308,7 +308,7 @@ namespace LethalMenu.Patches
             if (!Settings.Untargetable) return;
             if (__result == LethalMenuMod.LocalPlayer)
             {
-                __result = null;
+                __result = null!;
             }
         }
 
@@ -1004,9 +1004,12 @@ namespace LethalMenu.Patches
             if (enemy == null) return;
             
             var nutcracker = enemy as NutcrackerEnemyAI;
-            if (nutcracker == null) return;
+            if (nutcracker == null || nutcracker.gunPoint == null) return;
             
-            nutcracker.ChangeEnemyOwnerServerRpc(LethalMenuMod.LocalPlayer.actualClientId);
+            var localPlayer = LethalMenuMod.LocalPlayer;
+            if (localPlayer == null) return;
+            
+            nutcracker.ChangeEnemyOwnerServerRpc(localPlayer.actualClientId);
             nutcracker.DropGunServerRpc(nutcracker.gunPoint.position);
         }
     }

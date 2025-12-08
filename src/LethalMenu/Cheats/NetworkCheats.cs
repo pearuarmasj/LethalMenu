@@ -1296,6 +1296,7 @@ namespace LethalMenu.Cheats
 
             // Start all chaos coroutines simultaneously
             var instance = LethalMenuMod.Instance;
+            if (instance == null) yield break;
             instance.StartCoroutine(SpamShipHornCoroutine(10));
             instance.StartCoroutine(FlickerShipLightsCoroutine());
             instance.StartCoroutine(SpamShipDoorsCoroutine(8));
