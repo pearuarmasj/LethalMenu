@@ -1748,7 +1748,7 @@ namespace LethalMenu.Cheats
                 hud?.UseSignalTranslatorServerRpc($"S{_spamCounter % 100:D2}");
             }
 
-            // RPC Lag Spam (every 0.05s - aggressive)
+            // RPC Lag Spam (every 0.05s - aggressive) - Full chaos: signal, chat, horn, damage, AND terminal sounds
             if (Settings.RPCLagSpam && time - _lastRPCSpam > 0.05f)
             {
                 _lastRPCSpam = time;
@@ -1756,18 +1756,28 @@ namespace LethalMenu.Cheats
                 
                 if (hud != null)
                 {
+                    // Signal spam
                     hud.UseSignalTranslatorServerRpc($"L{_spamCounter % 100:D2}");
+                    // Chat spam (hidden)
                     hud.AddTextToChatOnServer($"<size=0>{_spamCounter}</size>");
+                    // Horn spam every 3rd iteration
                     if (_spamCounter % 3 == 0)
                     {
                         hud.AlarmHornServerRpc();
                     }
                 }
+                
+                // Terminal audio spam - cycle through indices for variety
                 if (terminal != null)
                 {
-                    terminal.PlayTerminalAudioServerRpc(0);
+                    terminal.PlayTerminalAudioServerRpc(_spamCounter % 5); // Cycle 0-4
+                    if (_spamCounter % 2 == 0)
+                    {
+                        terminal.PlayTerminalAudioServerRpc(-1); // Invalid for earrape
+                    }
                 }
                 
+                // Damage spam
                 var localPlayer = LethalMenuMod.LocalPlayer;
                 if (localPlayer != null && !localPlayer.isPlayerDead && _spamCounter % 5 == 0)
                 {
@@ -1775,18 +1785,32 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Terminal Sound Spam (every 0.1s)
+            // Terminal Sound Spam (every 0.1s) - Both beeping AND earrape
             if (Settings.TerminalSoundSpam && time - _lastTerminalSpam > 0.1f)
             {
                 _lastTerminalSpam = time;
-                terminal?.PlayTerminalAudioServerRpc(1);
+                _spamCounter++;
+                if (terminal != null)
+                {
+                    // Normal terminal beep
+                    terminal.PlayTerminalAudioServerRpc(1);
+                    // Earrape (cash register) - invalid index
+                    terminal.PlayTerminalAudioServerRpc(-1);
+                    terminal.PlayTerminalAudioServerRpc(-99999);
+                }
             }
 
-            // Terminal Earrape Spam (every 0.05s)
+            // Terminal Earrape Spam (every 0.05s) - Pure invalid index spam
             if (Settings.TerminalEarrapeSpam && time - _lastEarrapeSpam > 0.05f)
             {
                 _lastEarrapeSpam = time;
-                terminal?.PlayTerminalAudioServerRpc(-1);
+                _spamCounter++;
+                if (terminal != null)
+                {
+                    terminal.PlayTerminalAudioServerRpc(-1);
+                    terminal.PlayTerminalAudioServerRpc(-99999);
+                    terminal.PlayTerminalAudioServerRpc(int.MaxValue);
+                }
             }
 
             // Chat Spam Loop (every 0.5s)
