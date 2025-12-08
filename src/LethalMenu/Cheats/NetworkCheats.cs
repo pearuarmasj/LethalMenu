@@ -16,6 +16,62 @@ namespace LethalMenu.Cheats
     /// </summary>
     public static class NetworkCheats
     {
+        #region Helper Methods
+
+        /// <summary>
+        /// Helper method to get Terminal with null check and logging.
+        /// </summary>
+        private static Terminal? GetTerminal()
+        {
+            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            if (terminal == null)
+            {
+                Debug.Log("[NetworkCheats] Terminal not found.");
+            }
+            return terminal;
+        }
+
+        /// <summary>
+        /// Helper method to get HUDManager with null check and logging.
+        /// </summary>
+        private static HUDManager? GetHUD()
+        {
+            var hud = HUDManager.Instance;
+            if (hud == null)
+            {
+                Debug.Log("[NetworkCheats] HUD not found.");
+            }
+            return hud;
+        }
+
+        /// <summary>
+        /// Helper method to get StartOfRound with null check and logging.
+        /// </summary>
+        private static StartOfRound? GetStartOfRound()
+        {
+            var startOfRound = StartOfRound.Instance;
+            if (startOfRound == null)
+            {
+                Debug.Log("[NetworkCheats] Not in game.");
+            }
+            return startOfRound;
+        }
+
+        /// <summary>
+        /// Helper method to get TimeOfDay with null check and logging.
+        /// </summary>
+        private static TimeOfDay? GetTimeOfDay()
+        {
+            var timeOfDay = TimeOfDay.Instance;
+            if (timeOfDay == null)
+            {
+                Debug.Log("[NetworkCheats] TimeOfDay not found.");
+            }
+            return timeOfDay;
+        }
+
+        #endregion
+
         #region Credits & Shop Exploits
 
         /// <summary>
@@ -23,12 +79,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void SetCredits(int amount)
         {
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
-            if (terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Terminal not found.");
-                return;
-            }
+            var terminal = GetTerminal();
+            if (terminal == null) return;
 
             terminal.groupCredits = amount;
             terminal.SyncGroupCreditsServerRpc(amount, terminal.numberOfItemsInDropship);
@@ -40,13 +92,9 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void UnlockShipUpgrade(int unlockableId)
         {
-            var startOfRound = StartOfRound.Instance;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
-            if (startOfRound == null || terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Not in game.");
-                return;
-            }
+            var startOfRound = GetStartOfRound();
+            var terminal = GetTerminal();
+            if (startOfRound == null || terminal == null) return;
 
             // Buy the unlockable but keep current credits
             startOfRound.BuyShipUnlockableServerRpc(unlockableId, terminal.groupCredits);
@@ -58,12 +106,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void FreeItems(int[] itemIds)
         {
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
-            if (terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Terminal not found.");
-                return;
-            }
+            var terminal = GetTerminal();
+            if (terminal == null) return;
 
             terminal.BuyItemsServerRpc(itemIds, terminal.groupCredits, 0);
             Debug.Log($"[NetworkCheats] Purchased {itemIds.Length} items for free.");
@@ -173,12 +217,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void SendChatMessage(string message, int playerIndex = -1)
         {
-            var hud = HUDManager.Instance;
-            if (hud == null)
-            {
-                Debug.Log("[NetworkCheats] HUD not found.");
-                return;
-            }
+            var hud = GetHUD();
+            if (hud == null) return;
 
             // If no player index specified, use local player
             if (playerIndex < 0)
@@ -203,12 +243,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void SendSystemMessage(string message)
         {
-            var hud = HUDManager.Instance;
-            if (hud == null)
-            {
-                Debug.Log("[NetworkCheats] HUD not found.");
-                return;
-            }
+            var hud = GetHUD();
+            if (hud == null) return;
 
             // playerId = -1 sends as system message (no player name)
             hud.AddTextToChatOnServer(message, -1);
@@ -232,7 +268,7 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static IEnumerator SpamSystemMessageCoroutine(string message, int count)
         {
-            var hud = HUDManager.Instance;
+            var hud = GetHUD();
             if (hud == null) yield break;
 
             // Calculate max base message length
@@ -269,7 +305,7 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static IEnumerator SpamChatCoroutine(string message, int count)
         {
-            var hud = HUDManager.Instance;
+            var hud = GetHUD();
             if (hud == null) yield break;
 
             var local = LethalMenuMod.LocalPlayer;
@@ -309,12 +345,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void ForceShipLeave()
         {
-            var timeOfDay = TimeOfDay.Instance;
-            if (timeOfDay == null)
-            {
-                Debug.Log("[NetworkCheats] TimeOfDay not found.");
-                return;
-            }
+            var timeOfDay = GetTimeOfDay();
+            if (timeOfDay == null) return;
 
             timeOfDay.SetShipLeaveEarlyServerRpc();
             Debug.Log("[NetworkCheats] Forced ship to leave early.");
@@ -341,13 +373,9 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void ChangeLevel(int levelId)
         {
-            var startOfRound = StartOfRound.Instance;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
-            if (startOfRound == null || terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Not in game.");
-                return;
-            }
+            var startOfRound = GetStartOfRound();
+            var terminal = GetTerminal();
+            if (startOfRound == null || terminal == null) return;
 
             startOfRound.ChangeLevelServerRpc(levelId, terminal.groupCredits);
             Debug.Log($"[NetworkCheats] Changing to level ID: {levelId}");
@@ -358,12 +386,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void EjectAllPlayers()
         {
-            var startOfRound = StartOfRound.Instance;
-            if (startOfRound == null)
-            {
-                Debug.Log("[NetworkCheats] Not in game.");
-                return;
-            }
+            var startOfRound = GetStartOfRound();
+            if (startOfRound == null) return;
 
             startOfRound.ManuallyEjectPlayersServerRpc();
             Debug.Log("[NetworkCheats] Ejecting all players.");
@@ -374,12 +398,8 @@ namespace LethalMenu.Cheats
         /// </summary>
         public static void ToggleMagnet(bool on)
         {
-            var startOfRound = StartOfRound.Instance;
-            if (startOfRound == null)
-            {
-                Debug.Log("[NetworkCheats] Not in game.");
-                return;
-            }
+            var startOfRound = GetStartOfRound();
+            if (startOfRound == null) return;
 
             startOfRound.SetMagnetOnServerRpc(on);
             Debug.Log($"[NetworkCheats] Magnet set to {(on ? "ON" : "OFF")}.");
