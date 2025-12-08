@@ -16,6 +16,9 @@ namespace LethalMenu.Menu
         private readonly string[] _tabs = { "Self", "Enemies", "Items", "Visuals", "World", "Network", "Settings" };
         private Vector2 _scrollPosition;
         private bool _stylesInitialized = false;
+        
+        // Constants
+        private const float ItemSpawnHeightOffset = 1.5f;
 
         // Credit editor state
         private string _creditInput = "10000";
@@ -1606,13 +1609,41 @@ namespace LethalMenu.Menu
             LethalMenuMod.LocalPlayer.TeleportPlayer(position);
         }
 
+        // Helper method to check if an item can be teleported
+        private bool CanTeleportItem(GrabbableObject item)
+        {
+            return item != null && !item.isHeld && !item.isHeldByEnemy && !item.isPocketed;
+        }
+
+        // Helper method to set up item for teleportation with proper physics
+        private void SetupItemTeleport(GrabbableObject item, Vector3 targetPos, Transform? elevatorTransform, bool toShip)
+        {
+            // Parent to elevator if teleporting to ship
+            if (toShip && elevatorTransform != null)
+            {
+                item.transform.SetParent(elevatorTransform, true);
+                item.isInShipRoom = true;
+                item.isInElevator = true;
+            }
+
+            // Set position and trigger proper ground detection
+            item.transform.position = targetPos;
+            item.startFallingPosition = item.transform.localPosition;
+            item.hasHitGround = false;
+            item.reachedFloorTarget = false;
+            item.fallTime = 0f;
+
+            // Call FallToGround to properly land the item
+            item.FallToGround(false);
+        }
+
         private void TeleportItemsToShip()
         {
             if (LethalMenuMod.GameInstance == null || LethalMenuMod.LocalPlayer == null) return;
 
             // Get player position as reference (they should be in ship when using this)
             Vector3 playerPos = LethalMenuMod.LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f; // Spawn above ground to let them fall
+            float spawnHeight = playerPos.y + ItemSpawnHeightOffset; // Spawn above ground to let them fall
 
             // Get ship bounds for containment check
             var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
@@ -1631,9 +1662,7 @@ namespace LethalMenu.Menu
 
             foreach (var item in allItems)
             {
-                if (item == null) continue;
-                if (item.isHeld || item.isHeldByEnemy) continue;
-                if (item.isPocketed) continue;
+                if (!CanTeleportItem(item)) continue;
 
                 // Check if item is ACTUALLY in ship bounds
                 bool actuallyInShip = shipBounds.bounds.Contains(item.transform.position);
@@ -1641,25 +1670,7 @@ namespace LethalMenu.Menu
 
                 // Set position above player to allow proper falling
                 var targetPos = new Vector3(playerPos.x, spawnHeight, playerPos.z);
-
-                // Parent to elevator so it moves with ship
-                if (elevatorTransform != null)
-                {
-                    item.transform.SetParent(elevatorTransform, true);
-                }
-
-                // Set position and trigger proper ground detection
-                item.transform.position = targetPos;
-                item.startFallingPosition = item.transform.localPosition;
-                item.isInShipRoom = true;
-                item.isInElevator = true;
-                item.hasHitGround = false;
-                item.reachedFloorTarget = false;
-                item.fallTime = 0f;
-
-                // Call FallToGround to properly land the item
-                item.FallToGround(false);
-
+                SetupItemTeleport(item, targetPos, elevatorTransform, true);
                 teleported++;
             }
 
@@ -1671,7 +1682,7 @@ namespace LethalMenu.Menu
             if (LethalMenuMod.LocalPlayer == null || LethalMenuMod.GameInstance == null) return;
 
             var playerPos = LethalMenuMod.LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f;
+            float spawnHeight = playerPos.y + ItemSpawnHeightOffset;
 
             // Get ship bounds to check if player is in ship
             var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
@@ -1686,30 +1697,13 @@ namespace LethalMenu.Menu
 
             foreach (var item in allItems)
             {
-                if (item == null) continue;
-                if (item.isHeld || item.isHeldByEnemy) continue;
-                if (item.isPocketed) continue;
+                if (!CanTeleportItem(item)) continue;
 
                 float dist = Vector3.Distance(playerPos, item.transform.position);
                 if (dist <= radius)
                 {
-                    // Parent to elevator if player is in ship
-                    if (playerInShip && elevatorTransform != null)
-                    {
-                        item.transform.SetParent(elevatorTransform, true);
-                        item.isInShipRoom = true;
-                        item.isInElevator = true;
-                    }
-
-                    // Set position and trigger fall
                     var targetPos = new Vector3(playerPos.x, spawnHeight, playerPos.z);
-                    item.transform.position = targetPos;
-                    item.startFallingPosition = item.transform.localPosition;
-                    item.hasHitGround = false;
-                    item.reachedFloorTarget = false;
-                    item.fallTime = 0f;
-                    item.FallToGround(false);
-
+                    SetupItemTeleport(item, targetPos, playerInShip ? elevatorTransform : null, playerInShip);
                     teleported++;
                 }
             }

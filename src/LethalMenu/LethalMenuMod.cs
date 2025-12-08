@@ -40,6 +40,13 @@ namespace LethalMenu
         private GameObject? _cachedVisorObject;
         private float _lastGameObjectCacheTime = 0f;
         private const float GameObjectCacheRefreshInterval = 5f; // Refresh cache every 5 seconds
+        
+        // Constants for magic numbers
+        private const float ShotgunPositionOffset = 0.45f;
+        private const float BreadcrumbHeightOffset = 0.5f;
+        private const int MaxBreadcrumbs = 1000;
+        private const int DefaultFieldOfView = 66;
+        private const float ItemSpawnHeight = 1.5f;
 
         // Game state references
         public static PlayerControllerB? LocalPlayer { get; set; }
@@ -203,15 +210,15 @@ namespace LethalMenu
             {
                 if (LocalPlayer.inTerminalMenu)
                 {
-                    LocalPlayer.gameplayCamera.fieldOfView = 66f;
+                    LocalPlayer.gameplayCamera.fieldOfView = DefaultFieldOfView;
                 }
                 else if (Settings.FOV)
                 {
                     LocalPlayer.gameplayCamera.fieldOfView = Settings.FOVValue;
                 }
-                else if (LocalPlayer.gameplayCamera.fieldOfView != 66f)
+                else if (LocalPlayer.gameplayCamera.fieldOfView != DefaultFieldOfView)
                 {
-                    LocalPlayer.gameplayCamera.fieldOfView = 66f;
+                    LocalPlayer.gameplayCamera.fieldOfView = DefaultFieldOfView;
                 }
             }
 
@@ -278,7 +285,7 @@ namespace LethalMenu
             var mouse = UnityEngine.InputSystem.Mouse.current;
             if (mouse == null || !mouse.leftButton.isPressed) return;
 
-            var pos = LocalPlayer.transform.position - LocalPlayer.gameplayCamera.transform.up * 0.45f;
+            var pos = LocalPlayer.transform.position - LocalPlayer.gameplayCamera.transform.up * ShotgunPositionOffset;
             var dir = LocalPlayer.gameplayCamera.transform.forward;
             shotgun.ShootGunServerRpc(pos, dir);
         }
@@ -303,11 +310,11 @@ namespace LethalMenu
             {
                 _lastBreadcrumbTime = Time.time;
                 var pos = LocalPlayer.transform.position;
-                pos.y -= 0.5f;
+                pos.y -= BreadcrumbHeightOffset;
                 _breadcrumbs.Add(pos);
                 
                 // Limit max breadcrumbs to prevent memory issues
-                if (_breadcrumbs.Count > 1000)
+                if (_breadcrumbs.Count > MaxBreadcrumbs)
                 {
                     _breadcrumbs.RemoveAt(0);
                 }
