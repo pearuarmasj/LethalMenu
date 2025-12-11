@@ -101,6 +101,7 @@ namespace LethalMenu
             Loader.Log("[LethalMenu] Registering cheats...");
             // Register all cheats
             _cheats.Add(new GodModeCheat());
+            _cheats.Add(new DemiGodCheat());
             _cheats.Add(new InfiniteStaminaCheat());
             _cheats.Add(new SpeedHackCheat());
             _cheats.Add(new JumpHackCheat());
@@ -113,6 +114,9 @@ namespace LethalMenu
             _cheats.Add(new EnemyControlCheat());
             _cheats.Add(new FreeCamCheat());
             _cheats.Add(new SpectatePlayerCheat());
+            _cheats.Add(new ThirdPersonCheat());
+            _cheats.Add(new InfoDisplayCheat());
+            _cheats.Add(new ItemSlotsCheat());
             Loader.Log($"[LethalMenu] Registered {_cheats.Count} cheats.");
 
             // Load config on startup
@@ -164,6 +168,9 @@ namespace LethalMenu
 
             // KillClick - kill enemy on left click
             UpdateKillClick();
+            
+            // StunClick - stun enemy/turret/mine on middle click
+            UpdateStunClick();
 
             // NoFog control
             UpdateFogState();
@@ -344,6 +351,62 @@ namespace LethalMenu
                     
                     Loader.Log($"Killed {enemy.enemyType?.enemyName ?? "enemy"}");
                     break;
+                }
+            }
+        }
+
+        private void UpdateStunClick()
+        {
+            if (!Settings.StunClick) return;
+            if (Settings.ShowMenu) return;
+            if (LocalPlayer == null) return;
+
+            // Check for middle mouse click
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse == null || !mouse.middleButton.wasPressedThisFrame) return;
+
+            // Raycast from camera
+            var camera = LocalPlayer.gameplayCamera;
+            if (camera == null) return;
+
+            var ray = new Ray(camera.transform.position, camera.transform.forward);
+            var hits = Physics.RaycastAll(ray, 100f);
+
+            foreach (var hit in hits)
+            {
+                // Check for enemy
+                var enemyCollider = hit.collider.GetComponent<EnemyAICollisionDetect>();
+                if (enemyCollider != null && enemyCollider.mainScript != null)
+                {
+                    enemyCollider.mainScript.SetEnemyStunned(true, 5f);
+                    HUDManager.Instance?.DisplayTip("Stun", $"Stunned {enemyCollider.mainScript.enemyType?.enemyName}");
+                    return;
+                }
+
+                // Check for turret
+                var turret = hit.collider.GetComponent<Turret>();
+                if (turret != null)
+                {
+                    var terminalObj = turret.GetComponent<TerminalAccessibleObject>();
+                    if (terminalObj != null)
+                    {
+                        terminalObj.CallFunctionFromTerminal();
+                        HUDManager.Instance?.DisplayTip("Stun", "Disabled turret");
+                    }
+                    return;
+                }
+
+                // Check for landmine
+                var landmine = hit.collider.GetComponent<Landmine>();
+                if (landmine != null)
+                {
+                    var terminalObj = landmine.GetComponent<TerminalAccessibleObject>();
+                    if (terminalObj != null)
+                    {
+                        terminalObj.CallFunctionFromTerminal();
+                        HUDManager.Instance?.DisplayTip("Stun", "Disabled landmine");
+                    }
+                    return;
                 }
             }
         }

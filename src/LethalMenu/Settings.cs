@@ -2,15 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using GameNetcodeStuff;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace LethalMenu
 {
-    /// <summary>
     /// Global settings and state for the mod.
-    /// </summary>
     public static class Settings
     {
         // Config file path
@@ -23,10 +22,60 @@ namespace LethalMenu
 
         // Self cheats
         public static bool GodMode { get; set; } = false;
+        public static bool DemiGod { get; set; } = false; // For local player demi-god state (config persistence)
+        
+        // Per-player Demi-God tracking (any player can have demi-god applied)
+        public static HashSet<ulong> DemiGodPlayers { get; set; } = new HashSet<ulong>();
+        
+        /// Check if a player has Demi-God enabled
+        public static bool IsDemiGod(PlayerControllerB player)
+        {
+            return player != null && DemiGodPlayers.Contains(player.playerClientId);
+        }
+        
+        /// Toggle Demi-God for a specific player
+        public static void ToggleDemiGod(PlayerControllerB player)
+        {
+            if (player == null) return;
+            
+            if (DemiGodPlayers.Contains(player.playerClientId))
+                DemiGodPlayers.Remove(player.playerClientId);
+            else
+                DemiGodPlayers.Add(player.playerClientId);
+        }
+        
+        /// Set Demi-God state for a specific player.
+        /// If it's the local player, also updates the persistent DemiGod setting.
+        public static void SetDemiGod(PlayerControllerB player, bool enabled)
+        {
+            if (player == null) return;
+            
+            if (enabled)
+                DemiGodPlayers.Add(player.playerClientId);
+            else
+                DemiGodPlayers.Remove(player.playerClientId);
+            
+            // If this is the local player, update the persistent setting
+            if (LethalMenuMod.LocalPlayer != null && 
+                player.playerClientId == LethalMenuMod.LocalPlayer.playerClientId)
+            {
+                DemiGod = enabled;
+            }
+        }
         public static bool InfiniteStamina { get; set; } = false;
         public static bool InfiniteBattery { get; set; } = false;
         public static bool NoFallDamage { get; set; } = false;
+        
+        // Extra item slots
+        public static bool ExtraItemSlots { get; set; } = false;
+        public static int ItemSlotCount { get; set; } = 4; // Default 4, can go up to 20
         public static bool NoClip { get; set; } = false;
+        
+        // Spin player settings
+        public static bool SpinCamera { get; set; } = true;
+        public static bool SpinModel { get; set; } = true;
+        public static float SpinDuration { get; set; } = 10f;
+        
         public static bool NightVision { get; set; } = false;
         public static bool SpeedHack { get; set; } = false;
         public static float SpeedMultiplier { get; set; } = 2.0f;
@@ -56,6 +105,7 @@ namespace LethalMenu
         public static bool HearEveryone { get; set; } = false;
         public static bool InstantInteract { get; set; } = false;
         public static bool KillClick { get; set; } = false;
+        public static bool StunClick { get; set; } = false;
         public static bool Invisibility { get; set; } = false;
 
         // New features batch 1 - Visual/HUD
@@ -111,18 +161,37 @@ namespace LethalMenu
         public static bool FullRenderResolution { get; set; } = false;
         public static bool HPDisplay { get; set; } = false;
 
+        // Info Display settings
+        public static bool InfoDisplay { get; set; } = false;
+        public static bool InfoDisplayCredits { get; set; } = true;
+        public static bool InfoDisplayQuota { get; set; } = true;
+        public static bool InfoDisplayDeadline { get; set; } = true;
+        public static bool InfoDisplayEnemies { get; set; } = true;
+        public static bool InfoDisplayBodies { get; set; } = true;
+        public static bool InfoDisplayMapLoot { get; set; } = true;
+        public static bool InfoDisplayShipLoot { get; set; } = true;
+        public static bool InfoDisplayMoon { get; set; } = true;
+        public static bool InfoDisplayTime { get; set; } = true;
+
         // Camera features
         public static bool FreeCam { get; set; } = false;
         public static float FreeCamSpeed { get; set; } = 10f;
         public static bool SpectatePlayer { get; set; } = false;
+        public static bool ThirdPerson { get; set; } = false;
+        public static float ThirdPersonDistance { get; set; } = 3f;
         public static int SpectatePlayerIndex { get; set; } = -1;
+
+        // Fake death state (runtime only, not persisted)
+        public static bool FakeDeath { get; set; } = false;
 
         // Networking / Anti-kick
         public static bool AntiKick { get; set; } = false;
-        public static System.Collections.Generic.HashSet<ulong> KickedFromLobbies { get; } = new System.Collections.Generic.HashSet<ulong>();
+        public static bool ShowKickedLobbies { get; set; } = true; // Mark lobbies from hosts who kicked you
+        public static System.Collections.Generic.HashSet<ulong> KickedHostIds { get; set; } = new System.Collections.Generic.HashSet<ulong>(); // Host Steam IDs who kicked you
         internal static bool WasKicked { get; set; } = false;
         internal static bool HostQuit { get; set; } = false;
         public static ulong CurrentLobbyId { get; set; } = 0;
+        public static ulong CurrentLobbyOwnerId { get; set; } = 0; // Steam ID of current lobby owner
 
         // Spam/Troll toggles (continuous while enabled)
         public static bool HornSpam { get; set; } = false;
@@ -188,9 +257,12 @@ namespace LethalMenu
                 {
                     // Player cheats
                     ["GodMode"] = GodMode,
+                    ["DemiGod"] = DemiGod,
                     ["InfiniteStamina"] = InfiniteStamina,
                     ["InfiniteBattery"] = InfiniteBattery,
                     ["NoFallDamage"] = NoFallDamage,
+                    ["ExtraItemSlots"] = ExtraItemSlots,
+                    ["ItemSlotCount"] = ItemSlotCount,
                     ["NoWeight"] = NoWeight,
                     ["SpeedHack"] = SpeedHack,
                     ["SpeedMultiplier"] = SpeedMultiplier,
@@ -205,6 +277,8 @@ namespace LethalMenu
                     ["FastClimb"] = FastClimb,
                     ["TauntSlide"] = TauntSlide,
                     ["FreeCamSpeed"] = FreeCamSpeed,
+                    ["ThirdPerson"] = ThirdPerson,
+                    ["ThirdPersonDistance"] = ThirdPersonDistance,
                     
                     // Patches
                     ["Untargetable"] = Untargetable,
@@ -259,6 +333,16 @@ namespace LethalMenu
                     ["Breadcrumbs"] = Breadcrumbs,
                     ["BreadcrumbInterval"] = BreadcrumbInterval,
                     ["HPDisplay"] = HPDisplay,
+                    ["InfoDisplay"] = InfoDisplay,
+                    ["InfoDisplayCredits"] = InfoDisplayCredits,
+                    ["InfoDisplayQuota"] = InfoDisplayQuota,
+                    ["InfoDisplayDeadline"] = InfoDisplayDeadline,
+                    ["InfoDisplayEnemies"] = InfoDisplayEnemies,
+                    ["InfoDisplayBodies"] = InfoDisplayBodies,
+                    ["InfoDisplayMapLoot"] = InfoDisplayMapLoot,
+                    ["InfoDisplayShipLoot"] = InfoDisplayShipLoot,
+                    ["InfoDisplayMoon"] = InfoDisplayMoon,
+                    ["InfoDisplayTime"] = InfoDisplayTime,
                     ["NoFog"] = NoFog,
                     
                     // ESP
@@ -278,6 +362,8 @@ namespace LethalMenu
                     
                     // Network
                     ["AntiKick"] = AntiKick,
+                    ["ShowKickedLobbies"] = ShowKickedLobbies,
+                    ["KickedHostIds"] = new JArray(KickedHostIds.Select(id => (long)id)),
                     ["HearEveryone"] = HearEveryone,
                     ["Invisibility"] = Invisibility,
                     ["DeathNotifications"] = DeathNotifications,
@@ -314,9 +400,12 @@ namespace LethalMenu
 
                 // Player cheats
                 GodMode = config["GodMode"]?.Value<bool>() ?? GodMode;
+                DemiGod = config["DemiGod"]?.Value<bool>() ?? DemiGod;
                 InfiniteStamina = config["InfiniteStamina"]?.Value<bool>() ?? InfiniteStamina;
                 InfiniteBattery = config["InfiniteBattery"]?.Value<bool>() ?? InfiniteBattery;
                 NoFallDamage = config["NoFallDamage"]?.Value<bool>() ?? NoFallDamage;
+                ExtraItemSlots = config["ExtraItemSlots"]?.Value<bool>() ?? ExtraItemSlots;
+                ItemSlotCount = config["ItemSlotCount"]?.Value<int>() ?? ItemSlotCount;
                 NoWeight = config["NoWeight"]?.Value<bool>() ?? NoWeight;
                 SpeedHack = config["SpeedHack"]?.Value<bool>() ?? SpeedHack;
                 SpeedMultiplier = config["SpeedMultiplier"]?.Value<float>() ?? SpeedMultiplier;
@@ -331,6 +420,8 @@ namespace LethalMenu
                 FastClimb = config["FastClimb"]?.Value<bool>() ?? FastClimb;
                 TauntSlide = config["TauntSlide"]?.Value<bool>() ?? TauntSlide;
                 FreeCamSpeed = config["FreeCamSpeed"]?.Value<float>() ?? FreeCamSpeed;
+                ThirdPerson = config["ThirdPerson"]?.Value<bool>() ?? ThirdPerson;
+                ThirdPersonDistance = config["ThirdPersonDistance"]?.Value<float>() ?? ThirdPersonDistance;
                 
                 // Patches
                 Untargetable = config["Untargetable"]?.Value<bool>() ?? Untargetable;
@@ -385,6 +476,16 @@ namespace LethalMenu
                 Breadcrumbs = config["Breadcrumbs"]?.Value<bool>() ?? Breadcrumbs;
                 BreadcrumbInterval = config["BreadcrumbInterval"]?.Value<float>() ?? BreadcrumbInterval;
                 HPDisplay = config["HPDisplay"]?.Value<bool>() ?? HPDisplay;
+                InfoDisplay = config["InfoDisplay"]?.Value<bool>() ?? InfoDisplay;
+                InfoDisplayCredits = config["InfoDisplayCredits"]?.Value<bool>() ?? InfoDisplayCredits;
+                InfoDisplayQuota = config["InfoDisplayQuota"]?.Value<bool>() ?? InfoDisplayQuota;
+                InfoDisplayDeadline = config["InfoDisplayDeadline"]?.Value<bool>() ?? InfoDisplayDeadline;
+                InfoDisplayEnemies = config["InfoDisplayEnemies"]?.Value<bool>() ?? InfoDisplayEnemies;
+                InfoDisplayBodies = config["InfoDisplayBodies"]?.Value<bool>() ?? InfoDisplayBodies;
+                InfoDisplayMapLoot = config["InfoDisplayMapLoot"]?.Value<bool>() ?? InfoDisplayMapLoot;
+                InfoDisplayShipLoot = config["InfoDisplayShipLoot"]?.Value<bool>() ?? InfoDisplayShipLoot;
+                InfoDisplayMoon = config["InfoDisplayMoon"]?.Value<bool>() ?? InfoDisplayMoon;
+                InfoDisplayTime = config["InfoDisplayTime"]?.Value<bool>() ?? InfoDisplayTime;
                 NoFog = config["NoFog"]?.Value<bool>() ?? NoFog;
                 
                 // ESP
@@ -404,6 +505,11 @@ namespace LethalMenu
                 
                 // Network
                 AntiKick = config["AntiKick"]?.Value<bool>() ?? AntiKick;
+                ShowKickedLobbies = config["ShowKickedLobbies"]?.Value<bool>() ?? ShowKickedLobbies;
+                if (config["KickedHostIds"] is JArray kickedArray)
+                {
+                    KickedHostIds = new HashSet<ulong>(kickedArray.Select(t => (ulong)(long)t));
+                }
                 HearEveryone = config["HearEveryone"]?.Value<bool>() ?? HearEveryone;
                 Invisibility = config["Invisibility"]?.Value<bool>() ?? Invisibility;
                 DeathNotifications = config["DeathNotifications"]?.Value<bool>() ?? DeathNotifications;
@@ -442,6 +548,7 @@ namespace LethalMenu
                 }
                 // Reset all to defaults by recreating
                 GodMode = false;
+                DemiGod = false;
                 InfiniteStamina = false;
                 InfiniteBattery = false;
                 NoFallDamage = false;

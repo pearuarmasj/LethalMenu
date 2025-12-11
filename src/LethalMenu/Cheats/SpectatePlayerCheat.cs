@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace LethalMenu.Cheats
 {
-    /// <summary>
+    /// 
     /// SpectatePlayer - watch other players from their perspective.
-    /// </summary>
+    /// 
     public class SpectatePlayerCheat : CheatBase
     {
         public override string Name => "SpectatePlayer";

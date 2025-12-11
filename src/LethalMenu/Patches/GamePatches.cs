@@ -1,18 +1,22 @@
+using System.Collections;
 using GameNetcodeStuff;
 using HarmonyLib;
+using LethalMenu.Cheats;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace LethalMenu.Patches
 {
-    /// <summary>
+    /// 
     /// Patches for PlayerControllerB to implement various cheats.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB))]
     public static class PlayerPatches
     {
-        /// <summary>
+        /// 
         /// God mode - prevent damage.
-        /// </summary>
+        /// 
         [HarmonyPatch("DamagePlayer")]
         [HarmonyPrefix]
         public static bool DamagePlayerPrefix(PlayerControllerB __instance)
@@ -25,9 +29,9 @@ namespace LethalMenu.Patches
             return true; // Run original method
         }
 
-        /// <summary>
+        /// 
         /// God mode - prevent kill.
-        /// </summary>
+        /// 
         [HarmonyPatch("KillPlayer")]
         [HarmonyPrefix]
         public static bool KillPlayerPrefix(PlayerControllerB __instance)
@@ -39,9 +43,9 @@ namespace LethalMenu.Patches
             return true;
         }
 
-        /// <summary>
+        /// 
         /// No fall damage.
-        /// </summary>
+        /// 
         [HarmonyPatch("PlayerHitGroundEffects")]
         [HarmonyPrefix]
         public static bool PlayerHitGroundPrefix(PlayerControllerB __instance)
@@ -55,9 +59,9 @@ namespace LethalMenu.Patches
             return true;
         }
 
-        /// <summary>
+        /// 
         /// Player update - various runtime cheats.
-        /// </summary>
+        /// 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         public static void UpdatePostfix(PlayerControllerB __instance)
@@ -91,9 +95,9 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
+        /// 
         /// One-handed items - forces twoHanded to false.
-        /// </summary>
+        /// 
         [HarmonyPatch("LateUpdate")]
         [HarmonyPostfix]
         public static void LateUpdatePostfix(PlayerControllerB __instance)
@@ -106,9 +110,9 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
+        /// 
         /// TauntSlide - allow emoting while moving.
-        /// </summary>
+        /// 
         [HarmonyPatch("CheckConditionsForEmote")]
         [HarmonyPostfix]
         public static void CheckEmotePostfix(ref bool __result, PlayerControllerB __instance)
@@ -123,9 +127,9 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
+        /// 
         /// GrabInLobby - allow grabbing items before game starts.
-        /// </summary>
+        /// 
         [HarmonyPatch("GrabObjectServerRpc")]
         [HarmonyPrefix]
         public static void GrabObjectPrefix(PlayerControllerB __instance)
@@ -140,9 +144,9 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
+        /// 
         /// Unlimited jump - allows jumping in air.
-        /// </summary>
+        /// 
         [HarmonyPatch("Jump_performed")]
         [HarmonyPrefix]
         public static bool JumpPrefix(PlayerControllerB __instance)
@@ -179,9 +183,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Patches for StartOfRound to track game state.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(StartOfRound))]
     public static class StartOfRoundPatches
     {
@@ -194,15 +198,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Patches for EnemyAI.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(EnemyAI))]
     public static class EnemyPatches
     {
-        /// <summary>
+        /// 
         /// Make enemies unable to target local player.
-        /// </summary>
+        /// 
         [HarmonyPatch("PlayerIsTargetable")]
         [HarmonyPostfix]
         public static void PlayerIsTargetablePostfix(ref bool __result, PlayerControllerB playerScript)
@@ -213,9 +217,9 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
+        /// 
         /// Clear enemy target if it's the local player.
-        /// </summary>
+        /// 
         [HarmonyPatch("Update")]
         [HarmonyPrefix]
         public static bool EnemyUpdatePrefix(EnemyAI __instance)
@@ -228,9 +232,9 @@ namespace LethalMenu.Patches
             return true;
         }
 
-        /// <summary>
+        /// 
         /// Block noise detection from local player.
-        /// </summary>
+        /// 
         [HarmonyPatch("DetectNoise")]
         [HarmonyPrefix]
         public static bool DetectNoisePrefix(EnemyAI __instance, Vector3 noisePosition)
@@ -248,15 +252,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// MouthDog-specific patches - they are blind and use sound.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(MouthDogAI))]
     public static class MouthDogPatches
     {
-        /// <summary>
+        /// 
         /// Block MouthDog from detecting local player's noise.
-        /// </summary>
+        /// 
         [HarmonyPatch("DetectNoise")]
         [HarmonyPrefix]
         public static bool DetectNoisePrefix(MouthDogAI __instance, Vector3 noisePosition)
@@ -273,9 +277,9 @@ namespace LethalMenu.Patches
             return true;
         }
 
-        /// <summary>
+        /// 
         /// Block MouthDog enrage towards local player.
-        /// </summary>
+        /// 
         [HarmonyPatch("EnterLunge")]
         [HarmonyPrefix]
         public static bool EnterLungePrefix(MouthDogAI __instance)
@@ -292,15 +296,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Turret patches - make turrets ignore local player when Untargetable.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(Turret))]
     public static class TurretPatches
     {
-        /// <summary>
+        /// 
         /// Return null if turret would target local player.
-        /// </summary>
+        /// 
         [HarmonyPatch("CheckForPlayersInLineOfSight")]
         [HarmonyPostfix]
         public static void CheckForPlayersPostfix(ref PlayerControllerB __result)
@@ -312,9 +316,9 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
+        /// 
         /// Clear turret target if it's the local player.
-        /// </summary>
+        /// 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         public static void UpdatePostfix(Turret __instance)
@@ -327,15 +331,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Anti-flash patches for HUDManager.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(HUDManager))]
     public static class HUDPatches
     {
-        /// <summary>
+        /// 
         /// Disable flash filter (stun grenades).
-        /// </summary>
+        /// 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         public static void UpdatePostfix(HUDManager __instance)
@@ -349,15 +353,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Anti-flash patches for SoundManager (ears ringing).
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(SoundManager))]
     public static class SoundPatches
     {
-        /// <summary>
+        /// 
         /// Disable ears ringing from stun grenades.
-        /// </summary>
+        /// 
         [HarmonyPatch("SetEarsRinging")]
         [HarmonyPrefix]
         public static bool SetEarsRingingPrefix()
@@ -366,15 +370,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Patches for GrabbableObject (items).
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(GrabbableObject))]
     public static class ItemPatches
     {
-        /// <summary>
+        /// 
         /// Infinite battery for held items.
-        /// </summary>
+        /// 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         public static void UpdatePostfix(GrabbableObject __instance)
@@ -392,9 +396,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Patches for QuickMenuManager to prevent menu interference.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(QuickMenuManager))]
     public static class QuickMenuPatches
     {
@@ -406,9 +410,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// No Quicksand patch - prevents sinking/slowing.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB))]
     public static class NoQuicksandPatch
     {
@@ -423,9 +427,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Shovel patches for super shovel.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(Shovel))]
     public static class ShovelPatches
     {
@@ -440,9 +444,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Shotgun patches for unlimited ammo.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(ShotgunItem))]
     public static class ShotgunPatches
     {
@@ -457,9 +461,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Terminal patches for shoplifter (free items).
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(Terminal))]
     public static class TerminalPatches
     {
@@ -474,9 +478,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Deposit desk patches to prevent Jeb attacks.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(DepositItemsDesk))]
     public static class DepositDeskPatches
     {
@@ -495,9 +499,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Build anywhere - allow placing ship objects outside ship bounds.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(ShipBuildModeManager))]
     public static class BuildModePatches
     {
@@ -512,9 +516,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Instant interact - skip hold interaction delay.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(HUDManager))]
     public static class InstantInteractPatches
     {
@@ -531,9 +535,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Voice patches for hearing everyone.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(StartOfRound))]
     public static class VoicePatches
     {
@@ -546,10 +550,10 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Invisibility - sends fake position to server, restores on client.
     /// Other players see you at y=-100 (underground).
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB))]
     public static class InvisibilityPatches
     {
@@ -609,15 +613,15 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Anti-kick patches - allows rejoining lobbies after being kicked.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class AntiKickPatches
     {
-        /// <summary>
+        /// 
         /// Track disconnections to detect kicks.
-        /// </summary>
+        /// 
         [HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.Disconnect))]
         [HarmonyPostfix]
         public static void DisconnectPostfix(GameNetworkManager __instance)
@@ -625,24 +629,32 @@ namespace LethalMenu.Patches
             // disconnectReason 1 = host quit, 3 = kicked
             if (GameNetworkManager.Instance.disconnectReason == 1)
             {
-                if (!Settings.HostQuit && Settings.CurrentLobbyId != 0)
+                // Host disconnected - might be kick if we weren't informed of host quit
+                if (!Settings.HostQuit && Settings.CurrentLobbyOwnerId != 0)
                 {
-                    Settings.KickedFromLobbies.Add(Settings.CurrentLobbyId);
+                    Settings.KickedHostIds.Add(Settings.CurrentLobbyOwnerId);
+                    UnityEngine.Debug.Log($"[LethalMenu] Marked host {Settings.CurrentLobbyOwnerId} as kicked (host disconnect)");
                 }
                 Settings.HostQuit = false;
             }
             else if (GameNetworkManager.Instance.disconnectReason == 3)
             {
-                if (Settings.CurrentLobbyId != 0)
+                // Explicitly kicked
+                if (Settings.CurrentLobbyOwnerId != 0)
                 {
-                    Settings.KickedFromLobbies.Add(Settings.CurrentLobbyId);
+                    Settings.KickedHostIds.Add(Settings.CurrentLobbyOwnerId);
+                    UnityEngine.Debug.Log($"[LethalMenu] Marked host {Settings.CurrentLobbyOwnerId} as kicked (explicit kick)");
                 }
             }
+            
+            // Reset tracking
+            Settings.CurrentLobbyOwnerId = 0;
+            Settings.CurrentLobbyId = 0;
         }
 
-        /// <summary>
+        /// 
         /// Detect when host disconnects (not a kick).
-        /// </summary>
+        /// 
         [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.OnClientDisconnect))]
         [HarmonyPostfix]
         public static void OnClientDisconnectPostfix(StartOfRound __instance, ulong clientId)
@@ -657,23 +669,26 @@ namespace LethalMenu.Patches
             }
         }
 
-        /// <summary>
-        /// Track lobby ID when joining.
-        /// </summary>
+        /// 
+        /// Track lobby ID and owner ID when joining.
+        /// 
         [HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.JoinLobby))]
         [HarmonyPostfix]
         public static void JoinLobbyPostfix(GameNetworkManager __instance, Steamworks.Data.Lobby lobby, Steamworks.SteamId id)
         {
             Settings.CurrentLobbyId = lobby.Id;
-            if (Settings.AntiKick && Settings.KickedFromLobbies.Contains(lobby.Owner.Id))
+            Settings.CurrentLobbyOwnerId = lobby.Owner.Id;
+            
+            // Check if we've been kicked by this host before (for anti-kick rejoin)
+            if (Settings.AntiKick && Settings.KickedHostIds.Contains(lobby.Owner.Id))
             {
                 Settings.WasKicked = true;
             }
         }
 
-        /// <summary>
+        /// 
         /// Override player values to rejoin after kick.
-        /// </summary>
+        /// 
         [HarmonyPatch(typeof(PlayerControllerB), "SendNewPlayerValuesServerRpc")]
         [HarmonyPrefix]
         public static bool SendNewPlayerValuesServerRpcPrefix(PlayerControllerB __instance, ulong newPlayerSteamId)
@@ -699,9 +714,9 @@ namespace LethalMenu.Patches
             return true;
         }
 
-        /// <summary>
+        /// 
         /// Update local player values after receiving client RPC.
-        /// </summary>
+        /// 
         [HarmonyPatch(typeof(PlayerControllerB), "SendNewPlayerValuesClientRpc")]
         [HarmonyPostfix]
         public static void SendNewPlayerValuesClientRpcPostfix(PlayerControllerB __instance)
@@ -727,9 +742,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Anti Ghost Girl patches.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(DressGirlAI))]
     public static class AntiGhostGirlPatches
     {
@@ -756,9 +771,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Ghost mode - enemies cannot see you (alternative to Untargetable).
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.PlayerIsTargetable))]
     public static class GhostModePatches
     {
@@ -774,9 +789,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Bridge never falls patches.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class BridgePatches
     {
@@ -795,9 +810,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Open dropship on land.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(ItemDropship), "ShipLandedAnimationEvent")]
     public static class OpenDropShipPatches
     {
@@ -809,9 +824,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Open ship door in space.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class OpenShipDoorSpacePatches
     {
@@ -838,9 +853,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// No camera shake.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(HUDManager), "ShakeCamera")]
     public static class NoCameraShakePatches
     {
@@ -851,9 +866,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// No depth of field.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(UnityEngine.Rendering.HighDefinition.DepthOfField), "IsActive")]
     public static class NoFieldOfDepthPatches
     {
@@ -864,9 +879,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Eggs always explode.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class EggsPatches
     {
@@ -886,9 +901,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Super knife damage.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(KnifeItem), "HitKnife")]
     public static class SuperKnifePatches
     {
@@ -899,9 +914,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Super jump force.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB), "PlayerJump")]
     public static class SuperJumpPatches
     {
@@ -913,9 +928,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Strong hands - two-handed items can be held one-handed.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class StrongHandsPatches
     {
@@ -933,9 +948,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Teleport with items - don't drop items when teleporting.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB), "DropAllHeldItems")]
     public static class TeleportWithItemsPatches
     {
@@ -946,9 +961,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Unlimited zap gun patches.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class UnlimitedZapGunPatches
     {
@@ -973,9 +988,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Grab nutcracker's shotgun.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB), "BeginGrabObject")]
     public static class GrabNutcrackerShotgunPatches
     {
@@ -1014,9 +1029,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Through walls patches.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class ThroughWallsPatches
     {
@@ -1053,9 +1068,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Death notification patches.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB), "KillPlayerClientRpc")]
     public static class DeathNotificationPatches
     {
@@ -1071,9 +1086,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Hear dead people patches.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(StartOfRound), "UpdatePlayerVoiceEffects")]
     public static class HearDeadPeoplePatches
     {
@@ -1104,9 +1119,9 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Loot before game starts patches.
-    /// </summary>
+    /// 
     [HarmonyPatch]
     public static class LootBeforeGameStartsPatches
     {
@@ -1144,10 +1159,10 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// <summary>
+    /// 
     /// Full render resolution - increases render texture to screen resolution.
     /// Applied via Harmony patch on PlayerControllerB.Start.
-    /// </summary>
+    /// 
     [HarmonyPatch(typeof(PlayerControllerB), "Start")]
     public static class FullRenderResolutionPatch
     {
@@ -1237,6 +1252,206 @@ namespace LethalMenu.Patches
             }
             _originalTexture = null;
             _applied = false;
+        }
+    }
+
+    /// 
+    /// Third-person camera patches for menu/terminal/death state transitions.
+    /// 
+    [HarmonyPatch(typeof(QuickMenuManager))]
+    public static class ThirdPersonMenuPatches
+    {
+        /// 
+        /// Disable third-person when opening quick menu.
+        /// 
+        [HarmonyPatch("OpenQuickMenu")]
+        [HarmonyPrefix]
+        public static void OpenQuickMenuPrefix()
+        {
+            ThirdPersonCheat.StoreAndDisable();
+        }
+
+        /// 
+        /// Restore third-person when closing quick menu.
+        /// 
+        [HarmonyPatch("CloseQuickMenu")]
+        [HarmonyPrefix]
+        public static void CloseQuickMenuPrefix()
+        {
+            ThirdPersonCheat.RestoreState();
+        }
+    }
+
+    /// 
+    /// Third-person patches for terminal transitions.
+    /// 
+    [HarmonyPatch(typeof(Terminal))]
+    public static class ThirdPersonTerminalPatches
+    {
+        /// 
+        /// Disable third-person when entering terminal.
+        /// 
+        [HarmonyPatch("BeginUsingTerminal")]
+        [HarmonyPrefix]
+        public static void BeginUsingTerminalPrefix()
+        {
+            ThirdPersonCheat.StoreAndDisable();
+        }
+
+        /// 
+        /// Restore third-person when exiting terminal.
+        /// 
+        [HarmonyPatch("QuitTerminal")]
+        [HarmonyPrefix]
+        public static void QuitTerminalPrefix()
+        {
+            ThirdPersonCheat.RestoreState();
+        }
+    }
+
+    /// 
+    /// Third-person patches for player death.
+    /// 
+    [HarmonyPatch(typeof(PlayerControllerB))]
+    public static class ThirdPersonDeathPatches
+    {
+        /// 
+        /// Disable third-person on death.
+        /// 
+        [HarmonyPatch("KillPlayer")]
+        [HarmonyPrefix]
+        public static void KillPlayerPrefix(PlayerControllerB __instance)
+        {
+            if (__instance == LethalMenuMod.LocalPlayer)
+            {
+                ThirdPersonCheat.ForceDisable();
+            }
+        }
+    }
+
+    /// 
+    /// Fake death patches - prevents local player from actually dying when FakeDeath is enabled.
+    /// The kill RPC is sent to other players but we intercept the local death.
+    /// 
+    [HarmonyPatch(typeof(PlayerControllerB))]
+    public static class FakeDeathPatches
+    {
+        /// 
+        /// When FakeDeath is active, skip the actual KillPlayer execution on local client.
+        /// The ServerRpc was already sent, so other players see us as dead.
+        /// 
+        [HarmonyPatch("KillPlayer")]
+        [HarmonyPrefix]
+        public static bool KillPlayerFakeDeathPrefix(PlayerControllerB __instance)
+        {
+            // Only intercept for local player when fake death is active
+            if (Settings.FakeDeath && __instance == LethalMenuMod.LocalPlayer)
+            {
+                // Don't actually die locally - just return false to skip the method
+                // The RPC was already sent in NetworkCheats.FakeDeath()
+                return false;
+            }
+            return true;
+        }
+
+        /// 
+        /// Also block the ClientRpc from killing us when FakeDeath is active.
+        /// 
+        [HarmonyPatch("KillPlayerClientRpc")]
+        [HarmonyPrefix]
+        public static bool KillPlayerClientRpcPrefix(PlayerControllerB __instance, int playerId)
+        {
+            // Check if this RPC is targeting our local player
+            var localPlayer = LethalMenuMod.LocalPlayer;
+            if (localPlayer == null) return true;
+
+            // If FakeDeath is active and the RPC is about us, block it
+            if (Settings.FakeDeath && playerId == (int)localPlayer.playerClientId)
+            {
+                return false; // Don't execute the death on our client
+            }
+            return true;
+        }
+    }
+
+    /// 
+    /// Patches for LobbySlot to mark lobbies from hosts who kicked you.
+    /// 
+    [HarmonyPatch(typeof(LobbySlot))]
+    public static class LobbySlotPatches
+    {
+        /// 
+        /// Mark lobbies from hosts who kicked you with a red highlight.
+        /// 
+        [HarmonyPatch("Awake")]
+        [HarmonyPostfix]
+        public static void AwakePostfix(LobbySlot __instance)
+        {
+            if (!Settings.ShowKickedLobbies) return;
+            
+            // Start a coroutine to check after lobby data is set
+            __instance.StartCoroutine(CheckKickedLobby(__instance));
+        }
+
+        private static IEnumerator CheckKickedLobby(LobbySlot slot)
+        {
+            // Wait for end of frame to ensure thisLobby is populated
+            yield return new WaitForEndOfFrame();
+            
+            // Check if this lobby's owner kicked us
+            try
+            {
+                string lobbyName = slot.thisLobby.GetData("name");
+                if (string.IsNullOrEmpty(lobbyName)) yield break;
+
+                ulong ownerId = slot.thisLobby.Owner.Id;
+                
+                if (Settings.KickedHostIds.Contains(ownerId))
+                {
+                    // Mark this lobby as "kicked from"
+                    ApplyKickedLobbyStyle(slot, "Host Kicked You", new Color(0.8f, 0.2f, 0.2f, 0.5f));
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[LethalMenu] Error checking kicked lobby: {ex.Message}");
+            }
+        }
+
+        /// 
+        /// Apply visual styling to mark a lobby.
+        /// 
+        private static void ApplyKickedLobbyStyle(LobbySlot slot, string labelText, Color bgColor)
+        {
+            // Skip challenge lobbies (different prefab structure)
+            if (slot.transform.name.Contains("Challenge")) return;
+
+            // Tint the background
+            var image = slot.GetComponent<Image>();
+            if (image != null)
+            {
+                image.color = bgColor;
+            }
+
+            // Add a label
+            GameObject labelObj = new GameObject("KickedLabel");
+            labelObj.transform.SetParent(slot.transform, false);
+            
+            TextMeshProUGUI label = labelObj.AddComponent<TextMeshProUGUI>();
+            label.text = labelText;
+            label.font = slot.playerCount.font;
+            label.fontSize = 12;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = new Color(1f, 0.3f, 0.3f, 1f);
+            label.enableWordWrapping = false;
+            label.raycastTarget = false;
+
+            RectTransform rect = labelObj.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(200, 20);
+            rect.anchorMin = new Vector2(0.5f, 0);
+            rect.anchorMax = new Vector2(0.5f, 0);
+            rect.pivot = new Vector2(0.5f, 0);
+            rect.anchoredPosition = new Vector2(0, -8);
         }
     }
 }

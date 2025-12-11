@@ -3,9 +3,9 @@ using UnityEngine.InputSystem;
 
 namespace LethalMenu.Components
 {
-    /// <summary>
+    /// 
     /// AI Movement component for controlling enemy movement.
-    /// </summary>
+    /// 
     public class AIMovement : MonoBehaviour
     {
         private const float WalkingSpeed = 0.5f;

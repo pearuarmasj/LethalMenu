@@ -3,9 +3,9 @@ using UnityEngine;
 
 namespace LethalMenu.Cheats
 {
-    /// <summary>
+    /// 
     /// ESP - draws boxes and labels around players, enemies, and items.
-    /// </summary>
+    /// 
     public class ESPCheat : CheatBase
     {
         public override string Name => "ESP";
@@ -145,9 +145,9 @@ namespace LethalMenu.Cheats
             }
         }
 
-        /// <summary>
+        /// 
         /// Get the active camera - handles spectator mode and fallback to Camera.main.
-        /// </summary>
+        /// 
         private Camera? GetActiveCamera()
         {
             if (LethalMenuMod.LocalPlayer == null)
@@ -159,10 +159,10 @@ namespace LethalMenu.Cheats
             return LethalMenuMod.LocalPlayer.gameplayCamera ?? Camera.main;
         }
 
-        /// <summary>
+        /// 
         /// Convert world position to screen coordinates.
         /// Returns false if position is behind camera.
-        /// </summary>
+        /// 
         private bool WorldToScreen(Camera camera, Vector3 worldPos, out Vector2 screenPos)
         {
             // Use viewport point to get normalized coordinates
@@ -315,20 +315,32 @@ namespace LethalMenu.Cheats
                 // Health bar (if enabled)
                 if (Settings.PlayerHealthBars && _boxTexture != null)
                 {
-                    float healthBarWidth = boxWidth + 10f;
-                    float healthBarHeight = 6f * scale;
+                    var healthStyle = new GUIStyle(_labelStyle)
+                    {
+                        fontSize = Mathf.Clamp(Mathf.RoundToInt(9 * scale), 8, 13),
+                        normal = { textColor = Color.white }
+                    };
+
+                    string healthText = $"{health}%";
+                    var healthContent = new GUIContent(healthText);
+                    var healthSize = healthStyle.CalcSize(healthContent);
+
+                    float baseBarWidth = boxWidth;
+                    float healthBarWidth = Mathf.Max(baseBarWidth, healthSize.x + 8f); // ensure text fits
+                    float healthBarHeight = Mathf.Clamp(6f * scale, 6f, 12f);
                     float healthPercent = Mathf.Clamp01(health / 100f);
 
-                    // Position health bar above the box
-                    float hbX = screenPos.x - healthBarWidth / 2;
+                    // Position health bar just above box, with small gap
+                    float hbX = screenPos.x - healthBarWidth / 2f;
                     float hbY = screenPos.y - boxHeight - healthBarHeight - 4f;
 
-                    // Background (dark)
                     var oldColor = GUI.color;
-                    GUI.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+
+                    // Background
+                    GUI.color = new Color(0f, 0f, 0f, 0.7f);
                     GUI.DrawTexture(new Rect(hbX, hbY, healthBarWidth, healthBarHeight), _boxTexture);
 
-                    // Health fill (green to red based on health)
+                    // Health fill
                     Color healthColor = Color.Lerp(Color.red, Color.green, healthPercent);
                     GUI.color = healthColor;
                     GUI.DrawTexture(new Rect(hbX + 1, hbY + 1, (healthBarWidth - 2) * healthPercent, healthBarHeight - 2), _boxTexture);
@@ -337,16 +349,12 @@ namespace LethalMenu.Cheats
                     GUI.color = Color.white;
                     DrawBox(new Rect(hbX, hbY, healthBarWidth, healthBarHeight), Color.white);
 
-                    GUI.color = oldColor;
+                    // Health text centered
+                    float textX = hbX + (healthBarWidth - healthSize.x) / 2f;
+                    float textY = hbY + (healthBarHeight - healthSize.y) / 2f - 0.5f;
+                    GUI.Label(new Rect(textX, textY, healthSize.x, healthSize.y), healthText, healthStyle);
 
-                    // Health text
-                    var healthStyle = new GUIStyle(_labelStyle);
-                    healthStyle.fontSize = Mathf.RoundToInt(10 * scale);
-                    healthStyle.normal.textColor = Color.white;
-                    string healthText = $"{health}%";
-                    var healthContent = new GUIContent(healthText);
-                    var healthSize = healthStyle.CalcSize(healthContent);
-                    GUI.Label(new Rect(hbX + healthBarWidth / 2 - healthSize.x / 2, hbY - 2, healthSize.x, healthSize.y), healthText, healthStyle);
+                    GUI.color = oldColor;
                 }
             }
         }

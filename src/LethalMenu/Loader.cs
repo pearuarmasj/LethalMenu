@@ -7,9 +7,9 @@ using UnityEngine;
 
 namespace LethalMenu
 {
-    /// <summary>
+    /// 
     /// Entry point for the mod. Called by the mono injector.
-    /// </summary>
+    /// 
     public static class Loader
     {
         private static GameObject? _modObject;
@@ -58,9 +58,9 @@ namespace LethalMenu
         private const uint FILE_SHARE_WRITE = 0x2;
         private const uint OPEN_EXISTING = 3;
 
-        /// <summary>
+        /// 
         /// Main entry point - called by SharpMonoInjector.
-        /// </summary>
+        /// 
         public static void Load()
         {
             if (_isLoaded)
@@ -164,9 +164,9 @@ namespace LethalMenu
             }
         }
 
-        /// <summary>
+        /// 
         /// Log to Console, Unity, and file.
-        /// </summary>
+        /// 
         public static void Log(string message)
         {
             string timestamped = $"[{DateTime.Now:HH:mm:ss}] {message}";
@@ -219,9 +219,9 @@ namespace LethalMenu
             catch { }
         }
 
-        /// <summary>
+        /// 
         /// Log error to Console, Unity, and file.
-        /// </summary>
+        /// 
         public static void LogError(string message)
         {
             string timestamped = $"[{DateTime.Now:HH:mm:ss}] [ERROR] {message}";
@@ -250,9 +250,9 @@ namespace LethalMenu
             catch { }
         }
 
-        /// <summary>
+        /// 
         /// Unload the mod and clean up.
-        /// </summary>
+        /// 
         public static void Unload()
         {
             if (!_isLoaded) return;
@@ -277,9 +277,9 @@ namespace LethalMenu
             }
         }
 
-        /// <summary>
+        /// 
         /// Load embedded DLLs (Harmony, etc.) into the AppDomain.
-        /// </summary>
+        /// 
         private static void LoadEmbeddedAssemblies()
         {
             Log("[LethalMenu] Loading embedded assemblies...");
@@ -306,9 +306,9 @@ namespace LethalMenu
             }
         }
 
-        /// <summary>
+        /// 
         /// Create the mod GameObject and initialize components.
-        /// </summary>
+        /// 
         private static void InitializeMod()
         {
             Log("[LethalMenu] Creating mod GameObject...");

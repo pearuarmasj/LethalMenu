@@ -1,44 +1,60 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using GameNetcodeStuff;
+using LethalMenu.Cheats.EnemyControl;
 using LethalMenu.Components;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace LethalMenu.Cheats
 {
-    /// <summary>
+    /// 
     /// Enemy control system - allows player to possess and control enemies.
-    /// </summary>
+    /// Now uses per-enemy-type controllers with unique abilities.
+    /// 
+    /// Controls:
+    /// - RMB (while not possessing): Target and possess enemy
+    /// - WASD: Move
+    /// - Shift: Sprint
+    /// - Space: Jump (or fly up in NoClip)
+    /// - Ctrl: Walk slow (or fly down in NoClip)
+    /// - LMB: Primary skill
+    /// - RMB: Secondary skill
+    /// - E: Interact with door / entrance teleport
+    /// - N: Toggle NoClip
+    /// - F9: Toggle AI control (let enemy AI take over)
+    /// - F11/Z: Release control
+    /// - Del/F12: Kill enemy and release
+    /// 
     public class EnemyControlCheat : CheatBase
     {
         public override string Name => "Enemy Control";
 
         // Currently controlled enemy
         private static EnemyAI? _controlledEnemy;
+        private static IEnemyController? _controller;
         private static GameObject? _controllerObject;
         private static MouseInput? _mouseInput;
         private static AIMovement? _movement;
         private static AudioListener? _audioListener;
+        private static Transform? _originalCameraParent;
 
+        // Control state
         public static bool IsControlling => _controlledEnemy != null;
         public static bool IsAIControlled { get; private set; } = false;
+        public static bool NoClipEnabled { get; private set; } = false;
+        private static bool _secondarySkillHeld = false;
 
-        // Controller dictionary - maps enemy types to their attack methods (simplified for API compatibility)
-        private static readonly Dictionary<Type, Action<EnemyAI>> PrimaryAttacks = new()
-        {
-            { typeof(FlowermanAI), e => { e.SwitchToBehaviourState(2); } }, // Chase mode
-            { typeof(NutcrackerEnemyAI), e => { var n = (NutcrackerEnemyAI)e; if (n.gun != null) n.FireGunServerRpc(); } },
-            { typeof(MouthDogAI), e => { e.SwitchToBehaviourState(2); } }, // Chase mode
-            { typeof(SpringManAI), e => { e.SwitchToBehaviourState(1); } }, // Active mode
-            { typeof(BlobAI), e => { e.SwitchToBehaviourState(1); } },
-            { typeof(CentipedeAI), e => { e.SwitchToBehaviourState(2); } }, // Attack mode
-            { typeof(CrawlerAI), e => { e.SwitchToBehaviourState(2); } },
-            { typeof(SandSpiderAI), e => { e.SwitchToBehaviourState(2); } },
-            { typeof(ForestGiantAI), e => { e.SwitchToBehaviourState(1); } }, // Chase mode
-            { typeof(JesterAI), e => { e.SwitchToBehaviourState(2); } }, // Rampage
-            { typeof(BaboonBirdAI), e => { e.SwitchToBehaviourState(2); } },
-        };
+        // Door cooldowns
+        private const float DoorInteractionCooldown = 0.7f;
+        private const float TeleportDoorCooldown = 2.5f;
+        private static float _doorCooldownRemaining = 0f;
+        private static float _teleportCooldownRemaining = 0f;
+
+        // Main entrance for outside status tracking
+        private static EntranceTeleport? _mainEntrance;
+        private static bool _firstUpdateAfterPossess = true;
 
         public new bool IsEnabled
         {
@@ -48,6 +64,10 @@ namespace LethalMenu.Cheats
 
         public override void OnUpdate()
         {
+            // Update cooldowns
+            if (_doorCooldownRemaining > 0) _doorCooldownRemaining -= Time.deltaTime;
+            if (_teleportCooldownRemaining > 0) _teleportCooldownRemaining -= Time.deltaTime;
+
             // Handle right-click targeting when not controlling
             if (IsEnabled && !IsControlling)
             {
@@ -55,7 +75,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (!IsEnabled || _controlledEnemy == null)
+            if (!IsEnabled || _controlledEnemy == null || _controller == null)
             {
                 if (IsControlling) StopControl();
                 return;
@@ -64,8 +84,16 @@ namespace LethalMenu.Cheats
             // Check if enemy died
             if (_controlledEnemy.isEnemyDead)
             {
+                _controller.OnDeath(_controlledEnemy);
                 StopControl();
                 return;
+            }
+
+            // First update after possession - cache main entrance
+            if (_firstUpdateAfterPossess)
+            {
+                _firstUpdateAfterPossess = false;
+                _mainEntrance = RoundManager.FindMainEntranceScript(true);
             }
 
             // Keep ownership
@@ -74,20 +102,93 @@ namespace LethalMenu.Cheats
                 _controlledEnemy.ChangeEnemyOwnerServerRpc(LethalMenuMod.LocalPlayer.actualClientId);
             }
 
-            // Update enemy position and rotation
-            if (!IsAIControlled && _movement != null && _mouseInput != null)
-            {
-                var euler = _controlledEnemy.transform.eulerAngles;
-                euler.y = _mouseInput.transform.eulerAngles.y;
-                _controlledEnemy.transform.eulerAngles = euler;
-                _controlledEnemy.transform.position = _movement.transform.position;
-            }
+            // Update outside status based on Y position relative to main entrance
+            UpdateOutsideStatus();
+
+            // Update controller
+            _controller.Update(_controlledEnemy, IsAIControlled);
 
             // Handle input
             HandleInput();
 
+            // Update enemy position and rotation if we're manually controlling
+            if (!IsAIControlled && _movement != null && _mouseInput != null)
+            {
+                if (_controller.IsAbleToRotate(_controlledEnemy))
+                {
+                    var euler = _controlledEnemy.transform.eulerAngles;
+                    euler.y = _mouseInput.transform.eulerAngles.y;
+                    _controlledEnemy.transform.eulerAngles = euler;
+                }
+
+                if (_controller.IsAbleToMove(_controlledEnemy))
+                {
+                    _controlledEnemy.transform.position = _movement.transform.position;
+                }
+
+                // Sync movement to controller
+                _controller.OnMovement(_controlledEnemy, _movement.IsMoving, _movement.IsSprinting);
+
+                // Auto-interact with doors when walking into them
+                AutoInteractWithDoors();
+            }
+
             // Move camera to follow enemy
             UpdateCamera();
+
+            // Update cursor tip
+            UpdateCursorTip();
+        }
+
+        /// 
+        /// Update the enemy's outside status based on Y position relative to main entrance.
+        /// This is important for proper enemy behavior and spawning.
+        /// 
+        private void UpdateOutsideStatus()
+        {
+            if (_controlledEnemy == null || _mainEntrance == null) return;
+
+            bool isOutside = _controlledEnemy.transform.position.y > _mainEntrance.transform.position.y + 5.0f;
+            _controlledEnemy.SetOutsideStatus(isOutside);
+        }
+
+        /// 
+        /// Automatically interact with doors when walking into them.
+        /// Uses raycast forward from enemy position.
+        /// 
+        private void AutoInteractWithDoors()
+        {
+            if (_controlledEnemy == null || _controller == null) return;
+            if (_doorCooldownRemaining > 0) return;
+
+            float interactRange = _controller.InteractRange(_controlledEnemy);
+
+            // Raycast forward to check for doors
+            if (!Physics.Raycast(_controlledEnemy.transform.position + Vector3.up * 0.5f, 
+                _controlledEnemy.transform.forward, out var hit, interactRange)) return;
+
+            // Check for regular doors
+            if (hit.collider.gameObject.TryGetComponent(out DoorLock doorLock))
+            {
+                OpenDoorAsEnemy(doorLock);
+                _doorCooldownRemaining = DoorInteractionCooldown;
+                return;
+            }
+
+            // Check for entrance doors
+            if (_controller.CanUseEntranceDoors(_controlledEnemy) && _teleportCooldownRemaining <= 0)
+            {
+                if (hit.collider.gameObject.TryGetComponent(out EntranceTeleport entrance))
+                {
+                    var exitPoint = GetExitPointFromDoor(entrance);
+                    if (exitPoint != null)
+                    {
+                        TeleportEnemyToPosition(exitPoint.position);
+                        _controlledEnemy.EnableEnemyMesh(true, false);
+                    }
+                    _teleportCooldownRemaining = TeleportDoorCooldown;
+                }
+            }
         }
 
         private static void TryTargetEnemy()
@@ -104,27 +205,25 @@ namespace LethalMenu.Cheats
             var ray = player.gameplayCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
             if (Physics.Raycast(ray, out var hit, 100f))
             {
-                // Check if we hit an enemy
                 var enemy = hit.collider.GetComponentInParent<EnemyAI>();
-                if (enemy != null)
+                if (enemy != null && !enemy.isEnemyDead)
                 {
                     TakeControl(enemy);
                     return;
                 }
             }
 
-            // Also check all enemies for close proximity (backup method)
+            // Backup: check nearby enemies we're looking at
             foreach (var enemy in UnityEngine.Object.FindObjectsOfType<EnemyAI>())
             {
                 if (enemy == null || enemy.isEnemyDead) continue;
-                
+
                 float dist = Vector3.Distance(player.transform.position, enemy.transform.position);
                 if (dist < 5f)
                 {
-                    // Check if we're looking at it
                     var toEnemy = (enemy.transform.position - player.gameplayCamera.transform.position).normalized;
                     var forward = player.gameplayCamera.transform.forward;
-                    if (Vector3.Dot(forward, toEnemy) > 0.85f) // ~30 degree cone
+                    if (Vector3.Dot(forward, toEnemy) > 0.85f)
                     {
                         TakeControl(enemy);
                         return;
@@ -137,12 +236,40 @@ namespace LethalMenu.Cheats
         {
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
-            if (keyboard == null || mouse == null) return;
+            if (keyboard == null || mouse == null || _controlledEnemy == null || _controller == null) return;
 
-            // Left click - primary attack
-            if (mouse.leftButton.wasPressedThisFrame)
+            // Left click - primary skill
+            if (mouse.leftButton.wasPressedThisFrame && !IsAIControlled)
             {
-                UsePrimarySkill();
+                _controller.UsePrimarySkill(_controlledEnemy);
+            }
+
+            // Right click - secondary skill
+            if (mouse.rightButton.wasPressedThisFrame && !IsAIControlled)
+            {
+                _controller.UseSecondarySkill(_controlledEnemy);
+                _secondarySkillHeld = true;
+            }
+            if (mouse.rightButton.isPressed && _secondarySkillHeld && !IsAIControlled)
+            {
+                _controller.OnSecondarySkillHold(_controlledEnemy);
+            }
+            if (mouse.rightButton.wasReleasedThisFrame && _secondarySkillHeld)
+            {
+                _controller.ReleaseSecondarySkill(_controlledEnemy);
+                _secondarySkillHeld = false;
+            }
+
+            // E - Interact with door (manual)
+            if (keyboard.eKey.wasPressedThisFrame && _doorCooldownRemaining <= 0)
+            {
+                TryInteractWithDoor();
+            }
+
+            // N - Toggle NoClip (more intuitive than F10)
+            if (keyboard.nKey.wasPressedThisFrame)
+            {
+                ToggleNoClip();
             }
 
             // F9 - Toggle AI control
@@ -151,61 +278,192 @@ namespace LethalMenu.Cheats
                 ToggleAIControl();
             }
 
-            // F10 - Toggle NoClip
+            // F10 - Toggle NoClip (alternate)
             if (keyboard.f10Key.wasPressedThisFrame)
             {
-                _movement?.SetNoClipMode(true);
+                ToggleNoClip();
             }
 
-            // F11 - Release control
-            if (keyboard.f11Key.wasPressedThisFrame)
+            // Z or F11 - Release control
+            if (keyboard.zKey.wasPressedThisFrame || keyboard.f11Key.wasPressedThisFrame)
             {
                 StopControl();
                 HUDManager.Instance?.DisplayTip("Enemy Control", "Released control");
             }
 
-            // F12 - Kill enemy and release
-            if (keyboard.f12Key.wasPressedThisFrame)
+            // Del or F12 - Kill enemy and release
+            if (keyboard.deleteKey.wasPressedThisFrame || keyboard.f12Key.wasPressedThisFrame)
             {
-                if (_controlledEnemy != null)
-                {
-                    // Try to kill properly with death animation
-                    _controlledEnemy.KillEnemyOnOwnerClient(false); // false = show death anim
-                    HUDManager.Instance?.DisplayTip("Enemy Control", "Enemy killed");
-                }
-                StopControl();
+                KillAndDespawnEnemy();
             }
+        }
+
+        /// 
+        /// Toggle NoClip mode for the possessed enemy.
+        /// 
+        private void ToggleNoClip()
+        {
+            if (_movement == null) return;
+
+            NoClipEnabled = !NoClipEnabled;
+            _movement.SetNoClipMode(NoClipEnabled);
+
+            // If turning off NoClip while AI is controlled, that's a conflict
+            if (!NoClipEnabled && IsAIControlled)
+            {
+                // NoClip off is fine with AI
+            }
+
+            HUDManager.Instance?.DisplayTip("Enemy Control", NoClipEnabled ? "NoClip: ON (Space=Up, Ctrl=Down)" : "NoClip: OFF");
+        }
+
+        /// 
+        /// Kill the controlled enemy and despawn it (if host).
+        /// 
+        private void KillAndDespawnEnemy()
+        {
+            if (_controlledEnemy == null) return;
+
+            var localPlayer = LethalMenuMod.LocalPlayer;
+            if (localPlayer == null) return;
+
+            // Kill the enemy
+            _controlledEnemy.KillEnemyOnOwnerClient(false);
+
+            // If we're the host, despawn the network object
+            if (localPlayer.IsHost || localPlayer.IsServer)
+            {
+                if (_controlledEnemy.TryGetComponent(out NetworkObject networkObject))
+                {
+                    try
+                    {
+                        networkObject.Despawn(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogWarning($"[EnemyControl] Failed to despawn: {ex.Message}");
+                    }
+                }
+            }
+
+            HUDManager.Instance?.DisplayTip("Enemy Control", "Enemy killed" + (localPlayer.IsHost ? " and despawned" : ""));
+            StopControl();
+        }
+
+        private void TryInteractWithDoor()
+        {
+            if (_controlledEnemy == null || _controller == null) return;
+
+            float interactRange = _controller.InteractRange(_controlledEnemy);
+            var position = _controlledEnemy.transform.position;
+
+            // Check for entrance doors (teleport between inside/outside)
+            if (_controller.CanUseEntranceDoors(_controlledEnemy) && _teleportCooldownRemaining <= 0)
+            {
+                foreach (var entrance in UnityEngine.Object.FindObjectsOfType<EntranceTeleport>())
+                {
+                    if (Vector3.Distance(position, entrance.transform.position) < interactRange)
+                    {
+                        // Find the matching exit point (inside<->outside)
+                        var exitPoint = GetExitPointFromDoor(entrance);
+                        if (exitPoint != null)
+                        {
+                            TeleportEnemyToPosition(exitPoint.position);
+                            _controlledEnemy.EnableEnemyMesh(true, false);
+                        }
+                        _teleportCooldownRemaining = TeleportDoorCooldown;
+                        return;
+                    }
+                }
+            }
+
+            // Check for regular doors
+            foreach (var door in UnityEngine.Object.FindObjectsOfType<DoorLock>())
+            {
+                if (Vector3.Distance(position, door.transform.position) < interactRange)
+                {
+                    OpenDoorAsEnemy(door);
+                    _doorCooldownRemaining = DoorInteractionCooldown;
+                    return;
+                }
+            }
+        }
+
+        /// 
+        /// Find the exit point for an entrance door (the matching door on the other side).
+        /// 
+        private static Transform? GetExitPointFromDoor(EntranceTeleport entrance)
+        {
+            var allEntrances = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>();
+            var exitEntrance = allEntrances.FirstOrDefault(e => 
+                e.entranceId == entrance.entranceId && 
+                e.isEntranceToBuilding != entrance.isEntranceToBuilding);
+            return exitEntrance?.entrancePoint;
+        }
+
+        /// 
+        /// Teleport the controlled enemy to a position.
+        /// 
+        private static void TeleportEnemyToPosition(Vector3 position)
+        {
+            if (_controlledEnemy == null || _movement == null) return;
+
+            _movement.SetPosition(position);
+            _controlledEnemy.transform.position = position;
+            
+            // Sync position to other clients
+            if (_controlledEnemy.IsSpawned)
+            {
+                _controlledEnemy.SyncPositionToClients();
+            }
+        }
+
+        /// 
+        /// Open a door as an enemy (uses proper enemy door open method).
+        /// 
+        private static void OpenDoorAsEnemy(DoorLock door)
+        {
+            if (door.isDoorOpened) return;
+
+            // Try to use the animated trigger first
+            if (door.gameObject.TryGetComponent(out AnimatedObjectTrigger trigger))
+            {
+                trigger.TriggerAnimationNonPlayer(false, true, false);
+            }
+
+            // Use the enemy-specific door open RPC
+            door.OpenDoorAsEnemyServerRpc();
         }
 
         private void UpdateCamera()
         {
-            if (_controlledEnemy == null) return;
+            if (_controlledEnemy == null || _mouseInput == null) return;
 
-            // Position camera behind and above enemy
             var camera = LethalMenuMod.LocalPlayer?.gameplayCamera;
             if (camera == null) return;
 
-            var pos = _controlledEnemy.transform.position + Vector3.up * 3f - _controlledEnemy.transform.forward * 3f;
-            camera.transform.position = pos;
+            // Position camera behind and above enemy based on mouse input rotation
+            float distance = 5f;
+            float height = 3f;
+
+            Vector3 offset = -_mouseInput.transform.forward * distance + Vector3.up * height;
+            camera.transform.position = _controlledEnemy.transform.position + offset;
             camera.transform.LookAt(_controlledEnemy.transform.position + Vector3.up);
         }
 
-        private void UsePrimarySkill()
+        private void UpdateCursorTip()
         {
-            if (_controlledEnemy == null || IsAIControlled) return;
+            if (_controlledEnemy == null || _controller == null) return;
+            if (LethalMenuMod.LocalPlayer == null) return;
 
-            var enemyType = _controlledEnemy.GetType();
-            if (PrimaryAttacks.TryGetValue(enemyType, out var attack))
-            {
-                try
-                {
-                    attack(_controlledEnemy);
-                }
-                catch (Exception ex)
-                {
-                    Loader.LogError($"[EnemyControl] Attack failed: {ex.Message}");
-                }
-            }
+            string tip = "";
+            var primary = _controller.GetPrimarySkillName(_controlledEnemy);
+            var secondary = _controller.GetSecondarySkillName(_controlledEnemy);
+
+            if (!string.IsNullOrEmpty(primary)) tip += $"[LMB] {primary}  ";
+            if (!string.IsNullOrEmpty(secondary)) tip += $"[RMB] {secondary}";
+
+            LethalMenuMod.LocalPlayer.cursorTip.text = tip;
         }
 
         private void ToggleAIControl()
@@ -216,8 +474,16 @@ namespace LethalMenu.Cheats
 
             if (IsAIControlled)
             {
+                // Warp AI to current position
                 _controlledEnemy.agent.Warp(_controlledEnemy.transform.position);
                 _controlledEnemy.SyncPositionToClients();
+
+                // Disable NoClip when enabling AI control (they conflict)
+                if (NoClipEnabled)
+                {
+                    NoClipEnabled = false;
+                    _movement.SetNoClipMode(false);
+                }
             }
 
             _controlledEnemy.agent.updatePosition = IsAIControlled;
@@ -226,12 +492,12 @@ namespace LethalMenu.Cheats
             _movement.SetPosition(_controlledEnemy.transform.position);
             _movement.enabled = !IsAIControlled;
 
-            HUDManager.Instance?.DisplayTip("Enemy Control", IsAIControlled ? "AI Control: ON" : "AI Control: OFF");
+            HUDManager.Instance?.DisplayTip("Enemy Control", IsAIControlled ? "AI Control: ON (observing)" : "AI Control: OFF (manual)");
         }
 
-        /// <summary>
+        /// 
         /// Take control of an enemy.
-        /// </summary>
+        /// 
         public static void TakeControl(EnemyAI enemy)
         {
             if (enemy == null || enemy.isEnemyDead)
@@ -240,10 +506,20 @@ namespace LethalMenu.Cheats
                 return;
             }
 
+            // Get controller for this enemy type
+            var controller = EnemyControllerRegistry.GetController(enemy);
+            if (controller == null)
+            {
+                HUDManager.Instance?.DisplayTip("Enemy Control", 
+                    $"No controller for {enemy.enemyType?.enemyName ?? enemy.GetType().Name}");
+                return;
+            }
+
             // Stop previous control
             if (IsControlling) StopControl();
 
             _controlledEnemy = enemy;
+            _controller = controller;
 
             // Take ownership
             if (enemy.IsSpawned && LethalMenuMod.LocalPlayer != null)
@@ -261,8 +537,14 @@ namespace LethalMenu.Cheats
             _audioListener = _controllerObject.AddComponent<AudioListener>();
 
             _movement.CalibrateCollision(enemy);
-            _movement.CharacterSprintSpeed = 2.8f;
+            _movement.CharacterSprintSpeed = controller.SprintMultiplier(enemy);
             _movement.SetPosition(enemy.transform.position);
+
+            // Sync animation speed if controller wants it
+            if (controller.SyncAnimationSpeedEnabled(enemy) && enemy.agent != null)
+            {
+                _movement.CharacterSpeed = enemy.agent.speed;
+            }
 
             // Disable AI
             if (enemy.agent != null)
@@ -273,31 +555,50 @@ namespace LethalMenu.Cheats
             }
 
             IsAIControlled = false;
+            NoClipEnabled = false;
+            _secondarySkillHeld = false;
+            _firstUpdateAfterPossess = true;
+            _mainEntrance = null;
             Settings.EnemyControl = true;
 
             // Switch audio listener
             if (LethalMenuMod.LocalPlayer != null)
             {
                 LethalMenuMod.LocalPlayer.activeAudioListener.enabled = false;
+                if (StartOfRound.Instance != null)
+                {
+                    StartOfRound.Instance.audioListener = _audioListener;
+                }
             }
 
-            // Store original camera position for restoration
+            // Store original camera parent for restoration
             _originalCameraParent = LethalMenuMod.LocalPlayer?.gameplayCamera?.transform.parent;
 
-            HUDManager.Instance?.DisplayTip("Enemy Control", 
-                $"Controlling {enemy.enemyType?.enemyName ?? "enemy"}\n" +
-                "F9=Toggle AI | F10=NoClip | F11=Release | F12=Kill");
+            // Notify controller
+            _controller.OnTakeControl(enemy);
+
+            // Hide death UI if player is dead
+            if (LethalMenuMod.LocalPlayer?.isPlayerDead == true)
+            {
+                HUDManager.Instance?.holdButtonToEndGameEarlyMeter?.gameObject?.SetActive(false);
+            }
+
+            string enemyName = enemy.enemyType?.enemyName ?? "enemy";
+            HUDManager.Instance?.DisplayTip("Enemy Control",
+                $"Controlling {enemyName}\n" +
+                "LMB=Primary | RMB=Secondary | E=Door\n" +
+                "N=NoClip | F9=AI | Z=Release | Del=Kill");
         }
 
-        private static Transform? _originalCameraParent;
-
-        /// <summary>
+        /// 
         /// Stop controlling the current enemy.
-        /// </summary>
+        /// 
         public static void StopControl()
         {
-            if (_controlledEnemy != null)
+            if (_controlledEnemy != null && _controller != null)
             {
+                _controller.OnReleaseControl(_controlledEnemy);
+
                 // Re-enable AI
                 if (_controlledEnemy.agent != null && _controlledEnemy.agent.isOnNavMesh)
                 {
@@ -312,7 +613,11 @@ namespace LethalMenu.Cheats
             if (LethalMenuMod.LocalPlayer != null)
             {
                 LethalMenuMod.LocalPlayer.activeAudioListener.enabled = true;
-                
+                if (StartOfRound.Instance != null)
+                {
+                    StartOfRound.Instance.audioListener = LethalMenuMod.LocalPlayer.activeAudioListener;
+                }
+
                 // Reset camera to player
                 var camera = LethalMenuMod.LocalPlayer.gameplayCamera;
                 if (camera != null && _originalCameraParent != null)
@@ -320,6 +625,15 @@ namespace LethalMenu.Cheats
                     camera.transform.SetParent(_originalCameraParent);
                     camera.transform.localPosition = Vector3.zero;
                     camera.transform.localRotation = Quaternion.identity;
+                }
+
+                // Restore cursor tip
+                LethalMenuMod.LocalPlayer.cursorTip.text = "";
+
+                // Restore death UI if player is dead
+                if (LethalMenuMod.LocalPlayer.isPlayerDead)
+                {
+                    HUDManager.Instance?.holdButtonToEndGameEarlyMeter?.gameObject?.SetActive(true);
                 }
             }
 
@@ -330,18 +644,28 @@ namespace LethalMenu.Cheats
             }
 
             _controlledEnemy = null;
+            _controller = null;
             _controllerObject = null;
             _mouseInput = null;
             _movement = null;
             _audioListener = null;
             _originalCameraParent = null;
+            _mainEntrance = null;
             IsAIControlled = false;
+            NoClipEnabled = false;
+            _secondarySkillHeld = false;
+            _firstUpdateAfterPossess = true;
             Settings.EnemyControl = false;
         }
 
-        /// <summary>
+        /// 
         /// Get the currently controlled enemy.
-        /// </summary>
+        /// 
         public static EnemyAI? GetControlledEnemy() => _controlledEnemy;
+
+        /// 
+        /// Get the current controller.
+        /// 
+        public static IEnemyController? GetCurrentController() => _controller;
     }
 }

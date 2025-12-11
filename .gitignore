@@ -372,3 +372,9 @@ docs
 .vscode
 /Old garbage, ignore
 deps
+src/LethalMenu/LethalMenuMod.cs
+LCMenucrash.dd64
+LethalMenu.dll.asm
+LethalMenu.dll.h
+.cursor/plans/lethalmenu_improvements_plan_b27bf8ce.plan.md
+.cursor/plans/lethalmenu_remaining_features.plan.md

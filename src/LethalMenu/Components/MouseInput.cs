@@ -3,9 +3,9 @@ using UnityEngine.InputSystem;
 
 namespace LethalMenu.Components
 {
-    /// <summary>
+    /// 
     /// Mouse input component for controlling rotation.
-    /// </summary>
+    /// 
     public class MouseInput : MonoBehaviour
     {
         private float _yaw = 0f;

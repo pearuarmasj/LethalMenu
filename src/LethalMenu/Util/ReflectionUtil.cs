@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace LethalMenu.Util
 {
-    /// <summary>
+    /// 
     /// Utility for calling private/internal methods via reflection.
-    /// </summary>
+    /// 
     public class ReflectionUtil<T>
     {
         // Include public methods too since some ServerRpc methods are public
@@ -22,9 +22,9 @@ namespace LethalMenu.Util
             _type = obj?.GetType() ?? typeof(T); // Use actual runtime type, not declared type
         }
 
-        /// <summary>
+        /// 
         /// Get a private field value.
-        /// </summary>
+        /// 
         public TResult? GetField<TResult>(string fieldName, bool isStatic = false)
         {
             try
@@ -45,9 +45,9 @@ namespace LethalMenu.Util
             }
         }
 
-        /// <summary>
+        /// 
         /// Set a private field value.
-        /// </summary>
+        /// 
         public ReflectionUtil<T> SetField(string fieldName, object value, bool isStatic = false)
         {
             try
@@ -68,9 +68,9 @@ namespace LethalMenu.Util
             return this;
         }
 
-        /// <summary>
+        /// 
         /// Get a private property value.
-        /// </summary>
+        /// 
         public TResult? GetProperty<TResult>(string propertyName, bool isStatic = false)
         {
             try
@@ -91,9 +91,9 @@ namespace LethalMenu.Util
             }
         }
 
-        /// <summary>
+        /// 
         /// Set a private property value.
-        /// </summary>
+        /// 
         public ReflectionUtil<T> SetProperty(string propertyName, object value, bool isStatic = false)
         {
             try
@@ -114,9 +114,9 @@ namespace LethalMenu.Util
             return this;
         }
 
-        /// <summary>
+        /// 
         /// Invoke a method with return value.
-        /// </summary>
+        /// 
         public TResult? Invoke<TResult>(string methodName, bool isStatic = false, params object[] args)
         {
             try
@@ -137,9 +137,9 @@ namespace LethalMenu.Util
             }
         }
 
-        /// <summary>
+        /// 
         /// Invoke a method (void return).
-        /// </summary>
+        /// 
         public ReflectionUtil<T> Invoke(string methodName, params object[] args)
         {
             try
@@ -161,9 +161,9 @@ namespace LethalMenu.Util
             return this;
         }
 
-        /// <summary>
+        /// 
         /// Find method by name and parameter types (handles overloads).
-        /// </summary>
+        /// 
         private MethodInfo? FindMethod(string methodName, BindingFlags flags, object[] args)
         {
             // First try direct match
@@ -193,9 +193,9 @@ namespace LethalMenu.Util
         }
     }
 
-    /// <summary>
+    /// 
     /// Extension method to create a ReflectionUtil wrapper.
-    /// </summary>
+    /// 
     public static class ReflectionExtensions
     {
         public static ReflectionUtil<T> Reflect<T>(this T obj) => new ReflectionUtil<T>(obj);

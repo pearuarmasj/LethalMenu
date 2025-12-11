@@ -4,26 +4,26 @@ using UnityEngine;
 
 namespace LethalMenu.Util
 {
-    /// <summary>
+    /// 
     /// Collects and caches game objects for easy access.
-    /// </summary>
+    /// 
     public static class ObjectManager
     {
         private static float _lastCollectTime;
         private const float CollectInterval = 2f; // Collect every 2 seconds
 
-        /// <summary>
+        /// 
         /// Force immediate collection of all objects.
-        /// </summary>
+        /// 
         public static void ForceCollect()
         {
             _lastCollectTime = 0f;
             CollectObjects();
         }
 
-        /// <summary>
+        /// 
         /// Collect all game objects (throttled).
-        /// </summary>
+        /// 
         public static void CollectObjects()
         {
             if (Time.time - _lastCollectTime < CollectInterval) return;

@@ -3,10 +3,12 @@ using UnityEngine.InputSystem;
 
 namespace LethalMenu.Cheats
 {
-    /// <summary>
     /// FreeCam - detach camera and fly around freely.
     /// Uses New Input System.
-    /// </summary>
+    /// 
+    /// Enhanced Phantom Mode:
+    /// - Arrow Left/Right: Snap camera to other players
+    /// - Shift + Disable: Teleport player to camera position
     public class FreeCamCheat : CheatBase
     {
         public override string Name => "FreeCam";
@@ -18,6 +20,15 @@ namespace LethalMenu.Cheats
         private Vector2 _rotation;
         private bool _wasEnabled;
         private Camera? _originalCamera;
+        
+        // Phantom mode - player cycling
+        private int _targetPlayerIndex = -1;
+        private static FreeCamCheat? _instance;
+
+        public FreeCamCheat()
+        {
+            _instance = this;
+        }
 
         public override void OnUpdate()
         {
@@ -30,6 +41,13 @@ namespace LethalMenu.Cheats
             }
             else if (!shouldEnable && _wasEnabled)
             {
+                // Check if shift is held - teleport player to camera
+                var keyboard = Keyboard.current;
+                if (keyboard != null && keyboard.leftShiftKey.isPressed && _freeCam != null)
+                {
+                    TeleportPlayerToCamera();
+                }
+                
                 DisableFreeCam();
             }
 
@@ -40,6 +58,7 @@ namespace LethalMenu.Cheats
             // Handle movement
             HandleMovement();
             HandleRotation();
+            HandlePlayerSnap();
         }
 
         private void EnableFreeCam()
@@ -100,7 +119,11 @@ namespace LethalMenu.Cheats
                 LethalMenuMod.LocalPlayer.activeAudioListener.enabled = false;
             }
 
+            // Reset target player
+            _targetPlayerIndex = -1;
+
             Loader.Log("FreeCam enabled");
+            HUDManager.Instance?.DisplayTip("FreeCam", "Arrow keys: snap to players\nShift+Disable: teleport to camera");
         }
 
         private void DisableFreeCam()
@@ -196,6 +219,129 @@ namespace LethalMenu.Cheats
             _rotation.x = Mathf.Clamp(_rotation.x, -90f, 90f);
 
             _freeCam.transform.rotation = Quaternion.Euler(_rotation.x, _rotation.y, 0f);
+        }
+
+        /// Handle arrow keys to snap camera to other players.
+        private void HandlePlayerSnap()
+        {
+            if (_freeCam == null) return;
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return;
+
+            var players = StartOfRound.Instance?.allPlayerScripts;
+            if (players == null || players.Length == 0) return;
+
+            // Count valid players (alive and controlled)
+            int validCount = 0;
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i] != null && (players[i].isPlayerControlled || players[i].isPlayerDead))
+                    validCount++;
+            }
+            if (validCount == 0) return;
+
+            bool snapNext = keyboard.rightArrowKey.wasPressedThisFrame;
+            bool snapPrev = keyboard.leftArrowKey.wasPressedThisFrame;
+            bool snapToLocal = keyboard.downArrowKey.wasPressedThisFrame;
+
+            if (snapToLocal)
+            {
+                // Snap back to local player
+                if (LethalMenuMod.LocalPlayer != null)
+                {
+                    SnapToPlayer(LethalMenuMod.LocalPlayer);
+                    _targetPlayerIndex = -1;
+                    HUDManager.Instance?.DisplayTip("FreeCam", "Snapped to: You");
+                }
+                return;
+            }
+
+            if (!snapNext && !snapPrev) return;
+
+            // Find next/prev valid player
+            int startIndex = _targetPlayerIndex < 0 ? 0 : _targetPlayerIndex;
+            int direction = snapNext ? 1 : -1;
+            
+            for (int i = 1; i <= players.Length; i++)
+            {
+                int checkIndex = (startIndex + i * direction + players.Length) % players.Length;
+                var player = players[checkIndex];
+                
+                if (player != null && (player.isPlayerControlled || player.isPlayerDead))
+                {
+                    _targetPlayerIndex = checkIndex;
+                    SnapToPlayer(player);
+                    
+                    string playerName = player.playerUsername ?? $"Player {checkIndex}";
+                    if (player == LethalMenuMod.LocalPlayer)
+                        playerName += " (You)";
+                    if (player.isPlayerDead)
+                        playerName += " [DEAD]";
+                    
+                    HUDManager.Instance?.DisplayTip("FreeCam", $"Snapped to: {playerName}");
+                    break;
+                }
+            }
+        }
+
+        /// Snap camera position to a player's head.
+        private void SnapToPlayer(GameNetcodeStuff.PlayerControllerB player)
+        {
+            if (_freeCam == null || player == null) return;
+
+            // Position camera at player's head
+            Vector3 targetPos;
+            if (player.isPlayerDead && player.deadBody != null)
+            {
+                targetPos = player.deadBody.transform.position + Vector3.up * 1f;
+            }
+            else if (player.gameplayCamera != null)
+            {
+                targetPos = player.gameplayCamera.transform.position;
+            }
+            else
+            {
+                targetPos = player.transform.position + Vector3.up * 1.6f;
+            }
+
+            _position = targetPos;
+            _freeCam.transform.position = _position;
+
+            // Match player's look direction
+            if (player.gameplayCamera != null && !player.isPlayerDead)
+            {
+                _rotation = new Vector2(
+                    player.gameplayCamera.transform.eulerAngles.x,
+                    player.gameplayCamera.transform.eulerAngles.y
+                );
+                _freeCam.transform.rotation = Quaternion.Euler(_rotation.x, _rotation.y, 0f);
+            }
+        }
+
+        /// Teleport the local player to the camera's current position.
+        /// Called when shift is held while disabling freecam.
+        private void TeleportPlayerToCamera()
+        {
+            if (_freeCam == null || LethalMenuMod.LocalPlayer == null) return;
+
+            Vector3 teleportPos = _freeCam.transform.position;
+            LethalMenuMod.LocalPlayer.TeleportPlayer(teleportPos);
+            
+            Debug.Log($"[FreeCam] Teleported player to {teleportPos}");
+            HUDManager.Instance?.DisplayTip("FreeCam", "Teleported to camera position!");
+        }
+
+        /// Static method to teleport player to camera (can be called from UI).
+        public static void TeleportToCameraPosition()
+        {
+            _instance?.TeleportPlayerToCamera();
+        }
+
+        /// Get current camera position (for UI display or other uses).
+        public static Vector3? GetCameraPosition()
+        {
+            return _instance?._freeCam?.transform.position;
         }
 
         public void ForceDisable()
