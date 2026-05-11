@@ -1,3 +1,4 @@
+using LethalMenu.Mixins;
 using UnityEngine;
 
 namespace LethalMenu.Menu
@@ -43,7 +44,7 @@ namespace LethalMenu.Menu
                     {
                         if (GUILayout.Button("TP To", _buttonStyle, GUILayout.Width(55)))
                         {
-                            TeleportTo(player.transform.position);
+                            this.TeleportTo(player.transform.position);
                         }
                     }
                     GUILayout.EndHorizontal();

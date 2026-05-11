@@ -2,14 +2,15 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Linq;
 using System.Collections;
+using LethalMenu.Mixins;
 using LethalMenu.Patches;
 
 namespace LethalMenu.Menu
 {
-    /// 
+    ///
     /// Unity IMGUI-based menu system with styling.
-    /// 
-    public partial class HackMenu
+    ///
+    public partial class HackMenu : ITeleporter, IHazardController, IShipController, IItemManipulator, IEnemyPrompter, IJetpack
     {
         private Rect _windowRect;
         private bool _windowRectInitialized = false;
@@ -392,10 +393,5 @@ namespace LethalMenu.Menu
                 hack.Execute();
         }
 
-        private void TeleportTo(Vector3 position)
-        {
-            if (LethalMenuMod.LocalPlayer == null) return;
-            LethalMenuMod.LocalPlayer.TeleportPlayer(position);
-        }
     }
 }

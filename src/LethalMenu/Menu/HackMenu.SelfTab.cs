@@ -1,3 +1,4 @@
+using LethalMenu.Mixins;
 using UnityEngine;
 
 namespace LethalMenu.Menu
@@ -103,60 +104,19 @@ namespace LethalMenu.Menu
 
                 if (GUILayout.Button("Teleport to Ship", _buttonStyle, GUILayout.Height(28)))
                 {
-                    TeleportToShip();
+                    this.TeleportToShip();
                 }
 
                 if (GUILayout.Button("Teleport to Main Entrance", _buttonStyle, GUILayout.Height(28)))
                 {
-                    TeleportToEntrance(true);
+                    this.TeleportToEntrance(true);
                 }
 
                 if (GUILayout.Button("Teleport to Fire Exit", _buttonStyle, GUILayout.Height(28)))
                 {
-                    TeleportToEntrance(false);
+                    this.TeleportToEntrance(false);
                 }
             });
-        }
-
-        private void TeleportToShip()
-        {
-            if (LethalMenuMod.LocalPlayer == null || LethalMenuMod.GameInstance == null) return;
-
-            var terminal = Object.FindObjectOfType<Terminal>();
-            if (terminal != null)
-            {
-                LethalMenuMod.LocalPlayer.TeleportPlayer(terminal.transform.position);
-            }
-        }
-
-        private void TeleportToEntrance(bool mainEntrance)
-        {
-            if (LethalMenuMod.LocalPlayer == null) return;
-
-            var entrances = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>();
-            if (entrances == null || entrances.Length == 0) return;
-
-            EntranceTeleport? target = null;
-            foreach (var entrance in entrances)
-            {
-                if (entrance == null) continue;
-
-                if (mainEntrance && entrance.entranceId == 0)
-                {
-                    target = entrance;
-                    break;
-                }
-                else if (!mainEntrance && entrance.entranceId != 0)
-                {
-                    target = entrance;
-                    break;
-                }
-            }
-
-            if (target != null)
-            {
-                LethalMenuMod.LocalPlayer.transform.position = target.entrancePoint?.position ?? target.transform.position;
-            }
         }
 
         #endregion
