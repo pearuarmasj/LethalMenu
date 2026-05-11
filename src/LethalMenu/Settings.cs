@@ -9,10 +9,8 @@ using UnityEngine;
 
 namespace LethalMenu
 {
-    /// Global settings and state for the mod.
     public static class Settings
     {
-        // Config file path
         private static readonly string ConfigPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "LethalMenu", "config.json");
@@ -20,229 +18,104 @@ namespace LethalMenu
         // Menu state
         public static bool ShowMenu { get; set; } = false;
 
-        // Self cheats
-        public static bool GodMode { get; set; } = false;
-        public static bool DemiGod { get; set; } = false; // For local player demi-god state (config persistence)
-        
-        // Per-player Demi-God tracking (any player can have demi-god applied)
+        // Per-player Demi-God tracking
         public static HashSet<ulong> DemiGodPlayers { get; set; } = new HashSet<ulong>();
-        
-        /// Check if a player has Demi-God enabled
+
         public static bool IsDemiGod(PlayerControllerB player)
         {
             return player != null && DemiGodPlayers.Contains(player.playerClientId);
         }
-        
-        /// Toggle Demi-God for a specific player
+
         public static void ToggleDemiGod(PlayerControllerB player)
         {
             if (player == null) return;
-            
+
             if (DemiGodPlayers.Contains(player.playerClientId))
                 DemiGodPlayers.Remove(player.playerClientId);
             else
                 DemiGodPlayers.Add(player.playerClientId);
         }
-        
-        /// Set Demi-God state for a specific player.
-        /// If it's the local player, also updates the persistent DemiGod setting.
+
         public static void SetDemiGod(PlayerControllerB player, bool enabled)
         {
             if (player == null) return;
-            
+
             if (enabled)
                 DemiGodPlayers.Add(player.playerClientId);
             else
                 DemiGodPlayers.Remove(player.playerClientId);
-            
-            // If this is the local player, update the persistent setting
-            if (LethalMenuMod.LocalPlayer != null && 
+
+            if (LethalMenuMod.LocalPlayer != null &&
                 player.playerClientId == LethalMenuMod.LocalPlayer.playerClientId)
             {
-                DemiGod = enabled;
+                Hack.DemiGod.SetEnabled(enabled);
             }
         }
-        public static bool InfiniteStamina { get; set; } = false;
-        public static bool InfiniteBattery { get; set; } = false;
-        public static bool NoFallDamage { get; set; } = false;
-        
-        // Extra item slots
-        public static bool ExtraItemSlots { get; set; } = false;
-        public static int ItemSlotCount { get; set; } = 4; // Default 4, can go up to 20
-        public static bool NoClip { get; set; } = false;
-        
-        // Spin player settings
+
+        // Non-boolean settings (float/int/string/Color/HashSet)
+        public static int ItemSlotCount { get; set; } = 4;
         public static bool SpinCamera { get; set; } = true;
         public static bool SpinModel { get; set; } = true;
         public static float SpinDuration { get; set; } = 10f;
-        
-        public static bool NightVision { get; set; } = false;
-        public static bool SpeedHack { get; set; } = false;
         public static float SpeedMultiplier { get; set; } = 2.0f;
-        public static bool JumpHack { get; set; } = false;
         public static float JumpMultiplier { get; set; } = 2.0f;
-        public static bool NoWeight { get; set; } = false;
-
-        // Non-linear cheats (Harmony patches)
-        public static bool Untargetable { get; set; } = false;
-        public static bool AntiFlash { get; set; } = false;
-        public static bool OneHanded { get; set; } = false;
-        public static bool UnlimitedJump { get; set; } = false;
-        public static bool NoQuicksand { get; set; } = false;
-        public static bool SuperShovel { get; set; } = false;
-        public static bool SuperSpeed { get; set; } = false;
-        public static bool UnlimitedAmmo { get; set; } = false;
-        public static bool FastClimb { get; set; } = false;
-        public static bool UnlimitedOxygen { get; set; } = false;
-        public static bool Shoplifter { get; set; } = false;
-        public static bool GrabInLobby { get; set; } = false;
-        public static bool JebAttackPrevention { get; set; } = false;
-        public static bool TauntSlide { get; set; } = false;
-        public static bool Reach { get; set; } = false;
-
-        // Medium complexity cheats
-        public static bool BuildAnywhere { get; set; } = false;
-        public static bool HearEveryone { get; set; } = false;
-        public static bool InstantInteract { get; set; } = false;
-        public static bool KillClick { get; set; } = false;
-        public static bool StunClick { get; set; } = false;
-        public static bool Invisibility { get; set; } = false;
-
-        // New features batch 1 - Visual/HUD
-        public static bool AlwaysShowClock { get; set; } = false;
-        public static bool Crosshair { get; set; } = false;
         public static float CrosshairScale { get; set; } = 10f;
         public static float CrosshairThickness { get; set; } = 2f;
-        public static UnityEngine.Color CrosshairColor { get; set; } = UnityEngine.Color.white;
-        public static bool NoVisor { get; set; } = false;
-        public static bool NoCameraShake { get; set; } = false;
-        public static bool NoFieldOfDepth { get; set; } = false;
-        public static bool FOV { get; set; } = false;
+        public static Color CrosshairColor { get; set; } = Color.white;
         public static float FOVValue { get; set; } = 90f;
-
-        // New features batch 2 - Enemy related
-        public static bool AntiGhostGirl { get; set; } = false;
-        public static bool GhostMode { get; set; } = false;
-        public static bool GrabNutcrackerShotgun { get; set; } = false;
-        public static bool EnemyControl { get; set; } = false;
-
-        // New features batch 3 - Environment
-        public static bool BridgeNeverFalls { get; set; } = false;
-        public static bool OpenDropShipLand { get; set; } = false;
-        public static bool OpenShipDoorSpace { get; set; } = false;
-        public static bool NoShipDoorClose { get; set; } = false;
-
-        // New features batch 4 - Items/Equipment
-        public static bool EggsAlwaysExplode { get; set; } = false;
-        public static bool EggsNeverExplode { get; set; } = false;
-        public static bool SuperKnife { get; set; } = false;
-        public static bool SuperJump { get; set; } = false;
         public static float SuperJumpForce { get; set; } = 20f;
-        public static bool StrongHands { get; set; } = false;
-        public static bool TeleportWithItems { get; set; } = false;
-        public static bool UnlimitedTZP { get; set; } = false;
-        public static bool NoTZPEffects { get; set; } = false;
-        public static bool UnlimitedZapGun { get; set; } = false;
-        public static bool UnlimitedPresents { get; set; } = false;
-
-        // New features batch 5 - Through walls
-        public static bool LootThroughWalls { get; set; } = false;
-        public static bool InteractThroughWalls { get; set; } = false;
-
-        // New features batch 6 - Notifications
-        public static bool DeathNotifications { get; set; } = false;
-
-        // New features batch 7 - More cheats
-        public static bool HearDeadPeople { get; set; } = false;
-        public static bool MinigunShotgun { get; set; } = false;
-        public static bool LootBeforeGameStarts { get; set; } = false;
-        public static bool Breadcrumbs { get; set; } = false;
-        public static float BreadcrumbInterval { get; set; } = 3f;
-        public static bool FullRenderResolution { get; set; } = false;
-        public static bool HPDisplay { get; set; } = false;
-
-        // Info Display settings
-        public static bool InfoDisplay { get; set; } = false;
-        public static bool InfoDisplayCredits { get; set; } = true;
-        public static bool InfoDisplayQuota { get; set; } = true;
-        public static bool InfoDisplayDeadline { get; set; } = true;
-        public static bool InfoDisplayEnemies { get; set; } = true;
-        public static bool InfoDisplayBodies { get; set; } = true;
-        public static bool InfoDisplayMapLoot { get; set; } = true;
-        public static bool InfoDisplayShipLoot { get; set; } = true;
-        public static bool InfoDisplayMoon { get; set; } = true;
-        public static bool InfoDisplayTime { get; set; } = true;
-
-        // Camera features
-        public static bool FreeCam { get; set; } = false;
+        public static float NightVisionIntensity { get; set; } = 10000f;
+        public static float NightVisionRange { get; set; } = 10000f;
         public static float FreeCamSpeed { get; set; } = 10f;
-        public static bool SpectatePlayer { get; set; } = false;
-        public static bool ThirdPerson { get; set; } = false;
         public static float ThirdPersonDistance { get; set; } = 3f;
         public static int SpectatePlayerIndex { get; set; } = -1;
+        public static float BreadcrumbInterval { get; set; } = 3f;
+        public static string SpamMessage { get; set; } = "SPAM";
 
         // Fake death state (runtime only, not persisted)
         public static bool FakeDeath { get; set; } = false;
 
-        // Networking / Anti-kick
-        public static bool AntiKick { get; set; } = false;
-        public static bool ShowKickedLobbies { get; set; } = true; // Mark lobbies from hosts who kicked you
-        public static System.Collections.Generic.HashSet<ulong> KickedHostIds { get; set; } = new System.Collections.Generic.HashSet<ulong>(); // Host Steam IDs who kicked you
+        // Networking state
+        public static HashSet<ulong> KickedHostIds { get; set; } = new HashSet<ulong>();
         internal static bool WasKicked { get; set; } = false;
         internal static bool HostQuit { get; set; } = false;
         public static ulong CurrentLobbyId { get; set; } = 0;
-        public static ulong CurrentLobbyOwnerId { get; set; } = 0; // Steam ID of current lobby owner
-
-        // Spam/Troll toggles (continuous while enabled)
-        public static bool HornSpam { get; set; } = false;
-        public static bool DoorSpam { get; set; } = false;
-        public static bool SignalSpam { get; set; } = false;
-        public static bool RPCLagSpam { get; set; } = false;
-        public static bool TerminalSoundSpam { get; set; } = false;
-        public static bool TerminalEarrapeSpam { get; set; } = false;
-        public static bool ChatSpamLoop { get; set; } = false;
-        public static bool CarHornSpam { get; set; } = false;
-        public static bool DeskDoorSpam { get; set; } = false;
-        public static string SpamMessage { get; set; } = "SPAM";
-
-        // Visual cheats
-        public static bool ESP { get; set; } = false;
-        public static bool PlayerESP { get; set; } = true;
-        public static bool EnemyESP { get; set; } = true;
-        public static bool ItemESP { get; set; } = true;
-        public static bool DoorESP { get; set; } = false;
-        public static bool MineESP { get; set; } = true;
-        public static bool TurretESP { get; set; } = true;
-        public static bool FuseboxESP { get; set; } = true;
-        public static bool NoFog { get; set; } = false;
-        public static bool PlayerHealthBars { get; set; } = true;
-
-        // Night vision settings
-        public static float NightVisionIntensity { get; set; } = 10000f;
-        public static float NightVisionRange { get; set; } = 10000f;
+        public static ulong CurrentLobbyOwnerId { get; set; } = 0;
 
         // ESP colors
-        public static UnityEngine.Color PlayerColor { get; set; } = UnityEngine.Color.green;
-        public static UnityEngine.Color EnemyColor { get; set; } = UnityEngine.Color.red;
-        public static UnityEngine.Color ItemColor { get; set; } = UnityEngine.Color.yellow;
-        public static UnityEngine.Color DoorColor { get; set; } = UnityEngine.Color.cyan;
-        public static UnityEngine.Color MineColor { get; set; } = new UnityEngine.Color(1f, 0.5f, 0f); // Orange
-        public static UnityEngine.Color TurretColor { get; set; } = UnityEngine.Color.magenta;
-        public static UnityEngine.Color FuseboxColor { get; set; } = new UnityEngine.Color(1f, 1f, 0.5f); // Light yellow
+        public static Color PlayerColor { get; set; } = Color.green;
+        public static Color EnemyColor { get; set; } = Color.red;
+        public static Color ItemColor { get; set; } = Color.yellow;
+        public static Color DoorColor { get; set; } = Color.cyan;
+        public static Color MineColor { get; set; } = new Color(1f, 0.5f, 0f);
+        public static Color TurretColor { get; set; } = Color.magenta;
+        public static Color FuseboxColor { get; set; } = new Color(1f, 1f, 0.5f);
 
         // Debug
         public static string DebugMessage { get; set; } = "";
-        
-        // UI - Collapsed sections (persisted)
-        public static System.Collections.Generic.HashSet<string> CollapsedSections { get; set; } = new System.Collections.Generic.HashSet<string>();
-        
-        // UI - Window size/position (persisted)
+
+        // UI persistence
+        public static HashSet<string> CollapsedSections { get; set; } = new HashSet<string>();
         public static float WindowX { get; set; } = 50f;
         public static float WindowY { get; set; } = 50f;
         public static float WindowWidth { get; set; } = 500f;
         public static float WindowHeight { get; set; } = 400f;
 
         #region Config Save/Load
+
+        // v1 property names that differ from Hack enum names
+        private static readonly Dictionary<string, Hack> V1NameMapping = new()
+        {
+            ["ESP"] = Hack.EnableESP,
+            ["FOV"] = Hack.CustomFOV,
+            ["NoFieldOfDepth"] = Hack.NoDepthOfField,
+            ["OpenDropShipLand"] = Hack.AutoOpenDropship,
+            ["OpenShipDoorSpace"] = Hack.ShipDoorInSpace,
+            ["JebAttackPrevention"] = Hack.AntiJeb,
+            ["ChatSpamLoop"] = Hack.ChatSpam,
+            ["TerminalEarrapeSpam"] = Hack.EarrapeSpam,
+        };
+
         public static void SaveConfig()
         {
             try
@@ -253,123 +126,32 @@ namespace LethalMenu
                     Directory.CreateDirectory(dir);
                 }
 
+                var toggles = new JObject();
+                foreach (var kv in HackExtensions.ToggleFlags)
+                {
+                    toggles[kv.Key.ToString()] = kv.Value;
+                }
+
                 var config = new JObject
                 {
-                    // Player cheats
-                    ["GodMode"] = GodMode,
-                    ["DemiGod"] = DemiGod,
-                    ["InfiniteStamina"] = InfiniteStamina,
-                    ["InfiniteBattery"] = InfiniteBattery,
-                    ["NoFallDamage"] = NoFallDamage,
-                    ["ExtraItemSlots"] = ExtraItemSlots,
+                    ["Version"] = 2,
+                    ["ToggleFlags"] = toggles,
+
                     ["ItemSlotCount"] = ItemSlotCount,
-                    ["NoWeight"] = NoWeight,
-                    ["SpeedHack"] = SpeedHack,
                     ["SpeedMultiplier"] = SpeedMultiplier,
-                    ["JumpHack"] = JumpHack,
                     ["JumpMultiplier"] = JumpMultiplier,
-                    
-                    // Movement
-                    ["SuperSpeed"] = SuperSpeed,
-                    ["SuperJump"] = SuperJump,
                     ["SuperJumpForce"] = SuperJumpForce,
-                    ["UnlimitedJump"] = UnlimitedJump,
-                    ["FastClimb"] = FastClimb,
-                    ["TauntSlide"] = TauntSlide,
                     ["FreeCamSpeed"] = FreeCamSpeed,
-                    ["ThirdPerson"] = ThirdPerson,
                     ["ThirdPersonDistance"] = ThirdPersonDistance,
-                    
-                    // Patches
-                    ["Untargetable"] = Untargetable,
-                    ["AntiFlash"] = AntiFlash,
-                    ["OneHanded"] = OneHanded,
-                    ["NoQuicksand"] = NoQuicksand,
-                    ["SuperShovel"] = SuperShovel,
-                    ["UnlimitedAmmo"] = UnlimitedAmmo,
-                    ["UnlimitedOxygen"] = UnlimitedOxygen,
-                    ["Shoplifter"] = Shoplifter,
-                    ["GrabInLobby"] = GrabInLobby,
-                    ["JebAttackPrevention"] = JebAttackPrevention,
-                    ["Reach"] = Reach,
-                    ["BuildAnywhere"] = BuildAnywhere,
-                    ["InstantInteract"] = InstantInteract,
-                    
-                    // Enemy
-                    ["GhostMode"] = GhostMode,
-                    ["AntiGhostGirl"] = AntiGhostGirl,
-                    ["GrabNutcrackerShotgun"] = GrabNutcrackerShotgun,
-                    
-                    // Items
-                    ["SuperKnife"] = SuperKnife,
-                    ["StrongHands"] = StrongHands,
-                    ["TeleportWithItems"] = TeleportWithItems,
-                    ["UnlimitedTZP"] = UnlimitedTZP,
-                    ["NoTZPEffects"] = NoTZPEffects,
-                    ["UnlimitedZapGun"] = UnlimitedZapGun,
-                    ["EggsAlwaysExplode"] = EggsAlwaysExplode,
-                    ["EggsNeverExplode"] = EggsNeverExplode,
-                    ["MinigunShotgun"] = MinigunShotgun,
-                    ["LootThroughWalls"] = LootThroughWalls,
-                    ["InteractThroughWalls"] = InteractThroughWalls,
-                    ["LootBeforeGameStarts"] = LootBeforeGameStarts,
-                    
-                    // Environment
-                    ["BridgeNeverFalls"] = BridgeNeverFalls,
-                    ["OpenDropShipLand"] = OpenDropShipLand,
-                    ["OpenShipDoorSpace"] = OpenShipDoorSpace,
-                    
-                    // Visual
-                    ["AlwaysShowClock"] = AlwaysShowClock,
-                    ["Crosshair"] = Crosshair,
                     ["CrosshairScale"] = CrosshairScale,
                     ["CrosshairThickness"] = CrosshairThickness,
-                    ["NoVisor"] = NoVisor,
-                    ["NoCameraShake"] = NoCameraShake,
-                    ["NoFieldOfDepth"] = NoFieldOfDepth,
-                    ["FullRenderResolution"] = FullRenderResolution,
-                    ["FOV"] = FOV,
                     ["FOVValue"] = FOVValue,
-                    ["Breadcrumbs"] = Breadcrumbs,
                     ["BreadcrumbInterval"] = BreadcrumbInterval,
-                    ["HPDisplay"] = HPDisplay,
-                    ["InfoDisplay"] = InfoDisplay,
-                    ["InfoDisplayCredits"] = InfoDisplayCredits,
-                    ["InfoDisplayQuota"] = InfoDisplayQuota,
-                    ["InfoDisplayDeadline"] = InfoDisplayDeadline,
-                    ["InfoDisplayEnemies"] = InfoDisplayEnemies,
-                    ["InfoDisplayBodies"] = InfoDisplayBodies,
-                    ["InfoDisplayMapLoot"] = InfoDisplayMapLoot,
-                    ["InfoDisplayShipLoot"] = InfoDisplayShipLoot,
-                    ["InfoDisplayMoon"] = InfoDisplayMoon,
-                    ["InfoDisplayTime"] = InfoDisplayTime,
-                    ["NoFog"] = NoFog,
-                    
-                    // ESP
-                    ["ESP"] = ESP,
-                    ["PlayerESP"] = PlayerESP,
-                    ["EnemyESP"] = EnemyESP,
-                    ["ItemESP"] = ItemESP,
-                    ["DoorESP"] = DoorESP,
-                    ["MineESP"] = MineESP,
-                    ["TurretESP"] = TurretESP,
-                    ["FuseboxESP"] = FuseboxESP,
-                    ["PlayerHealthBars"] = PlayerHealthBars,
-                    
-                    // Night vision
                     ["NightVisionIntensity"] = NightVisionIntensity,
                     ["NightVisionRange"] = NightVisionRange,
-                    
-                    // Network
-                    ["AntiKick"] = AntiKick,
-                    ["ShowKickedLobbies"] = ShowKickedLobbies,
+
                     ["KickedHostIds"] = new JArray(KickedHostIds.Select(id => (long)id)),
-                    ["HearEveryone"] = HearEveryone,
-                    ["Invisibility"] = Invisibility,
-                    ["DeathNotifications"] = DeathNotifications,
-                    ["HearDeadPeople"] = HearDeadPeople,
-                    
-                    // UI
+
                     ["CollapsedSections"] = new JArray(CollapsedSections),
                     ["WindowX"] = WindowX,
                     ["WindowY"] = WindowY,
@@ -385,6 +167,7 @@ namespace LethalMenu
                 Loader.Log($"Failed to save config: {ex.Message}");
             }
         }
+
         public static void LoadConfig()
         {
             try
@@ -398,143 +181,102 @@ namespace LethalMenu
                 var json = File.ReadAllText(ConfigPath);
                 var config = JObject.Parse(json);
 
-                // Player cheats
-                GodMode = config["GodMode"]?.Value<bool>() ?? GodMode;
-                DemiGod = config["DemiGod"]?.Value<bool>() ?? DemiGod;
-                InfiniteStamina = config["InfiniteStamina"]?.Value<bool>() ?? InfiniteStamina;
-                InfiniteBattery = config["InfiniteBattery"]?.Value<bool>() ?? InfiniteBattery;
-                NoFallDamage = config["NoFallDamage"]?.Value<bool>() ?? NoFallDamage;
-                ExtraItemSlots = config["ExtraItemSlots"]?.Value<bool>() ?? ExtraItemSlots;
+                int version = config["Version"]?.Value<int>() ?? 1;
+
+                if (version >= 2)
+                {
+                    LoadV2(config);
+                }
+                else
+                {
+                    LoadV1Legacy(config);
+                }
+
+                // Non-boolean settings (shared across versions)
                 ItemSlotCount = config["ItemSlotCount"]?.Value<int>() ?? ItemSlotCount;
-                NoWeight = config["NoWeight"]?.Value<bool>() ?? NoWeight;
-                SpeedHack = config["SpeedHack"]?.Value<bool>() ?? SpeedHack;
                 SpeedMultiplier = config["SpeedMultiplier"]?.Value<float>() ?? SpeedMultiplier;
-                JumpHack = config["JumpHack"]?.Value<bool>() ?? JumpHack;
                 JumpMultiplier = config["JumpMultiplier"]?.Value<float>() ?? JumpMultiplier;
-                
-                // Movement
-                SuperSpeed = config["SuperSpeed"]?.Value<bool>() ?? SuperSpeed;
-                SuperJump = config["SuperJump"]?.Value<bool>() ?? SuperJump;
                 SuperJumpForce = config["SuperJumpForce"]?.Value<float>() ?? SuperJumpForce;
-                UnlimitedJump = config["UnlimitedJump"]?.Value<bool>() ?? UnlimitedJump;
-                FastClimb = config["FastClimb"]?.Value<bool>() ?? FastClimb;
-                TauntSlide = config["TauntSlide"]?.Value<bool>() ?? TauntSlide;
                 FreeCamSpeed = config["FreeCamSpeed"]?.Value<float>() ?? FreeCamSpeed;
-                ThirdPerson = config["ThirdPerson"]?.Value<bool>() ?? ThirdPerson;
                 ThirdPersonDistance = config["ThirdPersonDistance"]?.Value<float>() ?? ThirdPersonDistance;
-                
-                // Patches
-                Untargetable = config["Untargetable"]?.Value<bool>() ?? Untargetable;
-                AntiFlash = config["AntiFlash"]?.Value<bool>() ?? AntiFlash;
-                OneHanded = config["OneHanded"]?.Value<bool>() ?? OneHanded;
-                NoQuicksand = config["NoQuicksand"]?.Value<bool>() ?? NoQuicksand;
-                SuperShovel = config["SuperShovel"]?.Value<bool>() ?? SuperShovel;
-                UnlimitedAmmo = config["UnlimitedAmmo"]?.Value<bool>() ?? UnlimitedAmmo;
-                UnlimitedOxygen = config["UnlimitedOxygen"]?.Value<bool>() ?? UnlimitedOxygen;
-                Shoplifter = config["Shoplifter"]?.Value<bool>() ?? Shoplifter;
-                GrabInLobby = config["GrabInLobby"]?.Value<bool>() ?? GrabInLobby;
-                JebAttackPrevention = config["JebAttackPrevention"]?.Value<bool>() ?? JebAttackPrevention;
-                Reach = config["Reach"]?.Value<bool>() ?? Reach;
-                BuildAnywhere = config["BuildAnywhere"]?.Value<bool>() ?? BuildAnywhere;
-                InstantInteract = config["InstantInteract"]?.Value<bool>() ?? InstantInteract;
-                
-                // Enemy
-                GhostMode = config["GhostMode"]?.Value<bool>() ?? GhostMode;
-                AntiGhostGirl = config["AntiGhostGirl"]?.Value<bool>() ?? AntiGhostGirl;
-                GrabNutcrackerShotgun = config["GrabNutcrackerShotgun"]?.Value<bool>() ?? GrabNutcrackerShotgun;
-                
-                // Items
-                SuperKnife = config["SuperKnife"]?.Value<bool>() ?? SuperKnife;
-                StrongHands = config["StrongHands"]?.Value<bool>() ?? StrongHands;
-                TeleportWithItems = config["TeleportWithItems"]?.Value<bool>() ?? TeleportWithItems;
-                UnlimitedTZP = config["UnlimitedTZP"]?.Value<bool>() ?? UnlimitedTZP;
-                NoTZPEffects = config["NoTZPEffects"]?.Value<bool>() ?? NoTZPEffects;
-                UnlimitedZapGun = config["UnlimitedZapGun"]?.Value<bool>() ?? UnlimitedZapGun;
-                EggsAlwaysExplode = config["EggsAlwaysExplode"]?.Value<bool>() ?? EggsAlwaysExplode;
-                EggsNeverExplode = config["EggsNeverExplode"]?.Value<bool>() ?? EggsNeverExplode;
-                MinigunShotgun = config["MinigunShotgun"]?.Value<bool>() ?? MinigunShotgun;
-                LootThroughWalls = config["LootThroughWalls"]?.Value<bool>() ?? LootThroughWalls;
-                InteractThroughWalls = config["InteractThroughWalls"]?.Value<bool>() ?? InteractThroughWalls;
-                LootBeforeGameStarts = config["LootBeforeGameStarts"]?.Value<bool>() ?? LootBeforeGameStarts;
-                
-                // Environment
-                BridgeNeverFalls = config["BridgeNeverFalls"]?.Value<bool>() ?? BridgeNeverFalls;
-                OpenDropShipLand = config["OpenDropShipLand"]?.Value<bool>() ?? OpenDropShipLand;
-                OpenShipDoorSpace = config["OpenShipDoorSpace"]?.Value<bool>() ?? OpenShipDoorSpace;
-                
-                // Visual
-                AlwaysShowClock = config["AlwaysShowClock"]?.Value<bool>() ?? AlwaysShowClock;
-                Crosshair = config["Crosshair"]?.Value<bool>() ?? Crosshair;
                 CrosshairScale = config["CrosshairScale"]?.Value<float>() ?? CrosshairScale;
                 CrosshairThickness = config["CrosshairThickness"]?.Value<float>() ?? CrosshairThickness;
-                NoVisor = config["NoVisor"]?.Value<bool>() ?? NoVisor;
-                NoCameraShake = config["NoCameraShake"]?.Value<bool>() ?? NoCameraShake;
-                NoFieldOfDepth = config["NoFieldOfDepth"]?.Value<bool>() ?? NoFieldOfDepth;
-                FullRenderResolution = config["FullRenderResolution"]?.Value<bool>() ?? FullRenderResolution;
-                FOV = config["FOV"]?.Value<bool>() ?? FOV;
                 FOVValue = config["FOVValue"]?.Value<float>() ?? FOVValue;
-                Breadcrumbs = config["Breadcrumbs"]?.Value<bool>() ?? Breadcrumbs;
                 BreadcrumbInterval = config["BreadcrumbInterval"]?.Value<float>() ?? BreadcrumbInterval;
-                HPDisplay = config["HPDisplay"]?.Value<bool>() ?? HPDisplay;
-                InfoDisplay = config["InfoDisplay"]?.Value<bool>() ?? InfoDisplay;
-                InfoDisplayCredits = config["InfoDisplayCredits"]?.Value<bool>() ?? InfoDisplayCredits;
-                InfoDisplayQuota = config["InfoDisplayQuota"]?.Value<bool>() ?? InfoDisplayQuota;
-                InfoDisplayDeadline = config["InfoDisplayDeadline"]?.Value<bool>() ?? InfoDisplayDeadline;
-                InfoDisplayEnemies = config["InfoDisplayEnemies"]?.Value<bool>() ?? InfoDisplayEnemies;
-                InfoDisplayBodies = config["InfoDisplayBodies"]?.Value<bool>() ?? InfoDisplayBodies;
-                InfoDisplayMapLoot = config["InfoDisplayMapLoot"]?.Value<bool>() ?? InfoDisplayMapLoot;
-                InfoDisplayShipLoot = config["InfoDisplayShipLoot"]?.Value<bool>() ?? InfoDisplayShipLoot;
-                InfoDisplayMoon = config["InfoDisplayMoon"]?.Value<bool>() ?? InfoDisplayMoon;
-                InfoDisplayTime = config["InfoDisplayTime"]?.Value<bool>() ?? InfoDisplayTime;
-                NoFog = config["NoFog"]?.Value<bool>() ?? NoFog;
-                
-                // ESP
-                ESP = config["ESP"]?.Value<bool>() ?? ESP;
-                PlayerESP = config["PlayerESP"]?.Value<bool>() ?? PlayerESP;
-                EnemyESP = config["EnemyESP"]?.Value<bool>() ?? EnemyESP;
-                ItemESP = config["ItemESP"]?.Value<bool>() ?? ItemESP;
-                DoorESP = config["DoorESP"]?.Value<bool>() ?? DoorESP;
-                MineESP = config["MineESP"]?.Value<bool>() ?? MineESP;
-                TurretESP = config["TurretESP"]?.Value<bool>() ?? TurretESP;
-                FuseboxESP = config["FuseboxESP"]?.Value<bool>() ?? FuseboxESP;
-                PlayerHealthBars = config["PlayerHealthBars"]?.Value<bool>() ?? PlayerHealthBars;
-                
-                // Night vision
                 NightVisionIntensity = config["NightVisionIntensity"]?.Value<float>() ?? NightVisionIntensity;
                 NightVisionRange = config["NightVisionRange"]?.Value<float>() ?? NightVisionRange;
-                
-                // Network
-                AntiKick = config["AntiKick"]?.Value<bool>() ?? AntiKick;
-                ShowKickedLobbies = config["ShowKickedLobbies"]?.Value<bool>() ?? ShowKickedLobbies;
+
                 if (config["KickedHostIds"] is JArray kickedArray)
                 {
                     KickedHostIds = new HashSet<ulong>(kickedArray.Select(t => (ulong)(long)t));
                 }
-                HearEveryone = config["HearEveryone"]?.Value<bool>() ?? HearEveryone;
-                Invisibility = config["Invisibility"]?.Value<bool>() ?? Invisibility;
-                DeathNotifications = config["DeathNotifications"]?.Value<bool>() ?? DeathNotifications;
-                HearDeadPeople = config["HearDeadPeople"]?.Value<bool>() ?? HearDeadPeople;
-                
-                // UI
+
                 var collapsedArray = config["CollapsedSections"] as JArray;
                 if (collapsedArray != null)
                 {
-                    CollapsedSections = new System.Collections.Generic.HashSet<string>(
+                    CollapsedSections = new HashSet<string>(
                         collapsedArray.Select(t => t.Value<string>()).Where(s => !string.IsNullOrEmpty(s))!
                     );
                 }
-                
-                // Window position/size
+
                 WindowX = config["WindowX"]?.Value<float>() ?? WindowX;
                 WindowY = config["WindowY"]?.Value<float>() ?? WindowY;
                 WindowWidth = config["WindowWidth"]?.Value<float>() ?? WindowWidth;
                 WindowHeight = config["WindowHeight"]?.Value<float>() ?? WindowHeight;
 
-                Loader.Log($"Config loaded from {ConfigPath}");
+                Loader.Log($"Config loaded (v{version}) from {ConfigPath}");
             }
             catch (Exception ex)
             {
                 Loader.Log($"Failed to load config: {ex.Message}");
+            }
+        }
+
+        private static void LoadV2(JObject config)
+        {
+            var toggles = config["ToggleFlags"] as JObject;
+            if (toggles == null) return;
+
+            foreach (var prop in toggles.Properties())
+            {
+                if (Enum.TryParse<Hack>(prop.Name, out Hack hack))
+                {
+                    hack.SetEnabled(prop.Value.Value<bool>());
+                }
+            }
+        }
+
+        private static void LoadV1Legacy(JObject config)
+        {
+            foreach (Hack hack in Enum.GetValues(typeof(Hack)))
+            {
+                // Skip action-type hacks (not toggles in v1)
+                if (hack >= Hack.SelfRevive) continue;
+
+                string key = hack.ToString();
+
+                // Check renamed properties first
+                string? v1Key = null;
+                foreach (var mapping in V1NameMapping)
+                {
+                    if (mapping.Value == hack)
+                    {
+                        v1Key = mapping.Key;
+                        break;
+                    }
+                }
+
+                bool loaded = false;
+                if (v1Key != null && config[v1Key] != null)
+                {
+                    hack.SetEnabled(config[v1Key]!.Value<bool>());
+                    loaded = true;
+                }
+
+                if (!loaded && config[key] != null)
+                {
+                    hack.SetEnabled(config[key]!.Value<bool>());
+                }
             }
         }
 
@@ -546,18 +288,22 @@ namespace LethalMenu
                 {
                     File.Delete(ConfigPath);
                 }
-                // Reset all to defaults by recreating
-                GodMode = false;
-                DemiGod = false;
-                InfiniteStamina = false;
-                InfiniteBattery = false;
-                NoFallDamage = false;
-                NoWeight = false;
-                SpeedHack = false;
+
+                HackExtensions.InitializeDefaults();
+
                 SpeedMultiplier = 2.0f;
-                JumpHack = false;
                 JumpMultiplier = 2.0f;
-                // ... etc
+                FOVValue = 90f;
+                SuperJumpForce = 20f;
+                FreeCamSpeed = 10f;
+                ThirdPersonDistance = 3f;
+                CrosshairScale = 10f;
+                CrosshairThickness = 2f;
+                BreadcrumbInterval = 3f;
+                NightVisionIntensity = 10000f;
+                NightVisionRange = 10000f;
+                ItemSlotCount = 4;
+
                 Loader.Log("Config reset to defaults");
             }
             catch (Exception ex)

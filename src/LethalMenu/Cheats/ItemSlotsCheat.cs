@@ -12,11 +12,9 @@ namespace LethalMenu.Cheats
     public class ItemSlotsCheat : CheatBase
     {
         public override string Name => "Extra Item Slots";
+        public override Hack HackType => Hack.ExtraItemSlots;
 
-        public override void OnUpdate()
-        {
-            IsEnabled = Settings.ExtraItemSlots && Settings.ItemSlotCount != 4;
-        }
+        public override void OnUpdate() { }
     }
 }
 
@@ -31,7 +29,7 @@ namespace LethalMenu.Patches
         {
             try
             {
-                if (!Settings.ExtraItemSlots) return;
+                if (!Hack.ExtraItemSlots.IsEnabled()) return;
                 
                 int slotCount = Settings.ItemSlotCount;
                 if (slotCount <= 4) return;
@@ -56,7 +54,7 @@ namespace LethalMenu.Patches
         {
             try
             {
-                if (!Settings.ExtraItemSlots) return;
+                if (!Hack.ExtraItemSlots.IsEnabled()) return;
                 
                 int slotCount = Settings.ItemSlotCount;
                 if (slotCount <= 4) return;

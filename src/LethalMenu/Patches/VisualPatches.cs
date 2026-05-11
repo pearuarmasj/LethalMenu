@@ -13,7 +13,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool Prefix()
         {
-            return !Settings.NoFieldOfDepth;
+            return !Hack.NoDepthOfField.IsEnabled();
         }
     }
 
@@ -41,7 +41,7 @@ namespace LethalMenu.Patches
             var camera = player.gameplayCamera;
             var currentTexture = camera.targetTexture;
             
-            if (Settings.FullRenderResolution)
+            if (Hack.FullRenderResolution.IsEnabled())
             {
                 if (_originalTexture == null && currentTexture != null)
                 {
@@ -113,7 +113,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void AwakePostfix(LobbySlot __instance)
         {
-            if (!Settings.ShowKickedLobbies) return;
+            if (!Hack.ShowKickedLobbies.IsEnabled()) return;
             
             __instance.StartCoroutine(CheckKickedLobby(__instance));
         }

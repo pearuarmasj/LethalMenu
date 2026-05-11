@@ -25,7 +25,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool UpdateVoicePrefix()
         {
-            return !Settings.HearEveryone;
+            return !Hack.HearEveryone.IsEnabled();
         }
     }
 
@@ -36,7 +36,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void Postfix(StartOfRound __instance)
         {
-            if (!Settings.HearDeadPeople || StartOfRound.Instance.shipIsLeaving) return;
+            if (!Hack.HearDeadPeople.IsEnabled() || StartOfRound.Instance.shipIsLeaving) return;
 
             for (int i = 0; i < __instance.allPlayerScripts.Length; i++)
             {
@@ -67,7 +67,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void Prefix(PlayerControllerB __instance, int playerId, int causeOfDeath)
         {
-            if (!Settings.DeathNotifications) return;
+            if (!Hack.DeathNotifications.IsEnabled()) return;
             
             var died = __instance.playersManager.allPlayerObjects[playerId].GetComponent<PlayerControllerB>();
             string causeName = ((CauseOfDeath)causeOfDeath).ToString();

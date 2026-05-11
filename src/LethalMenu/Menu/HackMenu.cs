@@ -357,6 +357,41 @@ namespace LethalMenu.Menu
             return newValue;
         }
 
+        private void DrawHackToggle(Hack hack, string? tooltip = null)
+        {
+            string label = hack.GetDisplayName();
+            GUILayout.BeginHorizontal();
+            bool newValue = GUILayout.Toggle(hack.IsEnabled(), label, _toggleStyle);
+            if (newValue != hack.IsEnabled())
+                hack.SetEnabled(newValue);
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(tooltip, new GUIStyle(_labelStyle) { fontSize = 11, normal = { textColor = new Color(0.6f, 0.6f, 0.6f) } });
+            }
+            GUILayout.EndHorizontal();
+        }
+
+        private void DrawHackToggle(Hack hack, string label, string? tooltip)
+        {
+            GUILayout.BeginHorizontal();
+            bool newValue = GUILayout.Toggle(hack.IsEnabled(), label, _toggleStyle);
+            if (newValue != hack.IsEnabled())
+                hack.SetEnabled(newValue);
+            if (!string.IsNullOrEmpty(tooltip))
+            {
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(tooltip, new GUIStyle(_labelStyle) { fontSize = 11, normal = { textColor = new Color(0.6f, 0.6f, 0.6f) } });
+            }
+            GUILayout.EndHorizontal();
+        }
+
+        private void DrawHackButton(Hack hack, string? label = null)
+        {
+            if (GUILayout.Button(label ?? hack.GetDisplayName(), _buttonStyle))
+                hack.Execute();
+        }
+
         private void TeleportTo(Vector3 position)
         {
             if (LethalMenuMod.LocalPlayer == null) return;

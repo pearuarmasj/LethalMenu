@@ -6,7 +6,6 @@ namespace LethalMenu.Menu
 {
     public partial class HackMenu
     {
-        // Item spawner state
         private int _selectedItemIndex = 0;
         private string _spawnValue = "100";
 
@@ -16,36 +15,35 @@ namespace LethalMenu.Menu
         {
             DrawSection("Item Cheats", () =>
             {
-                Settings.InfiniteBattery = DrawToggle("Infinite Battery", Settings.InfiniteBattery, "Items never lose charge");
-                Settings.OneHanded = DrawToggle("One-Handed", Settings.OneHanded, "Two-handed items become one-handed");
-                Settings.StrongHands = DrawToggle("Strong Hands", Settings.StrongHands, "Two-handed items held one-handed");
-                Settings.Reach = DrawToggle("Extended Reach", Settings.Reach, "Grab items from far away");
-                Settings.LootThroughWalls = DrawToggle("Loot Through Walls", Settings.LootThroughWalls, "Grab items through walls");
-                Settings.InteractThroughWalls = DrawToggle("Interact Through Walls", Settings.InteractThroughWalls, "Interact through walls");
-                Settings.LootBeforeGameStarts = DrawToggle("Loot Before Start", Settings.LootBeforeGameStarts, "Grab items before game starts");
-                Settings.GrabNutcrackerShotgun = DrawToggle("Grab Nutcracker Gun", Settings.GrabNutcrackerShotgun, "Steal shotgun from Nutcracker");
+                DrawHackToggle(Hack.InfiniteBattery, "Infinite Battery", "Items never lose charge");
+                DrawHackToggle(Hack.OneHanded, "One-Handed", "Two-handed items become one-handed");
+                DrawHackToggle(Hack.StrongHands, "Strong Hands", "Two-handed items held one-handed");
+                DrawHackToggle(Hack.Reach, "Extended Reach", "Grab items from far away");
+                DrawHackToggle(Hack.LootThroughWalls, "Loot Through Walls", "Grab items through walls");
+                DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "Interact through walls");
+                DrawHackToggle(Hack.LootBeforeGameStarts, "Loot Before Start", "Grab items before game starts");
+                DrawHackToggle(Hack.GrabNutcrackerShotgun, "Grab Nutcracker Gun", "Steal shotgun from Nutcracker");
             });
 
             DrawSection("Weapon Cheats", () =>
             {
-                Settings.SuperShovel = DrawToggle("Super Shovel", Settings.SuperShovel, "One-hit kill with shovel");
-                Settings.SuperKnife = DrawToggle("Super Knife", Settings.SuperKnife, "Knife does massive damage");
-                Settings.UnlimitedAmmo = DrawToggle("Unlimited Ammo", Settings.UnlimitedAmmo, "Shotgun never runs out");
-                Settings.MinigunShotgun = DrawToggle("Minigun Shotgun", Settings.MinigunShotgun, "Hold LMB to rapid fire shotgun");
-                Settings.UnlimitedZapGun = DrawToggle("Unlimited Zap Gun", Settings.UnlimitedZapGun, "Zap gun never overheats");
+                DrawHackToggle(Hack.SuperShovel, "Super Shovel", "One-hit kill with shovel");
+                DrawHackToggle(Hack.SuperKnife, "Super Knife", "Knife does massive damage");
+                DrawHackToggle(Hack.UnlimitedAmmo, "Unlimited Ammo", "Shotgun never runs out");
+                DrawHackToggle(Hack.MinigunShotgun, "Minigun Shotgun", "Hold LMB to rapid fire shotgun");
+                DrawHackToggle(Hack.UnlimitedZapGun, "Unlimited Zap Gun", "Zap gun never overheats");
             });
 
             DrawSection("Special Items", () =>
             {
-                Settings.UnlimitedTZP = DrawToggle("Unlimited TZP", Settings.UnlimitedTZP, "TZP never runs out");
-                Settings.NoTZPEffects = DrawToggle("No TZP Effects", Settings.NoTZPEffects, "TZP doesn't affect vision");
-                Settings.EggsAlwaysExplode = DrawToggle("Eggs Always Explode", Settings.EggsAlwaysExplode, "Easter eggs always explode");
-                Settings.EggsNeverExplode = DrawToggle("Eggs Never Explode", Settings.EggsNeverExplode, "Easter eggs never explode");
+                DrawHackToggle(Hack.UnlimitedTZP, "Unlimited TZP", "TZP never runs out");
+                DrawHackToggle(Hack.NoTZPEffects, "No TZP Effects", "TZP doesn't affect vision");
+                DrawHackToggle(Hack.EggsAlwaysExplode, "Eggs Always Explode", "Easter eggs always explode");
+                DrawHackToggle(Hack.EggsNeverExplode, "Eggs Never Explode", "Easter eggs never explode");
             });
 
             DrawSection("Item Teleport", () =>
             {
-                // Count ALL grabbable items (not just scrap) for teleport purposes
                 var gameInstance = StartOfRound.Instance;
                 var allItems = Object.FindObjectsOfType<GrabbableObject>();
 
@@ -100,7 +98,6 @@ namespace LethalMenu.Menu
                     return;
                 }
 
-                // Item selector - show items with valid prefabs
                 var spawnableItems = allItems.Where(i => i != null && i.spawnPrefab != null).ToList();
                 if (spawnableItems.Count == 0)
                 {
@@ -138,23 +135,15 @@ namespace LethalMenu.Menu
         {
             if (LethalMenuMod.GameInstance == null || LethalMenuMod.LocalPlayer == null) return;
 
-            // Get player position as reference (they should be in ship when using this)
             Vector3 playerPos = LethalMenuMod.LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f; // Spawn above ground to let them fall
+            float spawnHeight = playerPos.y + 1.5f;
 
-            // Get ship bounds for containment check
             var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
-            if (shipBounds == null)
-            {
-                Loader.LogError("Ship bounds not found");
-                return;
-            }
+            if (shipBounds == null) return;
 
-            // Get the ship's elevator transform for proper parenting
             var elevatorTransform = LethalMenuMod.GameInstance.elevatorTransform;
             var localPlayer = LethalMenuMod.LocalPlayer;
 
-            // Re-collect items to ensure fresh list
             var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
             int teleported = 0;
             int totalValue = 0;
@@ -165,44 +154,34 @@ namespace LethalMenu.Menu
                 if (item.isHeld || item.isHeldByEnemy) continue;
                 if (item.isPocketed) continue;
 
-                // Check if item is ACTUALLY in ship bounds
                 bool actuallyInShip = shipBounds.bounds.Contains(item.transform.position);
                 if (actuallyInShip) continue;
 
-                // Set position above player to allow proper falling
                 var targetPos = new Vector3(playerPos.x, spawnHeight, playerPos.z);
 
-                // Parent to elevator so it moves with ship
                 if (elevatorTransform != null)
                 {
                     item.transform.SetParent(elevatorTransform, true);
                 }
 
-                // Set position and trigger proper ground detection
                 item.transform.position = targetPos;
                 item.startFallingPosition = item.transform.localPosition;
                 item.hasHitGround = false;
                 item.reachedFloorTarget = false;
                 item.fallTime = 0f;
 
-                // IMPORTANT: Use SetItemInElevator to properly track stats
-                // This updates scrapCollectedInLevel and player's profitable stat
                 if (!item.isInShipRoom)
                 {
-                    // Call SetItemInElevator which handles all the stat tracking
                     localPlayer.SetItemInElevator(true, true, item);
                     totalValue += item.scrapValue;
                 }
                 else
                 {
-                    // Already marked as in ship, just set flags
                     item.isInShipRoom = true;
                     item.isInElevator = true;
                 }
 
-                // Call FallToGround to properly land the item
                 item.FallToGround(false);
-
                 teleported++;
             }
 
@@ -216,14 +195,11 @@ namespace LethalMenu.Menu
             var playerPos = LethalMenuMod.LocalPlayer.transform.position;
             float spawnHeight = playerPos.y + 1.5f;
 
-            // Get ship bounds to check if player is in ship
             var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
             bool playerInShip = shipBounds != null && shipBounds.bounds.Contains(playerPos);
 
-            // Get elevator transform for parenting if in ship
             var elevatorTransform = LethalMenuMod.GameInstance.elevatorTransform;
 
-            // Re-collect items for fresh list
             var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
             int teleported = 0;
 
@@ -236,7 +212,6 @@ namespace LethalMenu.Menu
                 float dist = Vector3.Distance(playerPos, item.transform.position);
                 if (dist <= radius)
                 {
-                    // Parent to elevator if player is in ship
                     if (playerInShip && elevatorTransform != null)
                     {
                         item.transform.SetParent(elevatorTransform, true);
@@ -244,7 +219,6 @@ namespace LethalMenu.Menu
                         item.isInElevator = true;
                     }
 
-                    // Set position and trigger fall
                     var targetPos = new Vector3(playerPos.x, spawnHeight, playerPos.z);
                     item.transform.position = targetPos;
                     item.startFallingPosition = item.transform.localPosition;
@@ -281,11 +255,10 @@ namespace LethalMenu.Menu
                     grabbable.fallTime = 0f;
                 }
                 obj.GetComponent<NetworkObject>()?.Spawn();
-                Loader.Log($"[LethalMenu] Spawned {item.itemName} with value {value}");
             }
             catch (System.Exception ex)
             {
-                Loader.LogError($"[LethalMenu] Failed to spawn item: {ex.Message}");
+                Loader.LogError($"Failed to spawn item: {ex.Message}");
             }
         }
 

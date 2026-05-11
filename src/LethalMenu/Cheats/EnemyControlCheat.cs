@@ -30,8 +30,8 @@ namespace LethalMenu.Cheats
     public class EnemyControlCheat : CheatBase
     {
         public override string Name => "Enemy Control";
+        public override Hack HackType => Hack.EnemyControl;
 
-        // Currently controlled enemy
         private static EnemyAI? _controlledEnemy;
         private static IEnemyController? _controller;
         private static GameObject? _controllerObject;
@@ -40,27 +40,18 @@ namespace LethalMenu.Cheats
         private static AudioListener? _audioListener;
         private static Transform? _originalCameraParent;
 
-        // Control state
         public static bool IsControlling => _controlledEnemy != null;
         public static bool IsAIControlled { get; private set; } = false;
         public static bool NoClipEnabled { get; private set; } = false;
         private static bool _secondarySkillHeld = false;
 
-        // Door cooldowns
         private const float DoorInteractionCooldown = 0.7f;
         private const float TeleportDoorCooldown = 2.5f;
         private static float _doorCooldownRemaining = 0f;
         private static float _teleportCooldownRemaining = 0f;
 
-        // Main entrance for outside status tracking
         private static EntranceTeleport? _mainEntrance;
         private static bool _firstUpdateAfterPossess = true;
-
-        public new bool IsEnabled
-        {
-            get => Settings.EnemyControl;
-            set => Settings.EnemyControl = value;
-        }
 
         public override void OnUpdate()
         {
@@ -559,7 +550,7 @@ namespace LethalMenu.Cheats
             _secondarySkillHeld = false;
             _firstUpdateAfterPossess = true;
             _mainEntrance = null;
-            Settings.EnemyControl = true;
+            Hack.EnemyControl.SetEnabled(true);
 
             // Switch audio listener
             if (LethalMenuMod.LocalPlayer != null)
@@ -655,7 +646,7 @@ namespace LethalMenu.Cheats
             NoClipEnabled = false;
             _secondarySkillHeld = false;
             _firstUpdateAfterPossess = true;
-            Settings.EnemyControl = false;
+            Hack.EnemyControl.SetEnabled(false);
         }
 
         /// 

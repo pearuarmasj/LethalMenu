@@ -24,7 +24,7 @@ namespace LethalMenu.Patches
             ref bool exhausted,
             ref bool isPlayerGrounded)
         {
-            if (!Settings.Invisibility) return;
+            if (!Hack.Invisibility.IsEnabled()) return;
             if (__instance != LethalMenuMod.LocalPlayer) return;
 
             _lastRealPos = newPos;
@@ -50,7 +50,7 @@ namespace LethalMenu.Patches
             ref bool exhausted,
             ref bool isPlayerGrounded)
         {
-            if (!Settings.Invisibility) return;
+            if (!Hack.Invisibility.IsEnabled()) return;
             if (__instance != LethalMenuMod.LocalPlayer) return;
 
             newPos = _lastRealPos;
@@ -114,7 +114,7 @@ namespace LethalMenu.Patches
             Settings.CurrentLobbyId = lobby.Id;
             Settings.CurrentLobbyOwnerId = lobby.Owner.Id;
             
-            if (Settings.AntiKick && Settings.KickedHostIds.Contains(lobby.Owner.Id))
+            if (Hack.AntiKick.IsEnabled() && Settings.KickedHostIds.Contains(lobby.Owner.Id))
             {
                 Settings.WasKicked = true;
             }
@@ -125,7 +125,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool SendNewPlayerValuesServerRpcPrefix(PlayerControllerB __instance, ulong newPlayerSteamId)
         {
-            if (Settings.AntiKick && Settings.WasKicked)
+            if (Hack.AntiKick.IsEnabled() && Settings.WasKicked)
             {
                 __instance.sentPlayerValues = true;
                 ulong[] playerSteamIds = new ulong[__instance.playersManager.allPlayerScripts.Length];
@@ -150,7 +150,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void SendNewPlayerValuesClientRpcPostfix(PlayerControllerB __instance)
         {
-            if (!Settings.AntiKick) return;
+            if (!Hack.AntiKick.IsEnabled()) return;
             if (LethalMenuMod.LocalPlayer == null) return;
 
             var localPlayer = LethalMenuMod.LocalPlayer;

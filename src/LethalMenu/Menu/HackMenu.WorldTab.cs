@@ -56,7 +56,7 @@ namespace LethalMenu.Menu
 
             DrawSection("Ship", () =>
             {
-                Settings.OpenShipDoorSpace = DrawToggle("Ship Door In Space", Settings.OpenShipDoorSpace, "Open ship door in space");
+                DrawHackToggle(Hack.ShipDoorInSpace, "Ship Door In Space", "Open ship door in space");
             });
 
             DrawSection("Fusebox Control", () =>
@@ -104,13 +104,13 @@ namespace LethalMenu.Menu
 
             DrawSection("Environment", () =>
             {
-                Settings.BridgeNeverFalls = DrawToggle("Bridge Never Falls", Settings.BridgeNeverFalls, "Bridges don't collapse");
-                Settings.OpenDropShipLand = DrawToggle("Auto-Open Dropship", Settings.OpenDropShipLand, "Dropship opens on landing");
-                Settings.Shoplifter = DrawToggle("Shoplifter", Settings.Shoplifter, "Terminal items cost $0");
-                Settings.GrabInLobby = DrawToggle("Grab In Lobby", Settings.GrabInLobby, "Grab items before round");
-                Settings.JebAttackPrevention = DrawToggle("Anti-Jeb", Settings.JebAttackPrevention, "Company desk won't attack");
-                Settings.BuildAnywhere = DrawToggle("Build Anywhere", Settings.BuildAnywhere, "Place furniture outside ship");
-                Settings.InstantInteract = DrawToggle("Instant Interact", Settings.InstantInteract, "No hold-to-interact delay");
+                DrawHackToggle(Hack.BridgeNeverFalls, "Bridge Never Falls", "Bridges don't collapse");
+                DrawHackToggle(Hack.AutoOpenDropship, "Auto-Open Dropship", "Dropship opens on landing");
+                DrawHackToggle(Hack.Shoplifter, "Shoplifter", "Terminal items cost $0");
+                DrawHackToggle(Hack.GrabInLobby, "Grab In Lobby", "Grab items before round");
+                DrawHackToggle(Hack.AntiJeb, "Anti-Jeb", "Company desk won't attack");
+                DrawHackToggle(Hack.BuildAnywhere, "Build Anywhere", "Place furniture outside ship");
+                DrawHackToggle(Hack.InstantInteract, "Instant Interact", "No hold-to-interact delay");
             });
             // Hazard controls moved to Network tab -> Hazard Control section
         }

@@ -57,8 +57,8 @@ namespace LethalMenu.Menu
 
             DrawSection("Networking Options", () =>
             {
-                Settings.AntiKick = DrawToggle("Anti-Kick", Settings.AntiKick, "Rejoin lobbies after being kicked");
-                Settings.ShowKickedLobbies = DrawToggle("Show Kicked Hosts", Settings.ShowKickedLobbies, "Mark lobbies from hosts who kicked you");
+                DrawHackToggle(Hack.AntiKick, "Anti-Kick", "Rejoin lobbies after being kicked");
+                DrawHackToggle(Hack.ShowKickedLobbies, "Show Kicked Hosts", "Mark lobbies from hosts who kicked you");
 
                 if (Settings.KickedHostIds.Count > 0)
                 {
@@ -70,10 +70,10 @@ namespace LethalMenu.Menu
                     }
                 }
 
-                Settings.HearEveryone = DrawToggle("Hear Everyone", Settings.HearEveryone, "Hear all voice chat");
-                Settings.Invisibility = DrawToggle("Invisibility", Settings.Invisibility, "Other players can't see you");
-                Settings.DeathNotifications = DrawToggle("Death Notifications", Settings.DeathNotifications, "See when players die");
-                Settings.HearDeadPeople = DrawToggle("Hear Dead People", Settings.HearDeadPeople, "Hear dead players' voice chat");
+                DrawHackToggle(Hack.HearEveryone, "Hear Everyone", "Hear all voice chat");
+                DrawHackToggle(Hack.Invisibility, "Invisibility", "Other players can't see you");
+                DrawHackToggle(Hack.DeathNotifications, "Death Notifications", "See when players die");
+                DrawHackToggle(Hack.HearDeadPeople, "Hear Dead People", "Hear dead players' voice chat");
             });
 
             DrawSection("Credits Exploit", () =>
@@ -754,27 +754,27 @@ namespace LethalMenu.Menu
                 GUILayout.Label("--- Continuous Spam Toggles ---", _labelStyle);
 
                 GUILayout.BeginHorizontal();
-                Settings.HornSpam = DrawToggle("Horn Spam", Settings.HornSpam);
-                Settings.DoorSpam = DrawToggle("Door Spam", Settings.DoorSpam);
+                DrawHackToggle(Hack.HornSpam, "Horn Spam", null);
+                DrawHackToggle(Hack.DoorSpam, "Door Spam", null);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                Settings.SignalSpam = DrawToggle("Signal Spam", Settings.SignalSpam);
-                Settings.RPCLagSpam = DrawToggle("RPC Lag", Settings.RPCLagSpam);
+                DrawHackToggle(Hack.SignalSpam, "Signal Spam", null);
+                DrawHackToggle(Hack.RPCLagSpam, "RPC Lag", null);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                Settings.TerminalSoundSpam = DrawToggle("Terminal Spam", Settings.TerminalSoundSpam);
-                Settings.TerminalEarrapeSpam = DrawToggle("EARRAPE", Settings.TerminalEarrapeSpam);
+                DrawHackToggle(Hack.TerminalSoundSpam, "Terminal Spam", null);
+                DrawHackToggle(Hack.EarrapeSpam, "EARRAPE", null);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                Settings.ChatSpamLoop = DrawToggle("Chat Spam", Settings.ChatSpamLoop);
-                Settings.CarHornSpam = DrawToggle("Car Horns", Settings.CarHornSpam);
+                DrawHackToggle(Hack.ChatSpam, "Chat Spam", null);
+                DrawHackToggle(Hack.CarHornSpam, "Car Horns", null);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                Settings.DeskDoorSpam = DrawToggle("Desk Door", Settings.DeskDoorSpam);
+                DrawHackToggle(Hack.DeskDoorSpam, "Desk Door", null);
                 if (GUILayout.Button("Flicker Lights", _buttonStyle))
                 {
                     Cheats.NetworkCheats.FlickerShipLights();
@@ -952,7 +952,7 @@ namespace LethalMenu.Menu
             DrawSection("Vehicle Trolling", () =>
             {
                 GUILayout.BeginHorizontal();
-                Settings.CarHornSpam = DrawToggle("Car Horn Spam", Settings.CarHornSpam);
+                DrawHackToggle(Hack.CarHornSpam, "Car Horn Spam", null);
                 if (GUILayout.Button("Explode Vehicles", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ExplodeAllVehicles();

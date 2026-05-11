@@ -11,6 +11,7 @@ namespace LethalMenu.Cheats
     public class ThirdPersonCheat : CheatBase
     {
         public override string Name => "Third Person";
+        public override Hack HackType => Hack.ThirdPerson;
 
         // Camera instance
         private static Camera? _thirdPersonCamera;
@@ -33,7 +34,7 @@ namespace LethalMenu.Cheats
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.vKey.wasPressedThisFrame)
             {
-                Settings.ThirdPerson = !Settings.ThirdPerson;
+                Hack.ThirdPerson.Toggle();
                 Toggle();
             }
 
@@ -79,7 +80,7 @@ namespace LethalMenu.Cheats
             Initialize();
             if (_thirdPersonCamera == null) return;
 
-            _isActive = Settings.ThirdPerson;
+            _isActive = Hack.ThirdPerson.IsEnabled();
 
             // Find UI elements
             var panelObj = GameObject.Find("Systems/UI/Canvas/Panel/");
@@ -125,7 +126,7 @@ namespace LethalMenu.Cheats
                 }
                 
                 // Restore visor based on NoVisor setting
-                if (visor != null) visor.SetActive(!Settings.NoVisor);
+                if (visor != null) visor.SetActive(!Hack.NoVisor.IsEnabled());
 
                 // Restore first-person arms (unless enemy controlling)
                 if (!EnemyControlCheat.IsControlling)
@@ -177,7 +178,7 @@ namespace LethalMenu.Cheats
             _previousStateBeforeMenu = _isActive;
             if (_isActive)
             {
-                Settings.ThirdPerson = false;
+                Hack.ThirdPerson.SetEnabled(false);
                 Toggle();
             }
         }
@@ -189,7 +190,7 @@ namespace LethalMenu.Cheats
         {
             if (_previousStateBeforeMenu)
             {
-                Settings.ThirdPerson = true;
+                Hack.ThirdPerson.SetEnabled(true);
                 Toggle();
             }
         }
@@ -201,7 +202,7 @@ namespace LethalMenu.Cheats
         {
             if (_isActive)
             {
-                Settings.ThirdPerson = false;
+                Hack.ThirdPerson.SetEnabled(false);
                 Toggle();
             }
         }
@@ -213,7 +214,7 @@ namespace LethalMenu.Cheats
         {
             if (_isActive)
             {
-                Settings.ThirdPerson = false;
+                Hack.ThirdPerson.SetEnabled(false);
                 Toggle();
             }
         }

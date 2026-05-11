@@ -10,15 +10,13 @@ namespace LethalMenu.Menu
         {
             DrawSection("Player Cheats", () =>
             {
-                Settings.GodMode = DrawToggle("God Mode", Settings.GodMode, "Prevents all damage");
-                // Demi-God is now per-player in the Players tab
-                Settings.InfiniteStamina = DrawToggle("Infinite Stamina", Settings.InfiniteStamina, "Never run out of sprint");
-                Settings.NoFallDamage = DrawToggle("No Fall Damage", Settings.NoFallDamage, "Take no damage from falls");
-                Settings.NoWeight = DrawToggle("No Weight", Settings.NoWeight, "Carry unlimited items without slowdown");
+                DrawHackToggle(Hack.GodMode, "God Mode", "Prevents all damage");
+                DrawHackToggle(Hack.InfiniteStamina, "Infinite Stamina", "Never run out of sprint");
+                DrawHackToggle(Hack.NoFallDamage, "No Fall Damage", "Take no damage from falls");
+                DrawHackToggle(Hack.NoWeight, "No Weight", "Carry unlimited items without slowdown");
 
-                // Extra item slots
-                Settings.ExtraItemSlots = DrawToggle("Extra Item Slots", Settings.ExtraItemSlots, "Expand inventory (requires restart)");
-                if (Settings.ExtraItemSlots)
+                DrawHackToggle(Hack.ExtraItemSlots, "Extra Item Slots", "Expand inventory (requires restart)");
+                if (Hack.ExtraItemSlots.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"  Slots: {Settings.ItemSlotCount}", _labelStyle, GUILayout.Width(80));
@@ -27,11 +25,10 @@ namespace LethalMenu.Menu
                     GUILayout.Label("  Changes apply on game restart", _labelStyle);
                 }
 
-                Settings.UnlimitedOxygen = DrawToggle("Unlimited Oxygen", Settings.UnlimitedOxygen, "No drowning");
-                Settings.AntiFlash = DrawToggle("Anti-Flash", Settings.AntiFlash, "Block stun grenade effects");
-                Settings.NoQuicksand = DrawToggle("No Quicksand", Settings.NoQuicksand, "No sinking/slowing");
+                DrawHackToggle(Hack.UnlimitedOxygen, "Unlimited Oxygen", "No drowning");
+                DrawHackToggle(Hack.AntiFlash, "Anti-Flash", "Block stun grenade effects");
+                DrawHackToggle(Hack.NoQuicksand, "No Quicksand", "No sinking/slowing");
 
-                // Self-Revive button (only show when dead)
                 if (LethalMenuMod.LocalPlayer?.isPlayerDead == true)
                 {
                     GUILayout.Space(5);
@@ -42,7 +39,6 @@ namespace LethalMenu.Menu
                     GUILayout.Label("  Respawn at ship (client-side)", _labelStyle);
                 }
 
-                // Fake Death button (only show when alive)
                 if (LethalMenuMod.LocalPlayer?.isPlayerDead == false)
                 {
                     GUILayout.Space(5);
@@ -68,10 +64,10 @@ namespace LethalMenu.Menu
 
             DrawSection("Movement", () =>
             {
-                Settings.NoClip = DrawToggle("No Clip", Settings.NoClip, "Fly through walls (WASD + Space/Ctrl)");
-                Settings.SpeedHack = DrawToggle("Speed Hack", Settings.SpeedHack, "Move faster");
+                DrawHackToggle(Hack.NoClip, "No Clip", "Fly through walls (WASD + Space/Ctrl)");
+                DrawHackToggle(Hack.SpeedHack, "Speed Hack", "Move faster");
 
-                if (Settings.SpeedHack)
+                if (Hack.SpeedHack.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"Speed: {Settings.SpeedMultiplier:F1}x", _labelStyle, GUILayout.Width(80));
@@ -79,9 +75,9 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
                 }
 
-                Settings.JumpHack = DrawToggle("Jump Hack", Settings.JumpHack, "Jump higher");
+                DrawHackToggle(Hack.JumpHack, "Jump Hack", "Jump higher");
 
-                if (Settings.JumpHack)
+                if (Hack.JumpHack.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"Jump: {Settings.JumpMultiplier:F1}x", _labelStyle, GUILayout.Width(80));
@@ -89,21 +85,21 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
                 }
 
-                Settings.SuperSpeed = DrawToggle("Super Speed", Settings.SuperSpeed, "Move much faster");
-                Settings.SuperJump = DrawToggle("Super Jump", Settings.SuperJump, "Jump much higher");
-                Settings.UnlimitedJump = DrawToggle("Unlimited Jump", Settings.UnlimitedJump, "Jump in mid-air");
-                Settings.FastClimb = DrawToggle("Fast Climb", Settings.FastClimb, "Climb ladders faster");
-                Settings.TauntSlide = DrawToggle("Taunt Slide", Settings.TauntSlide, "Emote while moving");
+                DrawHackToggle(Hack.SuperSpeed, "Super Speed", "Move much faster");
+                DrawHackToggle(Hack.SuperJump, "Super Jump", "Jump much higher");
+                DrawHackToggle(Hack.UnlimitedJump, "Unlimited Jump", "Jump in mid-air");
+                DrawHackToggle(Hack.FastClimb, "Fast Climb", "Climb ladders faster");
+                DrawHackToggle(Hack.TauntSlide, "Taunt Slide", "Emote while moving");
             });
 
             DrawSection("Vision", () =>
             {
-                Settings.NightVision = DrawToggle("Night Vision", Settings.NightVision, "See in the dark");
+                DrawHackToggle(Hack.NightVision, "Night Vision", "See in the dark");
             });
 
             DrawSection("Teleport", () =>
             {
-                Settings.TeleportWithItems = DrawToggle("Teleport With Items", Settings.TeleportWithItems, "Keep items when teleporting");
+                DrawHackToggle(Hack.TeleportWithItems, "Teleport With Items", "Keep items when teleporting");
 
                 if (GUILayout.Button("Teleport to Ship", _buttonStyle, GUILayout.Height(28)))
                 {
@@ -122,7 +118,6 @@ namespace LethalMenu.Menu
             });
         }
 
-        // Actions
         private void TeleportToShip()
         {
             if (LethalMenuMod.LocalPlayer == null || LethalMenuMod.GameInstance == null) return;
@@ -146,7 +141,6 @@ namespace LethalMenu.Menu
             {
                 if (entrance == null) continue;
 
-                // entranceId 0 = main entrance, 1+ = fire exits
                 if (mainEntrance && entrance.entranceId == 0)
                 {
                     target = entrance;

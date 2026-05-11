@@ -14,7 +14,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void CheckForPlayersPostfix(ref PlayerControllerB __result)
         {
-            if (!Settings.Untargetable) return;
+            if (!Hack.Untargetable.IsEnabled()) return;
             if (__result == LethalMenuMod.LocalPlayer)
             {
                 __result = null!;
@@ -26,7 +26,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void UpdatePostfix(Turret __instance)
         {
-            if (!Settings.Untargetable) return;
+            if (!Hack.Untargetable.IsEnabled()) return;
             if (__instance.targetPlayerWithRotation == LethalMenuMod.LocalPlayer)
             {
                 __instance.targetPlayerWithRotation = null;
@@ -45,7 +45,7 @@ namespace LethalMenu.Patches
         {
             LethalMenuMod.HUD = __instance;
 
-            if (Settings.AntiFlash)
+            if (Hack.AntiFlash.IsEnabled())
             {
                 __instance.flashFilter = 0f;
             }
@@ -61,7 +61,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool SetEarsRingingPrefix()
         {
-            return !Settings.AntiFlash;
+            return !Hack.AntiFlash.IsEnabled();
         }
     }
 
@@ -73,7 +73,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool HoldInteractionFillPrefix(ref bool __result)
         {
-            if (Settings.InstantInteract)
+            if (Hack.InstantInteract.IsEnabled())
             {
                 __result = true;
                 return false;
@@ -89,7 +89,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool Prefix()
         {
-            return !Settings.NoCameraShake;
+            return !Hack.NoCameraShake.IsEnabled();
         }
     }
 

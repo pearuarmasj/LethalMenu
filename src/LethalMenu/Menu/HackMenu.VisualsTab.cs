@@ -11,29 +11,29 @@ namespace LethalMenu.Menu
         {
             DrawSection("ESP", () =>
             {
-                Settings.ESP = DrawToggle("Enable ESP", Settings.ESP, "Show objects through walls");
+                DrawHackToggle(Hack.EnableESP, "Enable ESP", "Show objects through walls");
 
-                if (Settings.ESP)
+                if (Hack.EnableESP.IsEnabled())
                 {
                     GUILayout.Space(5);
-                    Settings.PlayerESP = DrawToggle("  Player ESP", Settings.PlayerESP);
-                    if (Settings.PlayerESP)
+                    DrawHackToggle(Hack.PlayerESP, "  Player ESP", null);
+                    if (Hack.PlayerESP.IsEnabled())
                     {
-                        Settings.PlayerHealthBars = DrawToggle("    Health Bars", Settings.PlayerHealthBars, "Show HP bars above players");
+                        DrawHackToggle(Hack.PlayerHealthBars, "    Health Bars", "Show HP bars above players");
                     }
-                    Settings.EnemyESP = DrawToggle("  Enemy ESP", Settings.EnemyESP);
-                    Settings.ItemESP = DrawToggle("  Item ESP", Settings.ItemESP);
-                    Settings.DoorESP = DrawToggle("  Door ESP", Settings.DoorESP);
-                    Settings.MineESP = DrawToggle("  Mine ESP", Settings.MineESP);
-                    Settings.TurretESP = DrawToggle("  Turret ESP", Settings.TurretESP);
-                    Settings.FuseboxESP = DrawToggle("  Fusebox ESP", Settings.FuseboxESP);
+                    DrawHackToggle(Hack.EnemyESP, "  Enemy ESP", null);
+                    DrawHackToggle(Hack.ItemESP, "  Item ESP", null);
+                    DrawHackToggle(Hack.DoorESP, "  Door ESP", null);
+                    DrawHackToggle(Hack.MineESP, "  Mine ESP", null);
+                    DrawHackToggle(Hack.TurretESP, "  Turret ESP", null);
+                    DrawHackToggle(Hack.FuseboxESP, "  Fusebox ESP", null);
                 }
             });
 
             DrawSection("Camera", () =>
             {
-                Settings.FreeCam = DrawToggle("FreeCam", Settings.FreeCam, "WASD+Mouse to fly around");
-                if (Settings.FreeCam)
+                DrawHackToggle(Hack.FreeCam, "FreeCam", "WASD+Mouse to fly around");
+                if (Hack.FreeCam.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"  Speed: {Settings.FreeCamSpeed:F0}", _labelStyle, GUILayout.Width(80));
@@ -48,14 +48,13 @@ namespace LethalMenu.Menu
                     GUILayout.Label("  Or hold Shift when disabling FreeCam", _labelStyle);
                 }
 
-                // Third-person camera
-                bool prevThirdPerson = Settings.ThirdPerson;
-                Settings.ThirdPerson = DrawToggle("Third Person", Settings.ThirdPerson, "Press V to toggle (view from behind)");
-                if (prevThirdPerson != Settings.ThirdPerson)
+                bool prevThirdPerson = Hack.ThirdPerson.IsEnabled();
+                DrawHackToggle(Hack.ThirdPerson, "Third Person", "Press V to toggle (view from behind)");
+                if (prevThirdPerson != Hack.ThirdPerson.IsEnabled())
                 {
                     LethalMenu.Cheats.ThirdPersonCheat.Toggle();
                 }
-                if (Settings.ThirdPerson)
+                if (Hack.ThirdPerson.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"  Distance: {Settings.ThirdPersonDistance:F1}", _labelStyle, GUILayout.Width(100));
@@ -63,9 +62,8 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
                 }
 
-                // Spectate player
-                Settings.SpectatePlayer = DrawToggle("Spectate Player", Settings.SpectatePlayer, "Watch another player");
-                if (Settings.SpectatePlayer)
+                DrawHackToggle(Hack.SpectatePlayer, "Spectate Player", "Watch another player");
+                if (Hack.SpectatePlayer.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
@@ -94,55 +92,52 @@ namespace LethalMenu.Menu
 
             DrawSection("HUD/Visual", () =>
             {
-                Settings.AlwaysShowClock = DrawToggle("Always Show Clock", Settings.AlwaysShowClock, "Clock always visible");
-                Settings.Crosshair = DrawToggle("Crosshair", Settings.Crosshair, "Show crosshair on screen");
-                Settings.HPDisplay = DrawToggle("HP Display", Settings.HPDisplay, "Show health on screen");
+                DrawHackToggle(Hack.AlwaysShowClock, "Always Show Clock", "Clock always visible");
+                DrawHackToggle(Hack.Crosshair, "Crosshair", "Show crosshair on screen");
+                DrawHackToggle(Hack.HPDisplay, "HP Display", "Show health on screen");
 
-                // Info Display - comprehensive game info HUD
-                Settings.InfoDisplay = DrawToggle("Info Display", Settings.InfoDisplay, "Show game info panel (top-right)");
-                if (Settings.InfoDisplay)
+                DrawHackToggle(Hack.InfoDisplay, "Info Display", "Show game info panel (top-right)");
+                if (Hack.InfoDisplay.IsEnabled())
                 {
                     GUILayout.Label("  Display Options:", _labelStyle);
                     GUILayout.BeginHorizontal();
-                    Settings.InfoDisplayCredits = GUILayout.Toggle(Settings.InfoDisplayCredits, "Credits", _buttonStyle, GUILayout.Width(70));
-                    Settings.InfoDisplayQuota = GUILayout.Toggle(Settings.InfoDisplayQuota, "Quota", _buttonStyle, GUILayout.Width(60));
-                    Settings.InfoDisplayDeadline = GUILayout.Toggle(Settings.InfoDisplayDeadline, "Deadline", _buttonStyle, GUILayout.Width(70));
+                    ToggleHackButton(Hack.InfoDisplayCredits, "Credits", 70);
+                    ToggleHackButton(Hack.InfoDisplayQuota, "Quota", 60);
+                    ToggleHackButton(Hack.InfoDisplayDeadline, "Deadline", 70);
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    Settings.InfoDisplayEnemies = GUILayout.Toggle(Settings.InfoDisplayEnemies, "Enemies", _buttonStyle, GUILayout.Width(70));
-                    Settings.InfoDisplayBodies = GUILayout.Toggle(Settings.InfoDisplayBodies, "Bodies", _buttonStyle, GUILayout.Width(60));
-                    Settings.InfoDisplayMapLoot = GUILayout.Toggle(Settings.InfoDisplayMapLoot, "Map Loot", _buttonStyle, GUILayout.Width(75));
+                    ToggleHackButton(Hack.InfoDisplayEnemies, "Enemies", 70);
+                    ToggleHackButton(Hack.InfoDisplayBodies, "Bodies", 60);
+                    ToggleHackButton(Hack.InfoDisplayMapLoot, "Map Loot", 75);
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    Settings.InfoDisplayShipLoot = GUILayout.Toggle(Settings.InfoDisplayShipLoot, "Ship Loot", _buttonStyle, GUILayout.Width(75));
-                    Settings.InfoDisplayMoon = GUILayout.Toggle(Settings.InfoDisplayMoon, "Moon", _buttonStyle, GUILayout.Width(55));
-                    Settings.InfoDisplayTime = GUILayout.Toggle(Settings.InfoDisplayTime, "Time", _buttonStyle, GUILayout.Width(50));
+                    ToggleHackButton(Hack.InfoDisplayShipLoot, "Ship Loot", 75);
+                    ToggleHackButton(Hack.InfoDisplayMoon, "Moon", 55);
+                    ToggleHackButton(Hack.InfoDisplayTime, "Time", 50);
                     GUILayout.EndHorizontal();
                 }
 
-                Settings.NoVisor = DrawToggle("No Visor", Settings.NoVisor, "Hide helmet visor");
-                Settings.NoCameraShake = DrawToggle("No Camera Shake", Settings.NoCameraShake, "Disable screen shake");
-                Settings.NoFieldOfDepth = DrawToggle("No Depth of Field", Settings.NoFieldOfDepth, "Disable blur effects");
+                DrawHackToggle(Hack.NoVisor, "No Visor", "Hide helmet visor");
+                DrawHackToggle(Hack.NoCameraShake, "No Camera Shake", "Disable screen shake");
+                DrawHackToggle(Hack.NoDepthOfField, "No Depth of Field", "Disable blur effects");
 
-                // Full Render Resolution toggle - applies via Harmony patch
-                bool prevFullRes = Settings.FullRenderResolution;
-                Settings.FullRenderResolution = DrawToggle("Full Render Resolution", Settings.FullRenderResolution, "Render at native screen resolution");
-                if (prevFullRes != Settings.FullRenderResolution)
+                bool prevFullRes = Hack.FullRenderResolution.IsEnabled();
+                DrawHackToggle(Hack.FullRenderResolution, "Full Render Resolution", "Render at native screen resolution");
+                if (prevFullRes != Hack.FullRenderResolution.IsEnabled())
                 {
-                    // Apply immediately when toggled
                     FullRenderResolutionPatch.ApplyResolution(LethalMenuMod.LocalPlayer);
                 }
 
-                Settings.FOV = DrawToggle("Custom FOV", Settings.FOV, "Change field of view");
-                if (Settings.FOV)
+                DrawHackToggle(Hack.CustomFOV, "Custom FOV", "Change field of view");
+                if (Hack.CustomFOV.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"  FOV: {Settings.FOVValue:F0}", _labelStyle, GUILayout.Width(80));
                     Settings.FOVValue = GUILayout.HorizontalSlider(Settings.FOVValue, 60f, 120f);
                     GUILayout.EndHorizontal();
                 }
-                Settings.Breadcrumbs = DrawToggle("Breadcrumbs", Settings.Breadcrumbs, "Mark your path");
-                if (Settings.Breadcrumbs)
+                DrawHackToggle(Hack.Breadcrumbs, "Breadcrumbs", "Mark your path");
+                if (Hack.Breadcrumbs.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"  Interval: {Settings.BreadcrumbInterval:F1}s", _labelStyle, GUILayout.Width(100));
@@ -153,8 +148,15 @@ namespace LethalMenu.Menu
 
             DrawSection("Environment", () =>
             {
-                Settings.NoFog = DrawToggle("No Fog", Settings.NoFog, "Remove all fog effects");
+                DrawHackToggle(Hack.NoFog, "No Fog", "Remove all fog effects");
             });
+        }
+
+        private void ToggleHackButton(Hack hack, string label, int width)
+        {
+            bool current = hack.IsEnabled();
+            bool newVal = GUILayout.Toggle(current, label, _buttonStyle, GUILayout.Width(width));
+            if (newVal != current) hack.SetEnabled(newVal);
         }
 
         private void CycleNextSpectatePlayer()

@@ -13,7 +13,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool DamagePlayerPrefix(PlayerControllerB __instance)
         {
-            if (Settings.GodMode && __instance == LethalMenuMod.LocalPlayer)
+            if (Hack.GodMode.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
             {
                 return false;
             }
@@ -25,7 +25,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool KillPlayerPrefix(PlayerControllerB __instance)
         {
-            if (Settings.GodMode && __instance == LethalMenuMod.LocalPlayer)
+            if (Hack.GodMode.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
             {
                 return false;
             }
@@ -37,7 +37,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool PlayerHitGroundPrefix(PlayerControllerB __instance)
         {
-            if (Settings.NoFallDamage && __instance == LethalMenuMod.LocalPlayer)
+            if (Hack.NoFallDamage.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
             {
                 __instance.fallValue = 0f;
                 __instance.fallValueUncapped = 0f;
@@ -52,28 +52,28 @@ namespace LethalMenu.Patches
         {
             if (__instance != LethalMenuMod.LocalPlayer) return;
 
-            if (Settings.InfiniteStamina)
+            if (Hack.InfiniteStamina.IsEnabled())
             {
                 __instance.sprintMeter = 1f;
             }
 
-            if (Settings.SuperSpeed)
+            if (Hack.SuperSpeed.IsEnabled())
             {
                 __instance.movementSpeed = 10f;
             }
 
-            if (Settings.FastClimb)
+            if (Hack.FastClimb.IsEnabled())
             {
                 __instance.climbSpeed = 8f;
             }
 
-            if (Settings.UnlimitedOxygen)
+            if (Hack.UnlimitedOxygen.IsEnabled())
             {
                 __instance.drunkness = 0f;
                 __instance.drunknessInertia = 0f;
             }
 
-            if (Settings.Reach)
+            if (Hack.Reach.IsEnabled())
             {
                 __instance.grabDistance = 30f;
             }
@@ -86,7 +86,7 @@ namespace LethalMenu.Patches
         {
             if (__instance != LethalMenuMod.LocalPlayer) return;
 
-            if (Settings.OneHanded)
+            if (Hack.OneHanded.IsEnabled())
             {
                 __instance.twoHanded = false;
             }
@@ -97,7 +97,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void CheckEmotePostfix(ref bool __result, PlayerControllerB __instance)
         {
-            if (Settings.TauntSlide && __instance == LethalMenuMod.LocalPlayer)
+            if (Hack.TauntSlide.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
             {
                 if (__instance.isPlayerControlled && !__instance.isPlayerDead && !__instance.inSpecialInteractAnimation)
                 {
@@ -111,7 +111,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void GrabObjectPrefix(PlayerControllerB __instance)
         {
-            if (Settings.GrabInLobby && __instance == LethalMenuMod.LocalPlayer)
+            if (Hack.GrabInLobby.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
             {
                 if (StartOfRound.Instance != null)
                 {
@@ -125,7 +125,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool JumpPrefix(PlayerControllerB __instance)
         {
-            if (!Settings.UnlimitedJump) return true;
+            if (!Hack.UnlimitedJump.IsEnabled()) return true;
             if (__instance != LethalMenuMod.LocalPlayer) return true;
             if (!__instance.isPlayerControlled) return false;
             if (__instance.inSpecialInteractAnimation) return false;
@@ -161,7 +161,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void Postfix(ref bool __result, PlayerControllerB __instance)
         {
-            if (Settings.NoQuicksand && __instance == LethalMenuMod.LocalPlayer)
+            if (Hack.NoQuicksand.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
             {
                 __result = false;
             }
@@ -176,7 +176,7 @@ namespace LethalMenu.Patches
         public static void Postfix(PlayerControllerB __instance)
         {
             if (LethalMenuMod.LocalPlayer == null || __instance != LethalMenuMod.LocalPlayer) return;
-            __instance.jumpForce = Settings.SuperJump ? Settings.SuperJumpForce : 13f;
+            __instance.jumpForce = Hack.SuperJump.IsEnabled() ? Settings.SuperJumpForce : 13f;
         }
     }
 
@@ -191,7 +191,7 @@ namespace LethalMenu.Patches
             if (LethalMenuMod.LocalPlayer == null || __instance.playerClientId != LethalMenuMod.LocalPlayer.playerClientId) return;
             
             var heldObject = __instance.currentlyHeldObjectServer;
-            if (Settings.StrongHands && heldObject != null)
+            if (Hack.StrongHands.IsEnabled() && heldObject != null)
             {
                 __instance.twoHanded = false;
             }
@@ -205,7 +205,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool Prefix()
         {
-            return !Settings.TeleportWithItems;
+            return !Hack.TeleportWithItems.IsEnabled();
         }
     }
 
@@ -219,22 +219,22 @@ namespace LethalMenu.Patches
         {
             if (__instance != LethalMenuMod.LocalPlayer) return;
 
-            if (Settings.LootThroughWalls || Settings.InteractThroughWalls)
+            if (Hack.LootThroughWalls.IsEnabled() || Hack.InteractThroughWalls.IsEnabled())
             {
                 __instance.grabDistance = 10000f;
                 int mask = 0;
-                if (Settings.LootThroughWalls)
+                if (Hack.LootThroughWalls.IsEnabled())
                     mask = LayerMask.GetMask("Props");
-                if (Settings.InteractThroughWalls)
+                if (Hack.InteractThroughWalls.IsEnabled())
                     mask = LayerMask.GetMask("InteractableObject");
-                if (Settings.LootThroughWalls && Settings.InteractThroughWalls)
+                if (Hack.LootThroughWalls.IsEnabled() && Hack.InteractThroughWalls.IsEnabled())
                     mask = LayerMask.GetMask("Props", "InteractableObject");
 
                 var field = __instance.GetType().GetField("interactableObjectsMask",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 field?.SetValue(__instance, mask);
             }
-            else if (!Settings.Reach)
+            else if (!Hack.Reach.IsEnabled())
             {
                 var field = __instance.GetType().GetField("interactableObjectsMask",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

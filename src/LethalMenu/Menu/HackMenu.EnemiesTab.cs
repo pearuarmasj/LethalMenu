@@ -10,14 +10,13 @@ namespace LethalMenu.Menu
         {
             DrawSection("Enemy Protection", () =>
             {
-                Settings.Untargetable = DrawToggle("Untargetable", Settings.Untargetable, "Enemies ignore you");
-                Settings.GhostMode = DrawToggle("Ghost Mode", Settings.GhostMode, "Enemies can't target you (EnemyAI)");
-                Settings.AntiGhostGirl = DrawToggle("Anti-Ghost Girl", Settings.AntiGhostGirl, "Ghost Girl won't haunt you");
+                DrawHackToggle(Hack.Untargetable, "Untargetable", "Enemies ignore you");
+                DrawHackToggle(Hack.GhostMode, "Ghost Mode", "Enemies can't target you (EnemyAI)");
+                DrawHackToggle(Hack.AntiGhostGirl, "Anti-Ghost Girl", "Ghost Girl won't haunt you");
             });
 
             DrawSection("Enemy Control", () =>
             {
-                // Show possession status
                 bool isPossessing = Cheats.EnemyControlCheat.IsControlling;
                 var controlledEnemy = Cheats.EnemyControlCheat.GetControlledEnemy();
 
@@ -46,19 +45,18 @@ namespace LethalMenu.Menu
                 }
                 else
                 {
-                    Settings.EnemyControl = DrawToggle("Enemy Control", Settings.EnemyControl, "RMB to possess enemy you're looking at");
-                    if (Settings.EnemyControl)
+                    DrawHackToggle(Hack.EnemyControl, "Enemy Control", "RMB to possess enemy you're looking at");
+                    if (Hack.EnemyControl.IsEnabled())
                     {
                         GUILayout.Label("  Close menu, look at enemy, RMB to possess", _labelStyle);
                     }
                 }
 
                 GUILayout.Space(5);
-                Settings.KillClick = DrawToggle("Kill Click", Settings.KillClick, "LMB kills enemies (close menu first)");
-                Settings.StunClick = DrawToggle("Stun Click", Settings.StunClick, "MMB stuns enemies/turrets/mines");
+                DrawHackToggle(Hack.KillClick, "Kill Click", "LMB kills enemies (close menu first)");
+                DrawHackToggle(Hack.StunClick, "Stun Click", "MMB stuns enemies/turrets/mines");
 
-                // Show controls when enabled
-                if (Settings.EnemyControl && !isPossessing)
+                if (Hack.EnemyControl.IsEnabled() && !isPossessing)
                 {
                     GUILayout.Space(5);
                     GUILayout.Label("Controls while possessing:", _labelStyle);
@@ -105,7 +103,6 @@ namespace LethalMenu.Menu
 
             DrawSection("Enemy List", () =>
             {
-                // List individual enemies
                 foreach (var enemy in LethalMenuMod.Enemies)
                 {
                     if (enemy == null || enemy.isEnemyDead) continue;

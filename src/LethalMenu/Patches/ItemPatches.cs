@@ -13,7 +13,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void UpdatePostfix(GrabbableObject __instance)
         {
-            if (!Settings.InfiniteBattery) return;
+            if (!Hack.InfiniteBattery.IsEnabled()) return;
 
             if (__instance.playerHeldBy == LethalMenuMod.LocalPlayer)
             {
@@ -33,7 +33,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void HitShovelPrefix(Shovel __instance)
         {
-            if (Settings.SuperShovel && __instance.playerHeldBy == LethalMenuMod.LocalPlayer)
+            if (Hack.SuperShovel.IsEnabled() && __instance.playerHeldBy == LethalMenuMod.LocalPlayer)
             {
                 __instance.shovelHitForce = 100;
             }
@@ -48,7 +48,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void ShootGunPostfix(ShotgunItem __instance)
         {
-            if (Settings.UnlimitedAmmo && __instance.playerHeldBy == LethalMenuMod.LocalPlayer)
+            if (Hack.UnlimitedAmmo.IsEnabled() && __instance.playerHeldBy == LethalMenuMod.LocalPlayer)
             {
                 __instance.shellsLoaded = 2;
             }
@@ -62,7 +62,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void Prefix(KnifeItem __instance)
         {
-            __instance.knifeHitForce = Settings.SuperKnife ? 1000 : 1;
+            __instance.knifeHitForce = Hack.SuperKnife.IsEnabled() ? 1000 : 1;
         }
     }
 
@@ -74,7 +74,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void ShiftBendPostfix(ref float ___bendMultiplier)
         {
-            if (Settings.UnlimitedZapGun)
+            if (Hack.UnlimitedZapGun.IsEnabled())
             {
                 ___bendMultiplier = 0f;
             }
@@ -84,7 +84,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void CooldownPostfix(GrabbableObject __instance)
         {
-            if (Settings.UnlimitedZapGun && __instance is PatcherTool)
+            if (Hack.UnlimitedZapGun.IsEnabled() && __instance is PatcherTool)
             {
                 __instance.currentUseCooldown = 0f;
             }
@@ -98,7 +98,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void Prefix(PlayerControllerB __instance)
         {
-            if (!Settings.GrabNutcrackerShotgun) return;
+            if (!Hack.GrabNutcrackerShotgun.IsEnabled()) return;
             
             var field = __instance.GetType().GetField("currentlyGrabbingObject", 
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -136,7 +136,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool SetExplodePrefix(StunGrenadeItem __instance)
         {
-            if (Settings.EggsNeverExplode && !Settings.EggsAlwaysExplode)
+            if (Hack.EggsNeverExplode.IsEnabled() && !Hack.EggsAlwaysExplode.IsEnabled())
             {
                 if (LethalMenuMod.LocalPlayer?.currentlyHeldObjectServer?.name == "EasterEgg(Clone)")
                 {
@@ -158,7 +158,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void BeginGrabPrefix(PlayerControllerB __instance)
         {
-            if (!Settings.LootBeforeGameStarts) return;
+            if (!Hack.LootBeforeGameStarts.IsEnabled()) return;
 
             var field = __instance.GetType().GetField("currentlyGrabbingObject",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

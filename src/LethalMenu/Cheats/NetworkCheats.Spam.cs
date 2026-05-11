@@ -237,14 +237,14 @@ namespace LethalMenu.Cheats
             var terminal = Object.FindObjectOfType<Terminal>();
 
             // Horn Spam (every 0.15s)
-            if (Settings.HornSpam && time - _lastHornSpam > 0.15f)
+            if (Hack.HornSpam.IsEnabled() && time - _lastHornSpam > 0.15f)
             {
                 _lastHornSpam = time;
                 hud?.AlarmHornServerRpc();
             }
 
             // Door Spam (every 0.2s)
-            if (Settings.DoorSpam && time - _lastDoorSpam > 0.2f)
+            if (Hack.DoorSpam.IsEnabled() && time - _lastDoorSpam > 0.2f)
             {
                 _lastDoorSpam = time;
                 _spamCounter++;
@@ -257,7 +257,7 @@ namespace LethalMenu.Cheats
             }
 
             // Signal Translator Spam (every 0.3s - has cooldown but we try anyway)
-            if (Settings.SignalSpam && time - _lastSignalSpam > 0.3f)
+            if (Hack.SignalSpam.IsEnabled() && time - _lastSignalSpam > 0.3f)
             {
                 _lastSignalSpam = time;
                 _spamCounter++;
@@ -265,7 +265,7 @@ namespace LethalMenu.Cheats
             }
 
             // RPC Lag Spam (every 0.05s - aggressive) - Full chaos: signal, chat, horn, damage, AND terminal sounds
-            if (Settings.RPCLagSpam && time - _lastRPCSpam > 0.05f)
+            if (Hack.RPCLagSpam.IsEnabled() && time - _lastRPCSpam > 0.05f)
             {
                 _lastRPCSpam = time;
                 _spamCounter++;
@@ -302,7 +302,7 @@ namespace LethalMenu.Cheats
             }
 
             // Terminal Sound Spam (every 0.08s) - FULL combo: index 0 (cash register) + index 1 (beep) + invalid indices
-            if (Settings.TerminalSoundSpam && time - _lastTerminalSpam > 0.08f)
+            if (Hack.TerminalSoundSpam.IsEnabled() && time - _lastTerminalSpam > 0.08f)
             {
                 _lastTerminalSpam = time;
                 _spamCounter++;
@@ -319,7 +319,7 @@ namespace LethalMenu.Cheats
             }
 
             // Terminal Earrape Spam (every 0.03s) - Pure invalid index spam + index 0 for max noise
-            if (Settings.TerminalEarrapeSpam && time - _lastEarrapeSpam > 0.03f)
+            if (Hack.EarrapeSpam.IsEnabled() && time - _lastEarrapeSpam > 0.03f)
             {
                 _lastEarrapeSpam = time;
                 _spamCounter++;
@@ -337,7 +337,7 @@ namespace LethalMenu.Cheats
             }
 
             // Chat Spam Loop (every 0.5s)
-            if (Settings.ChatSpamLoop && time - _lastChatSpam > 0.5f)
+            if (Hack.ChatSpam.IsEnabled() && time - _lastChatSpam > 0.5f)
             {
                 _lastChatSpam = time;
                 _spamCounter++;
@@ -347,7 +347,7 @@ namespace LethalMenu.Cheats
             }
 
             // Car Horn Spam (every 0.15s)
-            if (Settings.CarHornSpam && time - _lastCarHornSpam > 0.15f)
+            if (Hack.CarHornSpam.IsEnabled() && time - _lastCarHornSpam > 0.15f)
             {
                 _lastCarHornSpam = time;
                 _spamCounter++;
@@ -364,7 +364,7 @@ namespace LethalMenu.Cheats
             }
 
             // Desk Door Spam (every 0.2s)
-            if (Settings.DeskDoorSpam && time - _lastDeskDoorSpam > 0.2f)
+            if (Hack.DeskDoorSpam.IsEnabled() && time - _lastDeskDoorSpam > 0.2f)
             {
                 _lastDeskDoorSpam = time;
                 var desk = Object.FindObjectOfType<DepositItemsDesk>();

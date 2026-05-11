@@ -3,12 +3,10 @@ using UnityEngine;
 
 namespace LethalMenu.Cheats
 {
-    /// 
-    /// SpectatePlayer - watch other players from their perspective.
-    /// 
     public class SpectatePlayerCheat : CheatBase
     {
         public override string Name => "SpectatePlayer";
+        public override Hack HackType => Hack.SpectatePlayer;
 
         private Camera? _specCam;
         private AudioListener? _audioListener;
@@ -17,9 +15,8 @@ namespace LethalMenu.Cheats
 
         public override void OnUpdate()
         {
-            bool shouldEnable = Settings.SpectatePlayer && Settings.SpectatePlayerIndex >= 0;
+            bool shouldEnable = IsEnabled && Settings.SpectatePlayerIndex >= 0;
 
-            // Handle toggle
             if (shouldEnable && !_wasEnabled)
             {
                 EnableSpectate();
@@ -33,18 +30,16 @@ namespace LethalMenu.Cheats
 
             if (!shouldEnable || _specCam == null) return;
 
-            // Follow the spectated player
             FollowPlayer();
         }
 
         public override void OnGUI()
         {
-            if (!Settings.SpectatePlayer || Settings.SpectatePlayerIndex < 0) return;
+            if (!IsEnabled || Settings.SpectatePlayerIndex < 0) return;
 
             var player = GetSpectatedPlayer();
             if (player == null) return;
 
-            // Draw spectating indicator
             var style = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 24,
@@ -57,12 +52,10 @@ namespace LethalMenu.Cheats
             var content = new GUIContent(text);
             var size = style.CalcSize(content);
 
-            // Shadow
             var shadowStyle = new GUIStyle(style);
             shadowStyle.normal.textColor = Color.black;
             GUI.Label(new Rect(Screen.width / 2 - size.x / 2 + 2, 52, size.x, size.y), text, shadowStyle);
-            
-            // Text
+
             GUI.Label(new Rect(Screen.width / 2 - size.x / 2, 50, size.x, size.y), text, style);
         }
 
@@ -81,28 +74,23 @@ namespace LethalMenu.Cheats
             var player = GetSpectatedPlayer();
             if (player == null || player == LethalMenuMod.LocalPlayer)
             {
-                Settings.SpectatePlayer = false;
+                Hack.SpectatePlayer.SetEnabled(false);
                 return;
             }
 
-            // Get original camera
             _originalCamera = LethalMenuMod.LocalPlayer.gameplayCamera;
             if (_originalCamera == null) return;
 
-            // Create spectate camera
             var camObj = new GameObject("LethalMenuSpecCam");
             _specCam = camObj.AddComponent<Camera>();
             _specCam.CopyFrom(_originalCamera);
             _specCam.nearClipPlane = 0.01f;
             _specCam.farClipPlane = 1000f;
 
-            // Add audio listener
             _audioListener = camObj.AddComponent<AudioListener>();
 
-            // Disable original camera
             _originalCamera.enabled = false;
 
-            // Disable original audio listener
             if (LethalMenuMod.LocalPlayer.activeAudioListener != null)
             {
                 LethalMenuMod.LocalPlayer.activeAudioListener.enabled = false;
@@ -121,7 +109,6 @@ namespace LethalMenu.Cheats
 
             _audioListener = null;
 
-            // Re-enable original camera
             if (_originalCamera != null)
             {
                 _originalCamera.enabled = true;
@@ -145,12 +132,10 @@ namespace LethalMenu.Cheats
             var player = GetSpectatedPlayer();
             if (player == null || player.isPlayerDead)
             {
-                // Player died or left, stop spectating
-                Settings.SpectatePlayer = false;
+                Hack.SpectatePlayer.SetEnabled(false);
                 return;
             }
 
-            // Follow their camera
             var playerCam = player.gameplayCamera;
             if (playerCam != null)
             {
@@ -162,7 +147,7 @@ namespace LethalMenu.Cheats
 
         public void ForceDisable()
         {
-            Settings.SpectatePlayer = false;
+            Hack.SpectatePlayer.SetEnabled(false);
             Settings.SpectatePlayerIndex = -1;
             DisableSpectate();
             _wasEnabled = false;
@@ -175,7 +160,6 @@ namespace LethalMenu.Cheats
             int startIndex = Settings.SpectatePlayerIndex;
             int nextIndex = (startIndex + 1) % LethalMenuMod.Players.Count;
 
-            // Skip local player and dead players
             while (nextIndex != startIndex)
             {
                 var player = LethalMenuMod.Players[nextIndex];

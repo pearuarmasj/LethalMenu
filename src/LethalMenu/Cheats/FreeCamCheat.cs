@@ -12,6 +12,7 @@ namespace LethalMenu.Cheats
     public class FreeCamCheat : CheatBase
     {
         public override string Name => "FreeCam";
+        public override Hack HackType => Hack.FreeCam;
 
         private Camera? _freeCam;
         private AudioListener? _audioListener;
@@ -32,7 +33,7 @@ namespace LethalMenu.Cheats
 
         public override void OnUpdate()
         {
-            bool shouldEnable = Settings.FreeCam;
+            bool shouldEnable = IsEnabled;
 
             // Handle toggle on/off
             if (shouldEnable && !_wasEnabled)
@@ -89,7 +90,7 @@ namespace LethalMenu.Cheats
             _freeCam.transform.rotation = _originalCamera.transform.rotation;
             _freeCam.nearClipPlane = 0.01f;
             _freeCam.farClipPlane = 1000f;
-            _freeCam.fieldOfView = Settings.FOV ? Settings.FOVValue : _originalCamera.fieldOfView;
+            _freeCam.fieldOfView = Hack.CustomFOV.IsEnabled() ? Settings.FOVValue : _originalCamera.fieldOfView;
             // Render directly to screen, not to a render texture
             _freeCam.targetTexture = null;
 
@@ -103,7 +104,7 @@ namespace LethalMenu.Cheats
             _light = lightObj.AddComponent<Light>();
             _light.type = LightType.Point;
             _light.range = Settings.NightVisionRange;
-            _light.intensity = Settings.NightVision ? Settings.NightVisionIntensity : 0f;
+            _light.intensity = Hack.NightVision.IsEnabled() ? Settings.NightVisionIntensity : 0f;
             _light.color = Color.white;
 
             // Disable original camera
@@ -195,7 +196,7 @@ namespace LethalMenu.Cheats
             // Update light if night vision is toggled
             if (_light != null)
             {
-                _light.intensity = Settings.NightVision ? Settings.NightVisionIntensity * 0.001f : 0f;
+                _light.intensity = Hack.NightVision.IsEnabled() ? Settings.NightVisionIntensity * 0.001f : 0f;
             }
         }
 
@@ -346,7 +347,7 @@ namespace LethalMenu.Cheats
 
         public void ForceDisable()
         {
-            Settings.FreeCam = false;
+            Hack.FreeCam.SetEnabled(false);
             DisableFreeCam();
             _wasEnabled = false;
         }

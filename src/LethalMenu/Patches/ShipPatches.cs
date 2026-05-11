@@ -24,7 +24,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void BuyItemsPrefix(Terminal __instance)
         {
-            if (Settings.Shoplifter)
+            if (Hack.Shoplifter.IsEnabled())
             {
                 __instance.groupCredits = 999999;
             }
@@ -39,14 +39,14 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool AttackPrefix()
         {
-            return !Settings.JebAttackPrevention;
+            return !Hack.AntiJeb.IsEnabled();
         }
 
         [HarmonyPatch("AttackPlayersServerRpc")]
         [HarmonyPrefix]
         public static bool AttackServerPrefix()
         {
-            return !Settings.JebAttackPrevention;
+            return !Hack.AntiJeb.IsEnabled();
         }
     }
 
@@ -58,7 +58,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void UpdatePostfix(ShipBuildModeManager __instance)
         {
-            if (Settings.BuildAnywhere && __instance.InBuildMode)
+            if (Hack.BuildAnywhere.IsEnabled() && __instance.InBuildMode)
             {
                 __instance.CanConfirmPosition = true;
             }
@@ -72,7 +72,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void Postfix(ItemDropship __instance)
         {
-            if (!Settings.OpenDropShipLand || __instance == null || __instance.shipDoorsOpened) return;
+            if (!Hack.AutoOpenDropship.IsEnabled() || __instance == null || __instance.shipDoorsOpened) return;
             __instance.OpenShipServerRpc();
         }
     }
@@ -85,11 +85,11 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool HangarDoorUpdatePrefix(HangarShipDoor __instance)
         {
-            if (Settings.OpenShipDoorSpace && !__instance.buttonsEnabled && StartOfRound.Instance.inShipPhase)
+            if (Hack.ShipDoorInSpace.IsEnabled() && !__instance.buttonsEnabled && StartOfRound.Instance.inShipPhase)
             {
                 __instance.SetDoorButtonsEnabled(true);
             }
-            else if (!Settings.OpenShipDoorSpace && __instance.buttonsEnabled && StartOfRound.Instance.inShipPhase)
+            else if (!Hack.ShipDoorInSpace.IsEnabled() && __instance.buttonsEnabled && StartOfRound.Instance.inShipPhase)
             {
                 __instance.SetDoorButtonsEnabled(false);
             }
@@ -100,7 +100,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool TeleportBoundsPrefix()
         {
-            return !Settings.OpenShipDoorSpace;
+            return !Hack.ShipDoorInSpace.IsEnabled();
         }
     }
 
@@ -112,14 +112,14 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool BridgeFallPrefix()
         {
-            return !Settings.BridgeNeverFalls;
+            return !Hack.BridgeNeverFalls.IsEnabled();
         }
 
         [HarmonyPatch(typeof(BridgeTriggerType2), "AddToBridgeInstabilityServerRpc")]
         [HarmonyPrefix]
         public static bool AddInstabilityPrefix()
         {
-            return !Settings.BridgeNeverFalls;
+            return !Hack.BridgeNeverFalls.IsEnabled();
         }
     }
 }

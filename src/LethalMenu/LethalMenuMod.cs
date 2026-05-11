@@ -99,7 +99,7 @@ namespace LethalMenu
         private void InitializeCheats()
         {
             Loader.Log("[LethalMenu] Registering cheats...");
-            // Register all cheats
+            HackExtensions.InitializeDefaults();
             _cheats.Add(new GodModeCheat());
             _cheats.Add(new DemiGodCheat());
             _cheats.Add(new InfiniteStaminaCheat());
@@ -153,6 +153,9 @@ namespace LethalMenu
                 ToggleCursor(Settings.ShowMenu);
             }
 
+            if (!Settings.ShowMenu)
+                HackExtensions.CheckKeyBinds();
+
             // Update all cheats (they internally check if enabled)
             foreach (var cheat in _cheats)
             {
@@ -188,7 +191,7 @@ namespace LethalMenu
         private void UpdateRuntimeFeatures()
         {
             // AlwaysShowClock - Find and enable the clock UI
-            if (Settings.AlwaysShowClock)
+            if (Hack.AlwaysShowClock.IsEnabled())
             {
                 // The clock is typically hidden in certain states - we need to find it in the HUD hierarchy
                 var clockObj = GameObject.Find("Systems/UI/Canvas/IngamePlayerHUD/TopLeftCorner/Clock");
@@ -202,7 +205,7 @@ namespace LethalMenu
                 {
                     LocalPlayer.gameplayCamera.fieldOfView = 66f;
                 }
-                else if (Settings.FOV)
+                else if (Hack.CustomFOV.IsEnabled())
                 {
                     LocalPlayer.gameplayCamera.fieldOfView = Settings.FOVValue;
                 }
@@ -216,11 +219,11 @@ namespace LethalMenu
             var visor = GameObject.Find("Systems/Rendering/PlayerHUDHelmetModel/");
             if (visor != null)
             {
-                visor.SetActive(!Settings.NoVisor);
+                visor.SetActive(!Hack.NoVisor.IsEnabled());
             }
 
             // Unlimited TZP
-            if (Settings.UnlimitedTZP && LocalPlayer != null)
+            if (Hack.UnlimitedTZP.IsEnabled() && LocalPlayer != null)
             {
                 var heldItem = LocalPlayer.currentlyHeldObjectServer;
                 if (heldItem is TetraChemicalItem tzp && tzp != null)
@@ -233,7 +236,7 @@ namespace LethalMenu
             }
 
             // No TZP Effects
-            if (Settings.NoTZPEffects && LocalPlayer != null && HUD != null)
+            if (Hack.NoTZPEffects.IsEnabled() && LocalPlayer != null && HUD != null)
             {
                 var heldItem = LocalPlayer.currentlyHeldObjectServer;
                 if (heldItem is TetraChemicalItem tzp && tzp != null)
@@ -250,7 +253,7 @@ namespace LethalMenu
             }
 
             // Eggs always explode
-            if (Settings.EggsAlwaysExplode && !Settings.EggsNeverExplode && LocalPlayer != null)
+            if (Hack.EggsAlwaysExplode.IsEnabled() && !Hack.EggsNeverExplode.IsEnabled() && LocalPlayer != null)
             {
                 var heldItem = LocalPlayer.currentlyHeldObjectServer;
                 if (heldItem is StunGrenadeItem egg && egg != null && egg.explodeSFX?.name == "EasterEggPop")
@@ -268,7 +271,7 @@ namespace LethalMenu
 
         private void UpdateMinigunShotgun()
         {
-            if (!Settings.MinigunShotgun || LocalPlayer == null) return;
+            if (!Hack.MinigunShotgun.IsEnabled() || LocalPlayer == null) return;
 
             var shotgun = LocalPlayer.currentlyHeldObjectServer as ShotgunItem;
             if (shotgun == null) return;
@@ -295,7 +298,7 @@ namespace LethalMenu
             }
 
             // Check if breadcrumbs are enabled
-            if (!Settings.Breadcrumbs) return;
+            if (!Hack.Breadcrumbs.IsEnabled()) return;
 
             if (Time.time - _lastBreadcrumbTime >= Settings.BreadcrumbInterval)
             {
@@ -314,7 +317,7 @@ namespace LethalMenu
 
         private void UpdateKillClick()
         {
-            if (!Settings.KillClick) return;
+            if (!Hack.KillClick.IsEnabled()) return;
             if (Settings.ShowMenu) return; // Don't kill while menu open
             if (LocalPlayer == null) return;
 
@@ -357,7 +360,7 @@ namespace LethalMenu
 
         private void UpdateStunClick()
         {
-            if (!Settings.StunClick) return;
+            if (!Hack.StunClick.IsEnabled()) return;
             if (Settings.ShowMenu) return;
             if (LocalPlayer == null) return;
 
@@ -413,7 +416,7 @@ namespace LethalMenu
 
         private void UpdateFogState()
         {
-            if (Settings.NoFog && !_fogWasDisabled)
+            if (Hack.NoFog.IsEnabled() && !_fogWasDisabled)
             {
                 // Find and disable all fog
                 _fogObjects = UnityEngine.Object.FindObjectsOfType<LocalVolumetricFog>();
@@ -426,7 +429,7 @@ namespace LethalMenu
                 }
                 _fogWasDisabled = true;
             }
-            else if (!Settings.NoFog && _fogWasDisabled)
+            else if (!Hack.NoFog.IsEnabled() && _fogWasDisabled)
             {
                 // Re-enable fog
                 if (_fogObjects != null)
@@ -496,19 +499,18 @@ namespace LethalMenu
             }
 
             // Draw crosshair
-            if (Settings.Crosshair)
+            if (Hack.Crosshair.IsEnabled())
             {
                 DrawCrosshair();
             }
 
             // Draw breadcrumbs
-            if (Settings.Breadcrumbs)
+            if (Hack.Breadcrumbs.IsEnabled())
             {
                 DrawBreadcrumbs();
             }
 
-            // Draw HP display
-            if (Settings.HPDisplay && LocalPlayer != null)
+            if (Hack.HPDisplay.IsEnabled() && LocalPlayer != null)
             {
                 DrawHPDisplay();
             }
@@ -584,6 +586,7 @@ namespace LethalMenu
             }
 
             _cheats.Clear();
+            HackExtensions.InitializeDefaults();
             Instance = null;
         }
 

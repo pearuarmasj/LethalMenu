@@ -2,19 +2,17 @@ using UnityEngine.InputSystem;
 
 namespace LethalMenu.Cheats
 {
-    /// 
+    ///
     /// God mode - prevents damage and death.
     /// Implemented via Harmony patches in GamePatches.cs.
-    /// 
+    ///
     public class GodModeCheat : CheatBase
     {
         public override string Name => "God Mode";
+        public override Hack HackType => Hack.GodMode;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.GodMode;
-
-            // Additional god mode logic - heal player
             if (IsEnabled && LethalMenuMod.LocalPlayer != null)
             {
                 if (LethalMenuMod.LocalPlayer.health < 100)
@@ -22,57 +20,50 @@ namespace LethalMenu.Cheats
                     LethalMenuMod.LocalPlayer.health = 100;
                 }
 
-                // Prevent critical injury state
                 LethalMenuMod.LocalPlayer.criticallyInjured = false;
             }
         }
     }
 
-    /// 
+    ///
     /// Demi-God mode - allows damage but auto-heals when health drops.
     /// Unlike God Mode, this doesn't block damage - you can still die from instant kills.
     /// Uses negative damage RPC exploit to heal via network.
     /// Can be applied to ANY player, not just local player.
-    /// 
+    ///
     public class DemiGodCheat : CheatBase
     {
         public override string Name => "Demi-God Mode";
+        public override Hack HackType => Hack.DemiGod;
 
         private float _lastHealTime = 0f;
-        private const float HealCooldown = 0.5f; // Heal every 0.5 seconds max
+        private const float HealCooldown = 0.5f;
         private bool _restoredFromConfig = false;
 
         public override void OnUpdate()
         {
-            // Restore local player's demi-god state from config on first opportunity
-            if (!_restoredFromConfig && Settings.DemiGod && LethalMenuMod.LocalPlayer != null)
+            if (!_restoredFromConfig && Hack.DemiGod.IsEnabled() && LethalMenuMod.LocalPlayer != null)
             {
                 Settings.DemiGodPlayers.Add(LethalMenuMod.LocalPlayer.playerClientId);
                 _restoredFromConfig = true;
             }
-            
-            // Check if any players have Demi-God enabled
-            IsEnabled = Settings.DemiGodPlayers.Count > 0;
 
-            if (!IsEnabled) return;
-            
+            if (Settings.DemiGodPlayers.Count == 0) return;
+
             float currentTime = UnityEngine.Time.time;
             if (currentTime - _lastHealTime < HealCooldown) return;
 
-            // Heal all players that have Demi-God enabled
             foreach (var player in LethalMenuMod.Players)
             {
                 if (player == null || player.isPlayerDead) continue;
                 if (!Settings.IsDemiGod(player)) continue;
 
-                // Only heal if health is below 100
                 if (player.health < 100)
                 {
                     _lastHealTime = currentTime;
                     HealPlayerViaNetwork(player);
                 }
 
-                // Clear critical injury state (but don't prevent damage)
                 if (player.criticallyInjured && player.health > 10)
                 {
                     player.criticallyInjured = false;
@@ -80,10 +71,6 @@ namespace LethalMenu.Cheats
             }
         }
 
-        /// 
-        /// Heals a specific player using the negative damage network exploit.
-        /// This syncs across network so other players see them heal.
-        /// 
         private void HealPlayerViaNetwork(GameNetcodeStuff.PlayerControllerB player)
         {
             if (player == null || player.isPlayerDead) return;
@@ -91,27 +78,24 @@ namespace LethalMenu.Cheats
             int healthNeeded = 100 - player.health;
             if (healthNeeded <= 0) return;
 
-            // Use negative damage to heal
-            // DamagePlayerFromOtherClientServerRpc with negative damage = healing
             player.DamagePlayerFromOtherClientServerRpc(
-                -healthNeeded, 
-                UnityEngine.Vector3.zero, 
+                -healthNeeded,
+                UnityEngine.Vector3.zero,
                 (int)player.playerClientId
             );
         }
     }
 
-    /// 
+    ///
     /// Infinite stamina - prevents stamina drain.
-    /// 
+    ///
     public class InfiniteStaminaCheat : CheatBase
     {
         public override string Name => "Infinite Stamina";
+        public override Hack HackType => Hack.InfiniteStamina;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.InfiniteStamina;
-
             if (IsEnabled && LethalMenuMod.LocalPlayer != null)
             {
                 LethalMenuMod.LocalPlayer.sprintMeter = 1f;
@@ -119,20 +103,19 @@ namespace LethalMenu.Cheats
         }
     }
 
-    /// 
+    ///
     /// Speed hack - increases movement speed.
-    /// 
+    ///
     public class SpeedHackCheat : CheatBase
     {
         public override string Name => "Speed Hack";
+        public override Hack HackType => Hack.SpeedHack;
 
         private float _originalSpeed = 4.6f;
         private bool _speedCaptured = false;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.SpeedHack;
-
             if (LethalMenuMod.LocalPlayer == null) return;
 
             if (!_speedCaptured)
@@ -160,20 +143,19 @@ namespace LethalMenu.Cheats
         }
     }
 
-    /// 
+    ///
     /// Jump hack - increases jump force.
-    /// 
+    ///
     public class JumpHackCheat : CheatBase
     {
         public override string Name => "Jump Hack";
+        public override Hack HackType => Hack.JumpHack;
 
         private float _originalJumpForce = 13f;
         private bool _jumpForceCaptured = false;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.JumpHack;
-
             if (LethalMenuMod.LocalPlayer == null) return;
 
             if (!_jumpForceCaptured)
@@ -201,17 +183,16 @@ namespace LethalMenu.Cheats
         }
     }
 
-    /// 
+    ///
     /// No clip - pass through walls.
-    /// 
+    ///
     public class NoClipCheat : CheatBase
     {
         public override string Name => "No Clip";
+        public override Hack HackType => Hack.NoClip;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.NoClip;
-
             if (LethalMenuMod.LocalPlayer == null) return;
 
             var controller = LethalMenuMod.LocalPlayer.GetComponent<UnityEngine.CharacterController>();
@@ -222,7 +203,6 @@ namespace LethalMenu.Cheats
 
             if (IsEnabled)
             {
-                // Allow flying movement using New Input System
                 var moveDirection = UnityEngine.Vector3.zero;
                 var keyboard = Keyboard.current;
 
@@ -259,17 +239,16 @@ namespace LethalMenu.Cheats
         }
     }
 
-    /// 
+    ///
     /// Night vision - enhances visibility in dark areas.
-    /// 
+    ///
     public class NightVisionCheat : CheatBase
     {
         public override string Name => "Night Vision";
+        public override Hack HackType => Hack.NightVision;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.NightVision;
-
             if (LethalMenuMod.LocalPlayer?.nightVision == null) return;
 
             var nightVisionLight = LethalMenuMod.LocalPlayer.nightVision;
@@ -295,48 +274,38 @@ namespace LethalMenu.Cheats
         }
     }
 
-    /// 
+    ///
     /// No fall damage.
     /// Implemented via Harmony patches in GamePatches.cs.
-    /// 
+    ///
     public class NoFallDamageCheat : CheatBase
     {
         public override string Name => "No Fall Damage";
-
-        public override void OnUpdate()
-        {
-            IsEnabled = Settings.NoFallDamage;
-        }
+        public override Hack HackType => Hack.NoFallDamage;
     }
 
-    /// 
+    ///
     /// Infinite battery for held items.
     /// Implemented via Harmony patches in GamePatches.cs.
-    /// 
+    ///
     public class InfiniteBatteryCheat : CheatBase
     {
         public override string Name => "Infinite Battery";
-
-        public override void OnUpdate()
-        {
-            IsEnabled = Settings.InfiniteBattery;
-        }
+        public override Hack HackType => Hack.InfiniteBattery;
     }
 
-    /// 
+    ///
     /// No weight - removes carry weight penalty.
-    /// 
+    ///
     public class NoWeightCheat : CheatBase
     {
         public override string Name => "No Weight";
+        public override Hack HackType => Hack.NoWeight;
 
         public override void OnUpdate()
         {
-            IsEnabled = Settings.NoWeight;
-
             if (IsEnabled && LethalMenuMod.LocalPlayer != null)
             {
-                // 1.0 = baseline (no weight penalty)
                 LethalMenuMod.LocalPlayer.carryWeight = 1f;
             }
         }

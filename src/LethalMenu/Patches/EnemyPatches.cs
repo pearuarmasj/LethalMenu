@@ -13,7 +13,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void PlayerIsTargetablePostfix(ref bool __result, PlayerControllerB playerScript)
         {
-            if (Settings.Untargetable && playerScript == LethalMenuMod.LocalPlayer)
+            if (Hack.Untargetable.IsEnabled() && playerScript == LethalMenuMod.LocalPlayer)
             {
                 __result = false;
             }
@@ -24,7 +24,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool EnemyUpdatePrefix(EnemyAI __instance)
         {
-            if (!Settings.Untargetable) return true;
+            if (!Hack.Untargetable.IsEnabled()) return true;
             if (__instance.targetPlayer != LethalMenuMod.LocalPlayer) return true;
 
             __instance.targetPlayer = null;
@@ -37,7 +37,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool DetectNoisePrefix(EnemyAI __instance, Vector3 noisePosition)
         {
-            if (!Settings.Untargetable) return true;
+            if (!Hack.Untargetable.IsEnabled()) return true;
             if (LethalMenuMod.LocalPlayer == null) return true;
 
             float distToPlayer = Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer.transform.position);
@@ -58,7 +58,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool DetectNoisePrefix(MouthDogAI __instance, Vector3 noisePosition)
         {
-            if (!Settings.Untargetable) return true;
+            if (!Hack.Untargetable.IsEnabled()) return true;
             if (LethalMenuMod.LocalPlayer == null) return true;
 
             float distToPlayer = Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer.transform.position);
@@ -74,7 +74,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool EnterLungePrefix(MouthDogAI __instance)
         {
-            if (!Settings.Untargetable) return true;
+            if (!Hack.Untargetable.IsEnabled()) return true;
             
             if (__instance.targetPlayer == LethalMenuMod.LocalPlayer)
             {
@@ -93,7 +93,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void ChoosePlayerToHauntPostfix(DressGirlAI __instance)
         {
-            if (!Settings.AntiGhostGirl || __instance == null) return;
+            if (!Hack.AntiGhostGirl.IsEnabled() || __instance == null) return;
             if (__instance.hauntingLocalPlayer)
             {
                 __instance.hauntingPlayer = null;
@@ -104,7 +104,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         public static void BeginChasingPostfix(DressGirlAI __instance)
         {
-            if (!Settings.AntiGhostGirl || __instance == null) return;
+            if (!Hack.AntiGhostGirl.IsEnabled() || __instance == null) return;
             if (__instance.hauntingLocalPlayer)
             {
                 __instance.hauntingPlayer = null;
@@ -119,7 +119,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool Prefix(PlayerControllerB playerScript)
         {
-            if (Settings.GhostMode && LethalMenuMod.LocalPlayer != null && 
+            if (Hack.GhostMode.IsEnabled() && LethalMenuMod.LocalPlayer != null && 
                 LethalMenuMod.LocalPlayer.playerClientId == playerScript.playerClientId)
             {
                 return false;

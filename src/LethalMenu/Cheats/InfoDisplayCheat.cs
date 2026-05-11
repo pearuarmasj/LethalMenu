@@ -9,6 +9,7 @@ namespace LethalMenu.Cheats
     public class InfoDisplayCheat : CheatBase
     {
         public override string Name => "Info Display";
+        public override Hack HackType => Hack.InfoDisplay;
 
         // GUI styling
         private static GUIStyle? _infoStyle;
@@ -16,10 +17,7 @@ namespace LethalMenu.Cheats
         private static GUIStyle? _valueStyle;
         private static Texture2D? _backgroundTexture;
 
-        public override void OnUpdate()
-        {
-            IsEnabled = Settings.InfoDisplay;
-        }
+        public override void OnUpdate() { }
 
         public override void OnGUI()
         {
@@ -95,14 +93,14 @@ namespace LethalMenu.Cheats
             currentY += 5f;
 
             // Credits
-            if (Settings.InfoDisplayCredits)
+            if (Hack.InfoDisplayCredits.IsEnabled())
             {
                 DrawInfoRow(x, currentY, labelWidth, valueWidth, "Credits:", $"${GetCredits()}");
                 currentY += 18f;
             }
 
             // Quota progress
-            if (Settings.InfoDisplayQuota)
+            if (Hack.InfoDisplayQuota.IsEnabled())
             {
                 int shipValue = GetShipValue();
                 int quota = GetQuota();
@@ -114,7 +112,7 @@ namespace LethalMenu.Cheats
             }
 
             // Deadline
-            if (Settings.InfoDisplayDeadline)
+            if (Hack.InfoDisplayDeadline.IsEnabled())
             {
                 int deadline = GetDeadline();
                 float buyingRate = GetBuyingRate();
@@ -125,7 +123,7 @@ namespace LethalMenu.Cheats
             }
 
             // Enemy count
-            if (Settings.InfoDisplayEnemies)
+            if (Hack.InfoDisplayEnemies.IsEnabled())
             {
                 int enemies = GetEnemyCount();
                 _valueStyle!.normal.textColor = enemies > 0 ? new Color(1f, 0.4f, 0.4f) : new Color(0.2f, 1f, 0.4f);
@@ -135,7 +133,7 @@ namespace LethalMenu.Cheats
             }
 
             // Body count (dead players)
-            if (Settings.InfoDisplayBodies)
+            if (Hack.InfoDisplayBodies.IsEnabled())
             {
                 int bodies = GetBodyCount();
                 _valueStyle!.normal.textColor = bodies > 0 ? new Color(1f, 0.4f, 0.4f) : new Color(0.2f, 1f, 0.4f);
@@ -145,7 +143,7 @@ namespace LethalMenu.Cheats
             }
 
             // Scrap on map (not in ship)
-            if (Settings.InfoDisplayMapLoot)
+            if (Hack.InfoDisplayMapLoot.IsEnabled())
             {
                 int mapCount = GetMapLootCount();
                 int mapValue = GetMapLootValue();
@@ -154,7 +152,7 @@ namespace LethalMenu.Cheats
             }
 
             // Ship loot count
-            if (Settings.InfoDisplayShipLoot)
+            if (Hack.InfoDisplayShipLoot.IsEnabled())
             {
                 int shipCount = GetShipLootCount();
                 DrawInfoRow(x, currentY, labelWidth, valueWidth, "Ship Items:", shipCount.ToString());
@@ -162,7 +160,7 @@ namespace LethalMenu.Cheats
             }
 
             // Current moon
-            if (Settings.InfoDisplayMoon)
+            if (Hack.InfoDisplayMoon.IsEnabled())
             {
                 string moon = GetCurrentMoon();
                 DrawInfoRow(x, currentY, labelWidth, valueWidth, "Moon:", moon);
@@ -170,7 +168,7 @@ namespace LethalMenu.Cheats
             }
 
             // Time
-            if (Settings.InfoDisplayTime)
+            if (Hack.InfoDisplayTime.IsEnabled())
             {
                 string time = GetCurrentTime();
                 DrawInfoRow(x, currentY, labelWidth, valueWidth, "Time:", time);
@@ -194,15 +192,15 @@ namespace LethalMenu.Cheats
         {
             float height = 35f; // Header + separator
             
-            if (Settings.InfoDisplayCredits) height += 18f;
-            if (Settings.InfoDisplayQuota) height += 36f; // Two lines
-            if (Settings.InfoDisplayDeadline) height += 36f; // Two lines
-            if (Settings.InfoDisplayEnemies) height += 18f;
-            if (Settings.InfoDisplayBodies) height += 18f;
-            if (Settings.InfoDisplayMapLoot) height += 18f;
-            if (Settings.InfoDisplayShipLoot) height += 18f;
-            if (Settings.InfoDisplayMoon) height += 18f;
-            if (Settings.InfoDisplayTime) height += 18f;
+            if (Hack.InfoDisplayCredits.IsEnabled()) height += 18f;
+            if (Hack.InfoDisplayQuota.IsEnabled()) height += 36f; // Two lines
+            if (Hack.InfoDisplayDeadline.IsEnabled()) height += 36f; // Two lines
+            if (Hack.InfoDisplayEnemies.IsEnabled()) height += 18f;
+            if (Hack.InfoDisplayBodies.IsEnabled()) height += 18f;
+            if (Hack.InfoDisplayMapLoot.IsEnabled()) height += 18f;
+            if (Hack.InfoDisplayShipLoot.IsEnabled()) height += 18f;
+            if (Hack.InfoDisplayMoon.IsEnabled()) height += 18f;
+            if (Hack.InfoDisplayTime.IsEnabled()) height += 18f;
 
             return height + 10f; // Padding
         }

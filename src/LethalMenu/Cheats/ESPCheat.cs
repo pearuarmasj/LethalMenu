@@ -3,21 +3,16 @@ using UnityEngine;
 
 namespace LethalMenu.Cheats
 {
-    /// 
+    ///
     /// ESP - draws boxes and labels around players, enemies, and items.
-    /// 
+    ///
     public class ESPCheat : CheatBase
     {
         public override string Name => "ESP";
+        public override Hack HackType => Hack.EnableESP;
 
-        // GUI styles
         private GUIStyle? _labelStyle;
         private Texture2D? _boxTexture;
-
-        public override void OnUpdate()
-        {
-            IsEnabled = Settings.ESP;
-        }
 
         public override void OnGUI()
         {
@@ -28,8 +23,7 @@ namespace LethalMenu.Cheats
 
             InitializeStyles();
 
-            // Draw player ESP
-            if (Settings.PlayerESP)
+            if (Hack.PlayerESP.IsEnabled())
             {
                 foreach (var player in LethalMenuMod.Players)
                 {
@@ -40,8 +34,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Draw enemy ESP
-            if (Settings.EnemyESP)
+            if (Hack.EnemyESP.IsEnabled())
             {
                 foreach (var enemy in LethalMenuMod.Enemies)
                 {
@@ -52,8 +45,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Draw item ESP
-            if (Settings.ItemESP)
+            if (Hack.ItemESP.IsEnabled())
             {
                 foreach (var item in LethalMenuMod.Items)
                 {
@@ -62,33 +54,30 @@ namespace LethalMenu.Cheats
                     var itemName = item.itemProperties?.itemName ?? "Item";
                     var scrapValue = item.scrapValue;
 
-                    // Color-code items by value
                     Color itemColor;
                     string label;
                     if (scrapValue > 0)
                     {
                         label = $"{itemName}\n${scrapValue}";
-                        // Color gradient: gray ($0-20), white ($20-50), green ($50-100), yellow ($100-200), orange ($200+)
                         if (scrapValue >= 200)
-                            itemColor = new Color(1f, 0.5f, 0f); // Orange - high value
+                            itemColor = new Color(1f, 0.5f, 0f);
                         else if (scrapValue >= 100)
-                            itemColor = new Color(1f, 1f, 0f); // Yellow - good value
+                            itemColor = new Color(1f, 1f, 0f);
                         else if (scrapValue >= 50)
-                            itemColor = new Color(0.4f, 1f, 0.4f); // Green - decent value
+                            itemColor = new Color(0.4f, 1f, 0.4f);
                         else
-                            itemColor = Settings.ItemColor; // Default
+                            itemColor = Settings.ItemColor;
                     }
                     else
                     {
                         label = itemName;
-                        itemColor = new Color(0.6f, 0.6f, 0.6f); // Gray for non-scrap items
+                        itemColor = new Color(0.6f, 0.6f, 0.6f);
                     }
                     DrawESP(camera, item.transform.position, label, itemColor, 1f);
                 }
             }
 
-            // Draw door ESP
-            if (Settings.DoorESP)
+            if (Hack.DoorESP.IsEnabled())
             {
                 foreach (var entrance in LethalMenuMod.Entrances)
                 {
@@ -99,8 +88,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Draw landmine ESP
-            if (Settings.MineESP)
+            if (Hack.MineESP.IsEnabled())
             {
                 foreach (var mine in LethalMenuMod.Landmines)
                 {
@@ -111,8 +99,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Draw turret ESP
-            if (Settings.TurretESP)
+            if (Hack.TurretESP.IsEnabled())
             {
                 foreach (var turret in LethalMenuMod.Turrets)
                 {
@@ -131,8 +118,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Draw fusebox/breaker box ESP
-            if (Settings.FuseboxESP)
+            if (Hack.FuseboxESP.IsEnabled())
             {
                 foreach (var box in LethalMenuMod.BreakerBoxes)
                 {
@@ -145,9 +131,6 @@ namespace LethalMenu.Cheats
             }
         }
 
-        /// 
-        /// Get the active camera - handles spectator mode and fallback to Camera.main.
-        /// 
         private Camera? GetActiveCamera()
         {
             if (LethalMenuMod.LocalPlayer == null)
@@ -159,26 +142,19 @@ namespace LethalMenu.Cheats
             return LethalMenuMod.LocalPlayer.gameplayCamera ?? Camera.main;
         }
 
-        /// 
-        /// Convert world position to screen coordinates.
-        /// Returns false if position is behind camera.
-        /// 
         private bool WorldToScreen(Camera camera, Vector3 worldPos, out Vector2 screenPos)
         {
-            // Use viewport point to get normalized coordinates
             Vector3 viewportPoint = camera.WorldToViewportPoint(worldPos);
 
-            // Check if behind camera
             if (viewportPoint.z <= 0)
             {
                 screenPos = Vector2.zero;
                 return false;
             }
 
-            // Convert to screen coordinates
             screenPos = new Vector2(
                 viewportPoint.x * Screen.width,
-                (1f - viewportPoint.y) * Screen.height  // Flip Y axis for GUI coordinates
+                (1f - viewportPoint.y) * Screen.height
             );
 
             return true;
@@ -186,53 +162,44 @@ namespace LethalMenu.Cheats
 
         private void DrawESP(Camera camera, Vector3 worldPos, string label, Color color, float height)
         {
-            // Convert world to screen
             if (!WorldToScreen(camera, worldPos, out Vector2 screenPos))
                 return;
 
-            // Calculate distance
             float distance = Vector3.Distance(camera.transform.position, worldPos);
-            if (distance > 500f) return; // Max ESP distance
+            if (distance > 500f) return;
 
-            // Draw distance label
             string fullLabel = $"{label}\n{distance:F0}m";
 
-            // Scale based on distance
             float scale = Mathf.Clamp(200f / distance, 0.3f, 2f);
             int fontSize = Mathf.RoundToInt(12 * scale);
 
-            // Calculate label size
             if (_labelStyle != null)
             {
                 _labelStyle.fontSize = fontSize;
                 var content = new GUIContent(fullLabel);
                 var size = _labelStyle.CalcSize(content);
 
-                // Draw box first (at the object's position)
                 float boxWidth = 30f * scale;
                 float boxHeight = height * 40f * scale;
                 Rect boxRect = new Rect(
                     screenPos.x - boxWidth / 2,
-                    screenPos.y - boxHeight / 2,  // Center the box on the object
+                    screenPos.y - boxHeight / 2,
                     boxWidth,
                     boxHeight
                 );
                 DrawBox(boxRect, color);
 
-                // Position label ABOVE the box
                 Rect labelRect = new Rect(
                     screenPos.x - size.x / 2,
-                    boxRect.y - size.y - 4f,  // Above the box with small gap
+                    boxRect.y - size.y - 4f,
                     size.x,
                     size.y
                 );
 
-                // Draw shadow/outline for visibility
                 var shadowStyle = new GUIStyle(_labelStyle);
                 shadowStyle.normal.textColor = Color.black;
                 GUI.Label(new Rect(labelRect.x + 1, labelRect.y + 1, labelRect.width, labelRect.height), fullLabel, shadowStyle);
 
-                // Draw colored label
                 _labelStyle.normal.textColor = color;
                 GUI.Label(labelRect, fullLabel, _labelStyle);
             }
@@ -241,67 +208,57 @@ namespace LethalMenu.Cheats
         private void DrawPlayerESP(Camera camera, GameNetcodeStuff.PlayerControllerB player)
         {
             var worldPos = player.transform.position;
-            
-            // Convert world to screen
+
             if (!WorldToScreen(camera, worldPos, out Vector2 screenPos))
                 return;
 
-            // Calculate distance
             float distance = Vector3.Distance(camera.transform.position, worldPos);
             if (distance > 500f) return;
 
             string playerName = player.playerUsername ?? "Player";
             int health = player.health;
-            
-            // Distance color: green (far) to red (close)
+
             Color distColor;
             if (distance < 10f)
-                distColor = new Color(1f, 0.3f, 0.3f); // Red - very close
+                distColor = new Color(1f, 0.3f, 0.3f);
             else if (distance < 30f)
-                distColor = new Color(1f, 0.7f, 0.3f); // Orange - close
+                distColor = new Color(1f, 0.7f, 0.3f);
             else if (distance < 60f)
-                distColor = new Color(1f, 1f, 0.3f); // Yellow - medium
+                distColor = new Color(1f, 1f, 0.3f);
             else
-                distColor = new Color(0.5f, 1f, 0.5f); // Green - far
+                distColor = new Color(0.5f, 1f, 0.5f);
 
-            // Scale based on distance
             float scale = Mathf.Clamp(200f / distance, 0.3f, 2f);
             int fontSize = Mathf.RoundToInt(12 * scale);
 
             if (_labelStyle != null)
             {
                 _labelStyle.fontSize = fontSize;
-                
-                // Draw name and distance as separate lines with different colors
+
                 string nameLine = playerName;
                 string distLine = $"[{distance:F0}m]";
-                
+
                 var nameContent = new GUIContent(nameLine);
                 var distContent = new GUIContent(distLine);
                 var nameSize = _labelStyle.CalcSize(nameContent);
                 var distSize = _labelStyle.CalcSize(distContent);
-                
+
                 float totalWidth = Mathf.Max(nameSize.x, distSize.x);
                 float totalHeight = nameSize.y + distSize.y;
-                
+
                 float baseX = screenPos.x - totalWidth / 2;
                 float baseY = screenPos.y - totalHeight / 2;
 
-                // Shadow for name
                 var shadowStyle = new GUIStyle(_labelStyle);
                 shadowStyle.normal.textColor = Color.black;
                 GUI.Label(new Rect(baseX + 1 + (totalWidth - nameSize.x) / 2, baseY + 1, nameSize.x, nameSize.y), nameLine, shadowStyle);
-                // Name label
                 _labelStyle.normal.textColor = Settings.PlayerColor;
                 GUI.Label(new Rect(baseX + (totalWidth - nameSize.x) / 2, baseY, nameSize.x, nameSize.y), nameLine, _labelStyle);
-                
-                // Shadow for distance
+
                 GUI.Label(new Rect(baseX + 1 + (totalWidth - distSize.x) / 2, baseY + nameSize.y + 1, distSize.x, distSize.y), distLine, shadowStyle);
-                // Distance label with color-coded distance
                 _labelStyle.normal.textColor = distColor;
                 GUI.Label(new Rect(baseX + (totalWidth - distSize.x) / 2, baseY + nameSize.y, distSize.x, distSize.y), distLine, _labelStyle);
 
-                // Box
                 float boxWidth = 30f * scale;
                 float boxHeight = 80f * scale;
                 Rect boxRect = new Rect(
@@ -312,8 +269,7 @@ namespace LethalMenu.Cheats
                 );
                 DrawBox(boxRect, Settings.PlayerColor);
 
-                // Health bar (if enabled)
-                if (Settings.PlayerHealthBars && _boxTexture != null)
+                if (Hack.PlayerHealthBars.IsEnabled() && _boxTexture != null)
                 {
                     var healthStyle = new GUIStyle(_labelStyle)
                     {
@@ -326,30 +282,25 @@ namespace LethalMenu.Cheats
                     var healthSize = healthStyle.CalcSize(healthContent);
 
                     float baseBarWidth = boxWidth;
-                    float healthBarWidth = Mathf.Max(baseBarWidth, healthSize.x + 8f); // ensure text fits
+                    float healthBarWidth = Mathf.Max(baseBarWidth, healthSize.x + 8f);
                     float healthBarHeight = Mathf.Clamp(6f * scale, 6f, 12f);
                     float healthPercent = Mathf.Clamp01(health / 100f);
 
-                    // Position health bar just above box, with small gap
                     float hbX = screenPos.x - healthBarWidth / 2f;
                     float hbY = screenPos.y - boxHeight - healthBarHeight - 4f;
 
                     var oldColor = GUI.color;
 
-                    // Background
                     GUI.color = new Color(0f, 0f, 0f, 0.7f);
                     GUI.DrawTexture(new Rect(hbX, hbY, healthBarWidth, healthBarHeight), _boxTexture);
 
-                    // Health fill
                     Color healthColor = Color.Lerp(Color.red, Color.green, healthPercent);
                     GUI.color = healthColor;
                     GUI.DrawTexture(new Rect(hbX + 1, hbY + 1, (healthBarWidth - 2) * healthPercent, healthBarHeight - 2), _boxTexture);
 
-                    // Border
                     GUI.color = Color.white;
                     DrawBox(new Rect(hbX, hbY, healthBarWidth, healthBarHeight), Color.white);
 
-                    // Health text centered
                     float textX = hbX + (healthBarWidth - healthSize.x) / 2f;
                     float textY = hbY + (healthBarHeight - healthSize.y) / 2f - 0.5f;
                     GUI.Label(new Rect(textX, textY, healthSize.x, healthSize.y), healthText, healthStyle);
@@ -363,23 +314,16 @@ namespace LethalMenu.Cheats
         {
             if (_boxTexture == null) return;
 
-            // Save current color
             var oldColor = GUI.color;
             GUI.color = color;
 
-            // Draw 4 sides of the box
             float thickness = 2f;
 
-            // Top
             GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, thickness), _boxTexture);
-            // Bottom
             GUI.DrawTexture(new Rect(rect.x, rect.y + rect.height - thickness, rect.width, thickness), _boxTexture);
-            // Left
             GUI.DrawTexture(new Rect(rect.x, rect.y, thickness, rect.height), _boxTexture);
-            // Right
             GUI.DrawTexture(new Rect(rect.x + rect.width - thickness, rect.y, thickness, rect.height), _boxTexture);
 
-            // Restore color
             GUI.color = oldColor;
         }
 
@@ -395,7 +339,6 @@ namespace LethalMenu.Cheats
                 richText = true
             };
 
-            // Create white texture for box drawing
             _boxTexture = new Texture2D(1, 1);
             _boxTexture.SetPixel(0, 0, Color.white);
             _boxTexture.Apply();
