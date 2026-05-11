@@ -8,6 +8,10 @@ namespace LethalMenu.Menu
 
         private void DrawEnemiesTab()
         {
+            if (GUILayout.Button("Open Enemy Manager", _buttonStyle, GUILayout.Height(28)))
+                _enemyManager.IsOpen = !_enemyManager.IsOpen;
+            GUILayout.Space(5);
+
             DrawSection("Enemy Protection", () =>
             {
                 DrawHackToggle(Hack.Untargetable, "Untargetable", "Enemies ignore you");

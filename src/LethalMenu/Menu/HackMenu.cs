@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections;
 using LethalMenu.Mixins;
 using LethalMenu.Patches;
+using LethalMenu.Menu.Popup;
 
 namespace LethalMenu.Menu
 {
@@ -61,6 +62,15 @@ namespace LethalMenu.Menu
         // Collapsible section style
         private GUIStyle? _collapseButtonStyle;
 
+        // Popup managers
+        private readonly ItemManagerPopup _itemManager = new();
+        private readonly EnemyManagerPopup _enemyManager = new();
+        private readonly WeatherManagerPopup _weatherManager = new();
+        private readonly SuitManagerPopup _suitManager = new();
+        private readonly UnlockablesManagerPopup _unlockablesManager = new();
+        private readonly LootManagerPopup _lootManager = new();
+        private readonly MoonManagerPopup _moonManager = new();
+
         private void Stylize()
         {
             if (Theme.ThemeLoader.Skin == null)
@@ -98,6 +108,15 @@ namespace LethalMenu.Menu
             GUI.color = new Color(1f, 1f, 1f, Settings.MenuAlpha);
             _windowRect = GUI.Window(12345, _windowRect, DrawWindow, "");
             GUI.color = Color.white;
+
+            // Draw popup windows
+            _itemManager.Draw();
+            _enemyManager.Draw();
+            _weatherManager.Draw();
+            _suitManager.Draw();
+            _unlockablesManager.Draw();
+            _lootManager.Draw();
+            _moonManager.Draw();
 
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - _windowRect.width);

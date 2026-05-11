@@ -83,6 +83,16 @@ namespace LethalMenu.Menu
                 return;
             }
 
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Moon Manager", _buttonStyle, GUILayout.Height(28)))
+                _moonManager.IsOpen = !_moonManager.IsOpen;
+            if (GUILayout.Button("Suit Manager", _buttonStyle, GUILayout.Height(28)))
+                _suitManager.IsOpen = !_suitManager.IsOpen;
+            if (GUILayout.Button("Unlockables", _buttonStyle, GUILayout.Height(28)))
+                _unlockablesManager.IsOpen = !_unlockablesManager.IsOpen;
+            GUILayout.EndHorizontal();
+            GUILayout.Space(5);
+
             // Credits and dropship status
             GUILayout.BeginHorizontal();
             GUILayout.Label($"Credits: ${terminal.groupCredits}", _headerStyle);

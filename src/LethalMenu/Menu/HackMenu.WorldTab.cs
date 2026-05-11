@@ -8,6 +8,14 @@ namespace LethalMenu.Menu
 
         private void DrawWorldTab()
         {
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Weather Manager", _buttonStyle, GUILayout.Height(28)))
+                _weatherManager.IsOpen = !_weatherManager.IsOpen;
+            if (GUILayout.Button("Loot Manager", _buttonStyle, GUILayout.Height(28)))
+                _lootManager.IsOpen = !_lootManager.IsOpen;
+            GUILayout.EndHorizontal();
+            GUILayout.Space(5);
+
             DrawSection("Credits", () =>
             {
                 // Get or refresh terminal reference

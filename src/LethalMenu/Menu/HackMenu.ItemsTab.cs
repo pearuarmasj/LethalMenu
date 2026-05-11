@@ -13,6 +13,10 @@ namespace LethalMenu.Menu
 
         private void DrawItemsTab()
         {
+            if (GUILayout.Button("Open Item Manager", _buttonStyle, GUILayout.Height(28)))
+                _itemManager.IsOpen = !_itemManager.IsOpen;
+            GUILayout.Space(5);
+
             DrawSection("Item Cheats", () =>
             {
                 DrawHackToggle(Hack.InfiniteBattery, "Infinite Battery", "Items never lose charge");
