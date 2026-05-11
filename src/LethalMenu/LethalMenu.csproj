@@ -24,4 +24,9 @@
     <EmbeddedResource Include="$(NuGetPackageRoot)\lib.harmony\2.3.3\lib\net48\0Harmony.dll" />
   </ItemGroup>
 
+  <!-- Theme skin assets -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Theme\*.skin" />
+  </ItemGroup>
+
 </Project>

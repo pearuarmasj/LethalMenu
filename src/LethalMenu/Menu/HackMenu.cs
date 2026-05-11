@@ -61,8 +61,25 @@ namespace LethalMenu.Menu
         // Collapsible section style
         private GUIStyle? _collapseButtonStyle;
 
+        private void Stylize()
+        {
+            if (Theme.ThemeLoader.Skin == null)
+                Theme.ThemeLoader.SetTheme(Settings.ThemeName);
+
+            if (Theme.ThemeLoader.Skin != null)
+            {
+                GUI.skin = Theme.ThemeLoader.Skin;
+                GUI.skin.label.fontSize = Settings.MenuFontSize;
+                GUI.skin.button.fontSize = Settings.MenuFontSize;
+                GUI.skin.toggle.fontSize = Settings.MenuFontSize;
+                GUI.skin.box.fontSize = Settings.MenuFontSize;
+                GUI.skin.textField.fontSize = Settings.MenuFontSize;
+            }
+        }
+
         public void Draw()
         {
+            Stylize();
             InitStyles();
             
             // Initialize window rect from saved settings (once)
@@ -78,7 +95,9 @@ namespace LethalMenu.Menu
             // Handle resize before drawing window
             HandleResize();
 
+            GUI.color = new Color(1f, 1f, 1f, Settings.MenuAlpha);
             _windowRect = GUI.Window(12345, _windowRect, DrawWindow, "");
+            GUI.color = Color.white;
 
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - _windowRect.width);

@@ -72,6 +72,11 @@ namespace LethalMenu
         public static float BreadcrumbInterval { get; set; } = 3f;
         public static string SpamMessage { get; set; } = "SPAM";
 
+        // Theme settings
+        public static string ThemeName { get; set; } = "Default";
+        public static float MenuAlpha { get; set; } = 1f;
+        public static int MenuFontSize { get; set; } = 14;
+
         // Fake death state (runtime only, not persisted)
         public static bool FakeDeath { get; set; } = false;
 
@@ -150,6 +155,10 @@ namespace LethalMenu
                     ["NightVisionIntensity"] = NightVisionIntensity,
                     ["NightVisionRange"] = NightVisionRange,
 
+                    ["ThemeName"] = ThemeName,
+                    ["MenuAlpha"] = MenuAlpha,
+                    ["MenuFontSize"] = MenuFontSize,
+
                     ["KickedHostIds"] = new JArray(KickedHostIds.Select(id => (long)id)),
 
                     ["CollapsedSections"] = new JArray(CollapsedSections),
@@ -205,6 +214,10 @@ namespace LethalMenu
                 BreadcrumbInterval = config["BreadcrumbInterval"]?.Value<float>() ?? BreadcrumbInterval;
                 NightVisionIntensity = config["NightVisionIntensity"]?.Value<float>() ?? NightVisionIntensity;
                 NightVisionRange = config["NightVisionRange"]?.Value<float>() ?? NightVisionRange;
+
+                ThemeName = config["ThemeName"]?.Value<string>() ?? ThemeName;
+                MenuAlpha = config["MenuAlpha"]?.Value<float>() ?? MenuAlpha;
+                MenuFontSize = config["MenuFontSize"]?.Value<int>() ?? MenuFontSize;
 
                 if (config["KickedHostIds"] is JArray kickedArray)
                 {

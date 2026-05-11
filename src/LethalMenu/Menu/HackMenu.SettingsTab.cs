@@ -8,6 +8,34 @@ namespace LethalMenu.Menu
 
         private void DrawSettingsTab()
         {
+            DrawSection("Theme", () =>
+            {
+                var themes = Theme.ThemeLoader.GetAvailableThemes();
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Theme:", _labelStyle, GUILayout.Width(60));
+                foreach (var theme in themes)
+                {
+                    var style = (theme == Theme.ThemeLoader.CurrentName) ? _selectedTabStyle : _buttonStyle;
+                    if (GUILayout.Button(theme, style, GUILayout.Height(24)))
+                    {
+                        Theme.ThemeLoader.SetTheme(theme);
+                        Settings.ThemeName = theme;
+                        _stylesInitialized = false;
+                    }
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Opacity: {Settings.MenuAlpha:F1}", _labelStyle, GUILayout.Width(80));
+                Settings.MenuAlpha = GUILayout.HorizontalSlider(Settings.MenuAlpha, 0.1f, 1f, GUILayout.Width(200));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Font: {Settings.MenuFontSize}", _labelStyle, GUILayout.Width(80));
+                Settings.MenuFontSize = (int)GUILayout.HorizontalSlider(Settings.MenuFontSize, 8, 24, GUILayout.Width(200));
+                GUILayout.EndHorizontal();
+            });
+
             DrawSection("Menu Settings", () =>
             {
                 GUILayout.Label("Press INSERT to toggle menu", _labelStyle);
