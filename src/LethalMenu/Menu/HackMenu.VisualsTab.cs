@@ -27,7 +27,48 @@ namespace LethalMenu.Menu
                     DrawHackToggle(Hack.MineESP, "  Mine ESP", null);
                     DrawHackToggle(Hack.TurretESP, "  Turret ESP", null);
                     DrawHackToggle(Hack.FuseboxESP, "  Fusebox ESP", null);
+                    DrawHackToggle(Hack.SteamValveESP,        "  Steam Valves", null);
+                    DrawHackToggle(Hack.BigDoorESP,           "  Big Doors", null);
+                    DrawHackToggle(Hack.ShipDoorESP,          "  Ship Door", null);
+                    DrawHackToggle(Hack.EnemyVentESP,         "  Enemy Vents", null);
+                    DrawHackToggle(Hack.ItemDropshipESP,      "  Item Dropship", null);
+                    DrawHackToggle(Hack.CruiserESP,           "  Cruiser", null);
+                    DrawHackToggle(Hack.MoldSporeESP,         "  Mold Spores", null);
+                    DrawHackToggle(Hack.MineshaftElevatorESP, "  Mineshaft Elevator", null);
+                    DrawHackToggle(Hack.SpikeRoofTrapESP,     "  Spike Traps", null);
                 }
+            });
+
+            DrawSection("Chams", () =>
+            {
+                DrawHackToggle(Hack.EnableChams, "Enable Chams", "Mesh-recolor objects visible through walls");
+                if (!Hack.EnableChams.IsEnabled()) return;
+
+                GUILayout.Space(5);
+                DrawHackToggle(Hack.PlayerChams,            "  Players", null);
+                DrawHackToggle(Hack.EnemyChams,             "  Enemies", null);
+                DrawHackToggle(Hack.ItemChams,              "  Items", null);
+                DrawHackToggle(Hack.LandmineChams,          "  Landmines", null);
+                DrawHackToggle(Hack.TurretChams,            "  Turrets", null);
+                DrawHackToggle(Hack.DoorChams,              "  Doors", null);
+                DrawHackToggle(Hack.BigDoorChams,           "  Big Doors", null);
+                DrawHackToggle(Hack.ShipDoorChams,          "  Ship Door", null);
+                DrawHackToggle(Hack.BreakerChams,           "  Breakers", null);
+                DrawHackToggle(Hack.EnemyVentChams,         "  Enemy Vents", null);
+                DrawHackToggle(Hack.ItemDropshipChams,      "  Item Dropship", null);
+                DrawHackToggle(Hack.CruiserChams,           "  Cruiser", null);
+                DrawHackToggle(Hack.MoldSporeChams,         "  Mold Spores", null);
+                DrawHackToggle(Hack.MineshaftElevatorChams, "  Mineshaft Elevator", null);
+                DrawHackToggle(Hack.EntranceChams,          "  Entrances", null);
+                DrawHackToggle(Hack.SpikeRoofTrapChams,     "  Spike Traps", null);
+                DrawHackToggle(Hack.SteamValveChams,        "  Steam Valves", null);
+
+                GUILayout.Space(5);
+                Settings.UseSingleChamColor = GUILayout.Toggle(Settings.UseSingleChamColor, "  Use single color for all", _toggleStyle);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"  Min Distance: {Settings.ChamDistance:F0}m", _labelStyle, GUILayout.Width(120));
+                Settings.ChamDistance = GUILayout.HorizontalSlider(Settings.ChamDistance, 0f, 100f);
+                GUILayout.EndHorizontal();
             });
 
             DrawSection("Camera", () =>

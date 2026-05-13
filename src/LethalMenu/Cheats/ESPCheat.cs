@@ -129,6 +129,87 @@ namespace LethalMenu.Cheats
                     DrawESP(camera, box.transform.position, status, boxColor, 1.5f);
                 }
             }
+
+            if (Hack.SteamValveESP.IsEnabled())
+            {
+                foreach (var v in LethalMenuMod.SteamValves)
+                {
+                    if (v == null) continue;
+                    DrawESP(camera, v.transform.position, "Steam Valve", Settings.MineColor, 1f);
+                }
+            }
+
+            if (Hack.BigDoorESP.IsEnabled())
+            {
+                foreach (var d in LethalMenuMod.BigDoors)
+                {
+                    if (d == null) continue;
+                    DrawESP(camera, d.transform.position, "Big Door", Settings.DoorColor, 2f);
+                }
+            }
+
+            if (Hack.ShipDoorESP.IsEnabled())
+            {
+                foreach (var d in LethalMenuMod.HangarShipDoors)
+                {
+                    if (d == null) continue;
+                    DrawESP(camera, d.transform.position, "Ship Door", Color.white, 2f);
+                }
+            }
+
+            if (Hack.EnemyVentESP.IsEnabled())
+            {
+                foreach (var v in LethalMenuMod.EnemyVents)
+                {
+                    if (v == null) continue;
+                    DrawESP(camera, v.transform.position, "Vent", Settings.DoorColor, 1f);
+                }
+            }
+
+            if (Hack.ItemDropshipESP.IsEnabled())
+            {
+                foreach (var d in LethalMenuMod.ItemDropships)
+                {
+                    if (d == null) continue;
+                    DrawESP(camera, d.transform.position, "Dropship", Color.cyan, 2f);
+                }
+            }
+
+            if (Hack.CruiserESP.IsEnabled())
+            {
+                foreach (var v in LethalMenuMod.Vehicles)
+                {
+                    if (v == null) continue;
+                    DrawESP(camera, v.transform.position, "Cruiser", new Color(1f, 0.78f, 0f), 1.5f);
+                }
+            }
+
+            if (Hack.MoldSporeESP.IsEnabled())
+            {
+                foreach (var s in LethalMenuMod.MoldSpores)
+                {
+                    if (s == null) continue;
+                    DrawESP(camera, s.transform.position, "Spore", new Color(0f, 0.78f, 0f), 0.5f);
+                }
+            }
+
+            if (Hack.MineshaftElevatorESP.IsEnabled())
+            {
+                foreach (var e in LethalMenuMod.MineshaftElevators)
+                {
+                    if (e == null) continue;
+                    DrawESP(camera, e.transform.position, "Elevator", new Color(0.7f, 0.7f, 0.7f), 2f);
+                }
+            }
+
+            if (Hack.SpikeRoofTrapESP.IsEnabled())
+            {
+                foreach (var s in LethalMenuMod.SpikeRoofTraps)
+                {
+                    if (s == null) continue;
+                    DrawESP(camera, s.transform.position, "Spike Trap", new Color(1f, 0f, 0.25f), 1f);
+                }
+            }
         }
 
         private Camera? GetActiveCamera()
