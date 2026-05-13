@@ -26,6 +26,9 @@ namespace LethalMenu.Cheats
                 }
                 return;
             }
+
+            // Lazy init the cham material on the first frame we're enabled.
+            ChamHandler.Setup();
             _wasEnabled = true;
 
             var local = LethalMenuMod.LocalPlayer;

@@ -134,8 +134,9 @@ namespace LethalMenu
             // Load config on startup
             Settings.LoadConfig();
 
-            // Initialize cham material after settings load so colors are correct from the first frame.
-            Handler.ChamHandler.Setup();
+            // NOTE: ChamHandler.Setup() is deferred to first ChamCheat.OnUpdate tick.
+            // Creating a Material from a built-in shader during Awake (before Unity's rendering subsystem
+            // is fully ready) caused injection crashes. Lazy init from Update is safe.
         }
 
         private void RegisterActionExecutors()

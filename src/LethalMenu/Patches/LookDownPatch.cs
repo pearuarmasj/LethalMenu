@@ -6,6 +6,8 @@ using HarmonyLib;
 namespace LethalMenu.Patches
 {
     /// Widens the vertical look clamp from +-80 to +-89 when LookDown is enabled.
+    /// Verified against LCSource: CalculateNormalLookingInput contains exactly one Mathf.Clamp(cameraUp, -80f, 80f)
+    /// and no other -80f/80f literals. Replacing every match is safe for this specific method.
     [HarmonyPatch(typeof(PlayerControllerB), "CalculateNormalLookingInput")]
     internal static class LookDownPatch
     {

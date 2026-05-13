@@ -21,29 +21,42 @@ namespace LethalMenu.Handler
         public ChamHandler(Object target) { _target = target; }
         public static ChamHandler For(Object obj) => new ChamHandler(obj);
 
-        /// Called once from LethalMenuMod initialization. Builds the shared material and starts the cleanup coroutine.
+        private static bool _setupAttempted;
+
+        /// Lazy setup. Idempotent. Safe to call from any frame after Unity has booted.
+        /// Wrapped in try/catch so a shader-find or material-create failure can't crash injection.
         public static void Setup()
         {
-            var shader = Shader.Find("Hidden/Internal-Colored");
-            if (shader == null)
+            if (_setupAttempted) return;
+            _setupAttempted = true;
+            try
             {
-                Debug.LogError("[ChamHandler] Shader 'Hidden/Internal-Colored' not found. Chams disabled.");
-                return;
+                var shader = Shader.Find("Hidden/Internal-Colored");
+                if (shader == null)
+                {
+                    Debug.LogError("[ChamHandler] Shader 'Hidden/Internal-Colored' not found. Chams disabled.");
+                    return;
+                }
+
+                _chamMaterial = new Material(shader)
+                {
+                    hideFlags = HideFlags.DontSaveInEditor | HideFlags.HideInHierarchy
+                };
+                _chamMaterial.SetInt("_SrcBlend", 5);  // SrcAlpha
+                _chamMaterial.SetInt("_DstBlend", 10); // OneMinusSrcAlpha
+                _chamMaterial.SetInt("_Cull", 0);      // double-sided
+                _chamMaterial.SetInt("_ZTest", 8);     // Always
+                _chamMaterial.SetInt("_ZWrite", 0);
+                _colorPropId = Shader.PropertyToID("_Color");
+
+                if (LethalMenuMod.Instance != null)
+                    LethalMenuMod.Instance.StartCoroutine(CleanupOrphanedMaterials());
             }
-
-            _chamMaterial = new Material(shader)
+            catch (System.Exception ex)
             {
-                hideFlags = HideFlags.DontSaveInEditor | HideFlags.HideInHierarchy
-            };
-            _chamMaterial.SetInt("_SrcBlend", 5);  // SrcAlpha
-            _chamMaterial.SetInt("_DstBlend", 10); // OneMinusSrcAlpha
-            _chamMaterial.SetInt("_Cull", 0);      // double-sided
-            _chamMaterial.SetInt("_ZTest", 8);     // Always
-            _chamMaterial.SetInt("_ZWrite", 0);
-            _colorPropId = Shader.PropertyToID("_Color");
-
-            if (LethalMenuMod.Instance != null)
-                LethalMenuMod.Instance.StartCoroutine(CleanupOrphanedMaterials());
+                Debug.LogError($"[ChamHandler] Setup failed, chams disabled: {ex}");
+                _chamMaterial = null;
+            }
         }
 
         public void ProcessCham(float distance)
