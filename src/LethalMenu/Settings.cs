@@ -72,6 +72,13 @@ namespace LethalMenu
         public static float BreadcrumbInterval { get; set; } = 3f;
         public static string SpamMessage { get; set; } = "SPAM";
 
+        // D+E tunables
+        public static float PhantomMoveSpeed { get; set; } = 20f;
+        public static bool PhantomTeleportOnExit { get; set; } = true;
+        public static float FollowDelaySeconds { get; set; } = 1.0f;
+        public static float FollowMaxDistance { get; set; } = 1.0f;
+        public static float PJSpammerRate { get; set; } = 5f;
+
         // Theme settings
         public static string ThemeName { get; set; } = "Default";
         public static float MenuAlpha { get; set; } = 1f;
@@ -167,6 +174,12 @@ namespace LethalMenu
                     ["NightVisionIntensity"] = NightVisionIntensity,
                     ["NightVisionRange"] = NightVisionRange,
 
+                    ["PhantomMoveSpeed"] = PhantomMoveSpeed,
+                    ["PhantomTeleportOnExit"] = PhantomTeleportOnExit,
+                    ["FollowDelaySeconds"] = FollowDelaySeconds,
+                    ["FollowMaxDistance"] = FollowMaxDistance,
+                    ["PJSpammerRate"] = PJSpammerRate,
+
                     ["ThemeName"] = ThemeName,
                     ["MenuAlpha"] = MenuAlpha,
                     ["MenuFontSize"] = MenuFontSize,
@@ -238,6 +251,12 @@ namespace LethalMenu
                 BreadcrumbInterval = config["BreadcrumbInterval"]?.Value<float>() ?? BreadcrumbInterval;
                 NightVisionIntensity = config["NightVisionIntensity"]?.Value<float>() ?? NightVisionIntensity;
                 NightVisionRange = config["NightVisionRange"]?.Value<float>() ?? NightVisionRange;
+
+                PhantomMoveSpeed = config["PhantomMoveSpeed"]?.Value<float>() ?? PhantomMoveSpeed;
+                PhantomTeleportOnExit = config["PhantomTeleportOnExit"]?.Value<bool>() ?? PhantomTeleportOnExit;
+                FollowDelaySeconds = config["FollowDelaySeconds"]?.Value<float>() ?? FollowDelaySeconds;
+                FollowMaxDistance = config["FollowMaxDistance"]?.Value<float>() ?? FollowMaxDistance;
+                PJSpammerRate = config["PJSpammerRate"]?.Value<float>() ?? PJSpammerRate;
 
                 ThemeName = config["ThemeName"]?.Value<string>() ?? ThemeName;
                 MenuAlpha = config["MenuAlpha"]?.Value<float>() ?? MenuAlpha;
