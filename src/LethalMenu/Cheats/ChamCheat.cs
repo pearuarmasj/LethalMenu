@@ -4,9 +4,9 @@ using Object = UnityEngine.Object;
 
 namespace LethalMenu.Cheats
 {
-    /// Master Chams cheat. Iterates each category's object collection per-frame and dispatches
-    /// to ChamHandler if the category sub-toggle is enabled. Transition-aware via _wasEnabled so
-    /// chams are stripped from all renderers when EnableChams toggles off.
+    /// Master Chams cheat. Iterates every category's object collection per-frame unconditionally and
+    /// dispatches to ChamHandler.ProcessCham, which decides apply-vs-remove based on the sub-toggle.
+    /// Unconditional iteration is required so that flipping a sub-toggle OFF strips chams on the next frame.
     public class ChamCheat : CheatBase
     {
         public override string Name => "Chams";
@@ -35,73 +35,33 @@ namespace LethalMenu.Cheats
             if (local == null) return;
             Vector3 from = local.transform.position;
 
-            if (Hack.PlayerChams.IsEnabled())
-                foreach (var p in LethalMenuMod.Players)
-                    Process(p, from);
+            // Iterate every category unconditionally — ProcessCham gates on the sub-toggle and removes
+            // chams when the toggle is off. Skipping disabled categories here would leave chammed
+            // renderers stuck because ProcessCham would never run for them.
 
-            if (Hack.EnemyChams.IsEnabled())
-                foreach (var e in LethalMenuMod.Enemies)
-                    Process(e, from);
+            foreach (var p in LethalMenuMod.Players)
+            {
+                // Skip local player — own body renderers sit at camera position and would fill the screen.
+                if (p == LethalMenuMod.LocalPlayer) continue;
+                Process(p, from);
+            }
 
-            if (Hack.ItemChams.IsEnabled())
-                foreach (var i in LethalMenuMod.Items)
-                    Process(i, from);
-
-            if (Hack.LandmineChams.IsEnabled())
-                foreach (var m in LethalMenuMod.Landmines)
-                    Process(m, from);
-
-            if (Hack.TurretChams.IsEnabled())
-                foreach (var t in LethalMenuMod.Turrets)
-                    Process(t, from);
-
-            if (Hack.DoorChams.IsEnabled())
-                foreach (var d in LethalMenuMod.DoorLocks)
-                    Process(d, from);
-
-            if (Hack.BigDoorChams.IsEnabled())
-                foreach (var d in LethalMenuMod.BigDoors)
-                    Process(d, from);
-
-            if (Hack.ShipDoorChams.IsEnabled())
-                foreach (var d in LethalMenuMod.HangarShipDoors)
-                    Process(d, from);
-
-            if (Hack.BreakerChams.IsEnabled())
-                foreach (var b in LethalMenuMod.BreakerBoxes)
-                    Process(b, from);
-
-            if (Hack.EnemyVentChams.IsEnabled())
-                foreach (var v in LethalMenuMod.EnemyVents)
-                    Process(v, from);
-
-            if (Hack.ItemDropshipChams.IsEnabled())
-                foreach (var d in LethalMenuMod.ItemDropships)
-                    Process(d, from);
-
-            if (Hack.CruiserChams.IsEnabled())
-                foreach (var v in LethalMenuMod.Vehicles)
-                    Process(v, from);
-
-            if (Hack.MoldSporeChams.IsEnabled())
-                foreach (var s in LethalMenuMod.MoldSpores)
-                    Process(s, from);
-
-            if (Hack.MineshaftElevatorChams.IsEnabled())
-                foreach (var e in LethalMenuMod.MineshaftElevators)
-                    Process(e, from);
-
-            if (Hack.EntranceChams.IsEnabled())
-                foreach (var e in LethalMenuMod.Entrances)
-                    Process(e, from);
-
-            if (Hack.SpikeRoofTrapChams.IsEnabled())
-                foreach (var s in LethalMenuMod.SpikeRoofTraps)
-                    Process(s, from);
-
-            if (Hack.SteamValveChams.IsEnabled())
-                foreach (var v in LethalMenuMod.SteamValves)
-                    Process(v, from);
+            foreach (var e in LethalMenuMod.Enemies) Process(e, from);
+            foreach (var i in LethalMenuMod.Items) Process(i, from);
+            foreach (var m in LethalMenuMod.Landmines) Process(m, from);
+            foreach (var t in LethalMenuMod.Turrets) Process(t, from);
+            foreach (var d in LethalMenuMod.DoorLocks) Process(d, from);
+            foreach (var d in LethalMenuMod.BigDoors) Process(d, from);
+            foreach (var d in LethalMenuMod.HangarShipDoors) Process(d, from);
+            foreach (var b in LethalMenuMod.BreakerBoxes) Process(b, from);
+            foreach (var v in LethalMenuMod.EnemyVents) Process(v, from);
+            foreach (var d in LethalMenuMod.ItemDropships) Process(d, from);
+            foreach (var v in LethalMenuMod.Vehicles) Process(v, from);
+            foreach (var s in LethalMenuMod.MoldSpores) Process(s, from);
+            foreach (var e in LethalMenuMod.MineshaftElevators) Process(e, from);
+            foreach (var e in LethalMenuMod.Entrances) Process(e, from);
+            foreach (var s in LethalMenuMod.SpikeRoofTraps) Process(s, from);
+            foreach (var v in LethalMenuMod.SteamValves) Process(v, from);
         }
 
         private static void Process(Object obj, Vector3 from)
