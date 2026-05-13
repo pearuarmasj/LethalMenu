@@ -1,42 +1,35 @@
 namespace LethalMenu.Cheats.EnemyControl
 {
-    /// 
+    /// <summary>
     /// Controller for PufferAI (Spore Lizard).
-    /// Abilities: Release spores.
-    /// 
+    /// Primary: Stomp (intimidate + damage close-range).
+    /// Secondary: Release spore smoke.
+    /// </summary>
     public class PufferController : IEnemyController<PufferAI>
     {
         private enum State
         {
             Idle = 0,
-            Alert = 1,
-            Fleeing = 2
+            Alerted = 1,
+            Hostile = 2
         }
 
         public void UsePrimarySkill(PufferAI enemy)
         {
-            // Puff spores
-            enemy.ShakeTailServerRpc();
+            enemy.SetBehaviourState(State.Hostile);
+            enemy.StompServerRpc();
         }
 
         public void UseSecondarySkill(PufferAI enemy)
         {
-            // Toggle alert mode
-            if (enemy.IsBehaviourState(State.Alert))
-            {
-                enemy.SetBehaviourState(State.Idle);
-            }
-            else
-            {
-                enemy.SetBehaviourState(State.Alert);
-            }
+            enemy.SetBehaviourState(State.Hostile);
+            enemy.ShakeTailServerRpc();
         }
 
-        public string? GetPrimarySkillName(PufferAI _) => "Puff Spores";
+        public string? GetPrimarySkillName(PufferAI _) => "Stomp";
+        public string? GetSecondarySkillName(PufferAI _) => "Smoke";
 
-        public string? GetSecondarySkillName(PufferAI enemy) =>
-            enemy.IsBehaviourState(State.Alert) ? "Relax" : "Alert";
-
-        public float InteractRange(PufferAI _) => 2.0f;
+        public float InteractRange(PufferAI _) => 2.5f;
+        public bool CanUseEntranceDoors(PufferAI _) => false;
     }
 }
