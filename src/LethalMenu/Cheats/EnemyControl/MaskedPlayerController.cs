@@ -1,42 +1,26 @@
 namespace LethalMenu.Cheats.EnemyControl
 {
-    /// 
+    /// <summary>
     /// Controller for MaskedPlayerEnemy.
-    /// Abilities: Mimic player behavior, chase.
-    /// 
+    /// Primary: Toggle "Hands Out" (zombie-style grab pose).
+    /// Secondary: Toggle crouching (sneak pose).
+    /// </summary>
     public class MaskedPlayerController : IEnemyController<MaskedPlayerEnemy>
     {
-        private enum State
-        {
-            Idle = 0,
-            Roaming = 1,
-            Chasing = 2
-        }
-
         public void UsePrimarySkill(MaskedPlayerEnemy enemy)
-        {
-            // Enter chase mode
-            enemy.SetBehaviourState(State.Chasing);
-        }
+            => enemy.SetHandsOutServerRpc(!enemy.creatureAnimator.GetBool("HandsOut"));
 
         public void UseSecondarySkill(MaskedPlayerEnemy enemy)
-        {
-            // Toggle roaming
-            if (enemy.IsBehaviourState(State.Roaming))
-            {
-                enemy.SetBehaviourState(State.Idle);
-            }
-            else
-            {
-                enemy.SetBehaviourState(State.Roaming);
-            }
-        }
+            => enemy.SetCrouchingServerRpc(!enemy.creatureAnimator.GetBool("Crouching"));
 
-        public string? GetPrimarySkillName(MaskedPlayerEnemy _) => "Chase";
+        public string? GetPrimarySkillName(MaskedPlayerEnemy enemy)
+            => enemy.creatureAnimator.GetBool("HandsOut") ? "Hands In" : "Hands Out";
 
-        public string? GetSecondarySkillName(MaskedPlayerEnemy enemy) =>
-            enemy.IsBehaviourState(State.Roaming) ? "Stop" : "Roam";
+        public string? GetSecondarySkillName(MaskedPlayerEnemy enemy)
+            => enemy.creatureAnimator.GetBool("Crouching") ? "Stand" : "Crouch";
 
-        public float InteractRange(MaskedPlayerEnemy _) => 2.0f;
+        public float InteractRange(MaskedPlayerEnemy _) => 1.0f;
+        public bool SyncAnimationSpeedEnabled(MaskedPlayerEnemy _) => false;
+        public bool CanUseEntranceDoors(MaskedPlayerEnemy _) => true;
     }
 }
