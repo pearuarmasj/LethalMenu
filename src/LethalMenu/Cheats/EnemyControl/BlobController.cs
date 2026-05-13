@@ -1,33 +1,42 @@
+using LethalMenu.Util;
+
 namespace LethalMenu.Cheats.EnemyControl
 {
-    /// 
+    /// <summary>
     /// Controller for BlobAI (Hygrodere/Slime).
-    /// Abilities: Movement speed control.
-    /// 
+    /// Primary: Anger (18s aggressive timer).
+    /// Secondary HOLD: Tame (resets anger, pauses pursuit).
+    /// Secondary RELEASE: Resume normal behaviour.
+    /// </summary>
     public class BlobController : IEnemyController<BlobAI>
     {
-        private enum State
+        public void UsePrimarySkill(BlobAI enemy)
         {
-            Idle = 0,
-            Chasing = 1
+            SetAngeredTimer(enemy, 18.0f);
         }
 
-        public void UseSecondarySkill(BlobAI enemy)
+        public void OnSecondarySkillHold(BlobAI enemy)
         {
-            // Toggle chase mode
-            if (enemy.IsBehaviourState(State.Chasing))
-            {
-                enemy.SetBehaviourState(State.Idle);
-            }
-            else
-            {
-                enemy.SetBehaviourState(State.Chasing);
-            }
+            SetAngeredTimer(enemy, 0.0f);
+            SetTamedTimer(enemy, 2.0f);
         }
 
-        public string? GetSecondarySkillName(BlobAI enemy) =>
-            enemy.IsBehaviourState(State.Chasing) ? "Stop Chase" : "Chase";
+        public void ReleaseSecondarySkill(BlobAI enemy)
+        {
+            SetTamedTimer(enemy, 0.0f);
+        }
 
-        public float InteractRange(BlobAI _) => 1.5f;
+        public string? GetPrimarySkillName(BlobAI _) => "Anger";
+        public string? GetSecondarySkillName(BlobAI _) => "(HOLD) Tame";
+
+        public float InteractRange(BlobAI _) => 3.5f;
+        public float SprintMultiplier(BlobAI _) => 9.8f;
+        public bool CanUseEntranceDoors(BlobAI _) => false;
+
+        private static void SetTamedTimer(BlobAI enemy, float time)
+            => enemy.Reflect().SetField("tamedTimer", time);
+
+        private static void SetAngeredTimer(BlobAI enemy, float time)
+            => enemy.Reflect().SetField("angeredTimer", time);
     }
 }
