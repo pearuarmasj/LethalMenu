@@ -15,7 +15,7 @@
   <!-- NuGet packages -->
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.3.3" />
-    <PackageReference Include="LethalCompany.GameLibs.Steam" Version="73.0.0-ngd.0" />
+    <PackageReference Include="LethalCompany.GameLibs.Steam" Version="81.0.5-ngd.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 

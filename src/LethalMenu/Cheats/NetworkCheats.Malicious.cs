@@ -146,7 +146,8 @@ namespace LethalMenu.Cheats
             bracken.SetMovingTowardsTargetPlayer(targetPlayer);
             bracken.SwitchToBehaviourState(2); // Aggravated/chase mode
             bracken.EnterAngerModeServerRpc(float.MaxValue); // Max anger = constant pathfinding
-            bracken.UpdateEnemyPositionServerRpc(targetPlayer.transform.position);
+            bracken.serverPosition = targetPlayer.transform.position;
+            bracken.transform.position = targetPlayer.transform.position;
 
             Debug.Log("[NetworkCheats] Bracken aggravated, transferring ownership to target...");
 
@@ -204,7 +205,8 @@ namespace LethalMenu.Cheats
                     // Aggravate and teleport to player
                     bracken.SetMovingTowardsTargetPlayer(player);
                     bracken.EnterAngerModeServerRpc(float.MaxValue);
-                    bracken.UpdateEnemyPositionServerRpc(player.transform.position);
+                    bracken.serverPosition = player.transform.position;
+                    bracken.transform.position = player.transform.position;
 
                     // Transfer to target
                     bracken.ChangeEnemyOwnerServerRpc(player.actualClientId);

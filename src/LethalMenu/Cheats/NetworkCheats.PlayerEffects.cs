@@ -32,7 +32,7 @@ namespace LethalMenu.Cheats
             try
             {
                 // Direct call attempt - may only work if we have permission
-                target.DropAllHeldItemsServerRpc();
+                target.DropAllHeldItemsAndSyncNonexact();
                 Debug.Log($"[NetworkCheats] Forced {target.playerUsername} to drop items.");
             }
             catch (Exception e)

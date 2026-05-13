@@ -40,7 +40,8 @@ namespace LethalMenu.Cheats
                     Vector3.zero,
                     (int)CauseOfDeath.Unknown,
                     0, // deathAnimation
-                    Vector3.zero
+                    Vector3.zero,
+                    false // setOverrideDropItems
                 );
 
                 Debug.Log("[NetworkCheats] FakeDeath: Death broadcasted to other players. You appear dead but can still move.");
