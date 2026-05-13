@@ -33,6 +33,7 @@ namespace LethalMenu.Cheats.EnemyControl
             { typeof(LassoManAI), new LassoManController() },
             { typeof(ButlerBeesEnemyAI), new ButlerBeesController() },
             { typeof(CaveDwellerAI), new CaveDwellerController() },
+            { typeof(ClaySurgeonAI), new ClaySurgeonController() },
         };
 
         /// 
