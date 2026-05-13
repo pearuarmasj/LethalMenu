@@ -65,6 +65,9 @@ namespace LethalMenu.Menu
             DrawSection("Ship", () =>
             {
                 DrawHackToggle(Hack.ShipDoorInSpace, "Ship Door In Space", "Open ship door in space");
+                DrawHackToggle(Hack.NoShipDoorClose, "No Ship Door Close", "Block host from closing the ship door");
+                DrawHackToggle(Hack.VehicleGodMode, "Vehicle God Mode", "Cruiser ignores damage");
+                DrawHackToggle(Hack.TriggerGun, "Trigger Gun", "Middle-click activates whatever the camera points at (mine/turret/door/etc.). Hold E to possess enemies.");
             });
 
             DrawSection("Fusebox Control", () =>

@@ -69,6 +69,9 @@ namespace LethalMenu.Menu
 
                 if (!ServerBrowser.CanRefreshLobbies)
                     GUILayout.Label(ServerBrowser.QueryBlockReason, _tooltipStyle);
+
+                GUILayout.Space(5);
+                DrawHackToggle(Hack.ShowOffensiveLobbyNames, "Show Offensive Lobby Names", "Disable Steamworks name-censorship in the browser");
             });
 
             DrawSection("Filters", () =>

@@ -149,6 +149,10 @@ namespace LethalMenu.Menu
             DrawSection("Environment", () =>
             {
                 DrawHackToggle(Hack.NoFog, "No Fog", "Remove all fog effects");
+                DrawHackToggle(Hack.ClearVisionMod, "Clear Vision", "Locally suppress HDRP fog/dust effects");
+                DrawHackToggle(Hack.MinimalGUIMod, "Minimal GUI", "Hide all HUD for cinematic shots");
+                DrawHackToggle(Hack.RadarPatch, "Radar+", "Extend in-ship radar coverage");
+                DrawHackToggle(Hack.EnemyDeathNotification, "Enemy Death Notifications", "HUD tip on every enemy death");
             });
         }
 

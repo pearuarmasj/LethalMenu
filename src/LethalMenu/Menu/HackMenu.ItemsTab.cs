@@ -23,6 +23,13 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "Interact through walls");
                 DrawHackToggle(Hack.LootBeforeGameStarts, "Loot Before Start", "Grab items before game starts");
                 DrawHackToggle(Hack.GrabNutcrackerShotgun, "Grab Nutcracker Gun", "Steal shotgun from Nutcracker");
+                DrawHackToggle(Hack.InfiniteScanRange, "Infinite Scan Range", "Q-scanner sees everything on the map");
+                DrawHackToggle(Hack.InfiniteGrab, "Infinite Grab", "Grab items from any distance");
+                DrawHackToggle(Hack.InfiniteItemUsage, "Infinite Item Usage", "Battery and charges never decrement");
+                DrawHackToggle(Hack.InfiniteDeposit, "Infinite Deposit", "Deposit desk has no item cap");
+                DrawHackToggle(Hack.LootAnyItemBeltBag, "Loot Any Item (Belt Bag)", "Belt bag accepts any grabbable");
+                DrawHackToggle(Hack.LootThroughWallsBeltBag, "Loot Through Walls (Belt Bag)", "Belt bag picks up scrap through walls");
+                DrawHackToggle(Hack.UnlimitedPresents, "Unlimited Presents", "Gift boxes can be opened repeatedly");
             });
 
             DrawSection("Weapon Cheats", () =>
