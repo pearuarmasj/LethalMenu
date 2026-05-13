@@ -39,6 +39,10 @@ namespace LethalMenu.Cheats.EnemyControl
             { typeof(FlowerSnakeEnemy), new FlowerSnakeController() },
             { typeof(RadMechAI), new RadMechController() },
             { typeof(GiantKiwiAI), new GiantKiwiController() },
+            { typeof(CadaverBloomAI), new CadaverBloomController() },
+            { typeof(CadaverGrowthAI), new CadaverGrowthController() },
+            { typeof(StingrayAI), new StingrayController() },
+            { typeof(PumaAI), new PumaController() },
         };
 
         /// 
