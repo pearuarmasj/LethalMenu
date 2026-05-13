@@ -4,7 +4,7 @@ namespace LethalMenu.Cheats.EnemyControl
     /// Controller for RedLocustBees (Circuit Bees).
     /// Abilities: Attack zap mode, return to idle.
     /// 
-    public class CircuitBeesController : IEnemyController<RedLocustBees>
+    public class RedLocustBeesController : IEnemyController<RedLocustBees>
     {
         private enum State
         {
