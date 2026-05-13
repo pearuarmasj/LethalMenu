@@ -128,6 +128,8 @@ namespace LethalMenu
 
         private void RegisterActionExecutors()
         {
+            Hack.DisconnectMod.RegisterExecutor(Cheats.NetworkCheats.DisconnectFromLobby);
+            Hack.ReconnectFromClipboard.RegisterExecutor(Cheats.NetworkCheats.ReconnectFromClipboard);
             Hack.SelfRevive.RegisterExecutor(Cheats.NetworkCheats.SelfRevive);
             Hack.FakeDeath.RegisterExecutor(Cheats.NetworkCheats.FakeDeath);
             Hack.CancelFakeDeath.RegisterExecutor(Cheats.NetworkCheats.CancelFakeDeath);

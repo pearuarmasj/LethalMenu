@@ -663,9 +663,21 @@ namespace LethalMenu.Menu
 
                 GUILayout.BeginHorizontal();
                 DrawHackToggle(Hack.DeskDoorSpam, "Desk Door", null);
+                DrawHackToggle(Hack.PJSpammer, "PJ Spammer", "Fake 'X joined the game' chat messages");
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Flicker Lights", _buttonStyle))
                 {
                     Hack.FlickerLights.Execute();
+                }
+                if (GUILayout.Button("Disconnect", _buttonStyle))
+                {
+                    Hack.DisconnectMod.Execute();
+                }
+                if (GUILayout.Button("Reconnect (clipboard)", _buttonStyle))
+                {
+                    Hack.ReconnectFromClipboard.Execute();
                 }
                 GUILayout.EndHorizontal();
 
