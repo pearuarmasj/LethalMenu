@@ -66,6 +66,10 @@ namespace LethalMenu.Cheats
         {
             if (LethalMenuMod.LocalPlayer == null) return;
 
+            // Mutex with Phantom — both fight over the gameplay camera transform.
+            if (Hack.Phantom.IsEnabled())
+                Hack.Phantom.SetEnabled(false);
+
             // Get original camera
             _originalCamera = LethalMenuMod.LocalPlayer.gameplayCamera;
             if (_originalCamera == null) return;

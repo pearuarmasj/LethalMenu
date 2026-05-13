@@ -525,6 +525,40 @@ namespace LethalMenu.Menu
                 }
             });
 
+            DrawSection("Follow Player", () =>
+            {
+                var followPlayers = Cheats.NetworkCheats.GetAllPlayers();
+                if (followPlayers.Length == 0)
+                {
+                    GUILayout.Label("No players to follow.", _labelStyle);
+                    return;
+                }
+
+                var names = followPlayers.Select(p => p.playerUsername ?? "?").ToArray();
+                int idx = Cheats.FollowCheat.TargetPlayer != null
+                    ? System.Array.IndexOf(followPlayers, Cheats.FollowCheat.TargetPlayer)
+                    : 0;
+                if (idx < 0) idx = 0;
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Target:", _labelStyle, GUILayout.Width(60));
+                if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
+                    idx = (idx - 1 + names.Length) % names.Length;
+                GUILayout.Label(names[idx], _labelStyle, GUILayout.Width(120));
+                if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
+                    idx = (idx + 1) % names.Length;
+                GUILayout.EndHorizontal();
+                Cheats.FollowCheat.TargetPlayer = followPlayers[idx];
+
+                DrawHackToggle(Hack.FollowPlayer, "Follow Player",
+                    $"Auto-walk behind {names[idx]} at {Settings.FollowDelaySeconds:F1}s delay");
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Delay: {Settings.FollowDelaySeconds:F1}s", _labelStyle, GUILayout.Width(80));
+                Settings.FollowDelaySeconds = GUILayout.HorizontalSlider(Settings.FollowDelaySeconds, 0.2f, 3.0f);
+                GUILayout.EndHorizontal();
+            });
+
             DrawSection("Player Actions", () =>
             {
                 var players = Cheats.NetworkCheats.GetAllPlayers();
