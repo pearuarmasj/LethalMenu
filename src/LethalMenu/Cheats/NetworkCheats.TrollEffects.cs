@@ -9,7 +9,7 @@ namespace LethalMenu.Cheats
     {
         #region Troll Effects
 
-        /// Spin all ship objects. Kind of lame but it's in the reference.
+        /// Spin all ship objects, then snap them back to their default placement when the spin ends.
         public static void SpinShipObjects(float duration = 5f)
         {
             var shipObjects = UnityEngine.Object.FindObjectsOfType<PlaceableShipObject>();
@@ -30,25 +30,72 @@ namespace LethalMenu.Cheats
             HUDManager.Instance?.DisplayTip("Spin", $"Spinning {shipObjects.Length} ship objects!");
         }
 
+        /// Snap every ship object back to the position/rotation it had when the lobby loaded.
+        /// Uses the game's own ResetShipObjectToDefaultPosition + broadcasts via PlaceShipObjectServerRpc
+        /// so other players see the reset.
+        public static void ResetAllShipObjects()
+        {
+            var shipObjects = UnityEngine.Object.FindObjectsOfType<PlaceableShipObject>();
+            if (shipObjects == null || shipObjects.Length == 0)
+            {
+                HUDManager.Instance?.DisplayTip("Reset Ship", "No ship objects found.");
+                return;
+            }
+
+            int resetCount = 0;
+            foreach (var obj in shipObjects)
+            {
+                if (ResetShipObject(obj)) resetCount++;
+            }
+
+            HUDManager.Instance?.DisplayTip("Reset Ship", $"Reset {resetCount} ship objects to default placement.");
+        }
+
+        /// Reset one PlaceableShipObject to its starting position + rotation, locally and across the network.
+        private static bool ResetShipObject(PlaceableShipObject obj)
+        {
+            if (obj == null || obj.parentObject == null) return false;
+            var manager = ShipBuildModeManager.Instance;
+            if (manager == null) return false;
+
+            var startPos = obj.parentObject.startingPosition;
+            var startRot = obj.parentObject.startingRotation;
+
+            // Local restore (clears placedPosition/rotation, resets transform).
+            manager.ResetShipObjectToDefaultPosition(obj);
+
+            // Network sync: rebroadcast as a placement at the default so other clients update too.
+            var netObj = obj.parentObject.GetComponent<Unity.Netcode.NetworkObject>();
+            var localPlayer = LethalMenuMod.LocalPlayer;
+            if (netObj != null && localPlayer != null)
+            {
+                manager.PlaceShipObjectServerRpc(startPos, startRot, netObj, (int)localPlayer.playerClientId);
+            }
+            return true;
+        }
+
         private static IEnumerator SpinObjectCoroutine(PlaceableShipObject obj, float duration)
         {
             float elapsed = 0f;
             Vector3 originalPos = obj.transform.position;
-            
+
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
                 float rotation = elapsed * 810f;
-                
+
                 ShipBuildModeManager.Instance?.PlaceShipObject(
                     originalPos,
                     new Vector3(0f, rotation, 0f),
                     obj,
                     false
                 );
-                
+
                 yield return null;
             }
+
+            // Snap back to the default placement so things don't stay at random rotations.
+            ResetShipObject(obj);
         }
 
         private static System.Collections.Generic.Dictionary<ulong, Coroutine> _activeSpinCoroutines = new System.Collections.Generic.Dictionary<ulong, Coroutine>();

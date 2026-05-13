@@ -518,6 +518,11 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.SpinShipObjects(5f);
                 }
+
+                if (GUILayout.Button("Reset Ship Objects", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ResetAllShipObjects();
+                }
             });
 
             DrawSection("Player Actions", () =>
