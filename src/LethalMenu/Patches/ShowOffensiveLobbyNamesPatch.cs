@@ -2,22 +2,14 @@ using HarmonyLib;
 
 namespace LethalMenu.Patches
 {
-    /// Clears SteamLobbyManager.censorOffensiveLobbyNames so the lobby browser shows uncensored names.
-    /// Applied on Awake and on every Update so toggling the cheat takes effect immediately.
-    [HarmonyPatch(typeof(SteamLobbyManager))]
+    /// Clears SteamLobbyManager.censorOffensiveLobbyNames every Update so the lobby browser
+    /// shows uncensored names. Update fires every frame so toggling the cheat takes effect immediately.
+    /// Note: SteamLobbyManager has no Awake; OnEnable + Update are the lifecycle hooks.
+    [HarmonyPatch(typeof(SteamLobbyManager), "Update")]
     internal static class ShowOffensiveLobbyNamesPatch
     {
-        [HarmonyPatch("Awake")]
         [HarmonyPostfix]
-        private static void OnAwake(SteamLobbyManager __instance)
-        {
-            if (Hack.ShowOffensiveLobbyNames.IsEnabled())
-                __instance.censorOffensiveLobbyNames = false;
-        }
-
-        [HarmonyPatch("Update")]
-        [HarmonyPostfix]
-        private static void OnUpdate(SteamLobbyManager __instance)
+        private static void Postfix(SteamLobbyManager __instance)
         {
             if (Hack.ShowOffensiveLobbyNames.IsEnabled())
                 __instance.censorOffensiveLobbyNames = false;
