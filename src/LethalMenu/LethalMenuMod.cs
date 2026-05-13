@@ -133,6 +133,9 @@ namespace LethalMenu
 
             // Load config on startup
             Settings.LoadConfig();
+
+            // Initialize cham material after settings load so colors are correct from the first frame.
+            Handler.ChamHandler.Setup();
         }
 
         private void RegisterActionExecutors()
