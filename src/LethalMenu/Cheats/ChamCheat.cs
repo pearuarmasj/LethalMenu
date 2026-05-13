@@ -95,6 +95,10 @@ namespace LethalMenu.Cheats
             if (Hack.SpikeRoofTrapChams.IsEnabled())
                 foreach (var s in LethalMenuMod.SpikeRoofTraps)
                     Process(s, from);
+
+            if (Hack.SteamValveChams.IsEnabled())
+                foreach (var v in LethalMenuMod.SteamValves)
+                    Process(v, from);
         }
 
         private static void Process(Object obj, Vector3 from)
