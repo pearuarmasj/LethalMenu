@@ -1,10 +1,11 @@
 using UnityEngine;
 using Unity.Netcode;
 using System.Linq;
+using LethalMenu.Mixins;
 
 namespace LethalMenu.Menu.Popup
 {
-    public class ItemManagerPopup : PopupMenu
+    public class ItemManagerPopup : PopupMenu, IItemManipulator
     {
         private string _searchFilter = "";
         private int _scrapValue = 100;

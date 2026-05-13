@@ -16,6 +16,7 @@ namespace LethalMenu.Cheats
         private static GUIStyle? _headerStyle;
         private static GUIStyle? _valueStyle;
         private static Texture2D? _backgroundTexture;
+        private static Texture2D? _borderTexture;
 
         public override void OnUpdate() { }
 
@@ -25,8 +26,18 @@ namespace LethalMenu.Cheats
             if (LethalMenuMod.LocalPlayer == null) return;
             if (StartOfRound.Instance == null) return;
 
+            ApplyHudSkin();
             InitializeStyles();
             DrawInfoPanel();
+        }
+
+        private static void ApplyHudSkin()
+        {
+            if (LethalMenu.Theme.ThemeLoader.Skin == null)
+                LethalMenu.Theme.ThemeLoader.SetTheme(Settings.ThemeName);
+
+            if (LethalMenu.Theme.ThemeLoader.Skin != null)
+                GUI.skin = LethalMenu.Theme.ThemeLoader.Skin;
         }
 
         private static void InitializeStyles()
@@ -38,12 +49,19 @@ namespace LethalMenu.Cheats
             _backgroundTexture.SetPixel(0, 0, new Color(0f, 0f, 0f, 0.7f));
             _backgroundTexture.Apply();
 
-            _infoStyle = new GUIStyle(GUI.skin.label)
+            _borderTexture = new Texture2D(1, 1);
+            _borderTexture.SetPixel(0, 0, Color.white);
+            _borderTexture.Apply();
+
+            _infoStyle = new GUIStyle()
             {
                 fontSize = 13,
                 fontStyle = FontStyle.Normal,
                 alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(5, 5, 2, 2)
+                padding = new RectOffset(5, 5, 2, 2),
+                clipping = TextClipping.Clip,
+                wordWrap = false,
+                richText = false
             };
             _infoStyle.normal.textColor = new Color(0.9f, 0.9f, 0.9f);
 
@@ -75,10 +93,7 @@ namespace LethalMenu.Cheats
             // Draw background
             GUI.DrawTexture(new Rect(x, y, panelWidth, panelHeight), _backgroundTexture);
 
-            // Draw border
-            GUI.color = new Color(0.4f, 0.8f, 1f, 0.5f);
-            GUI.Box(new Rect(x, y, panelWidth, panelHeight), "");
-            GUI.color = Color.white;
+            DrawBorder(new Rect(x, y, panelWidth, panelHeight), new Color(0.4f, 0.8f, 1f, 0.5f));
 
             float currentY = y + 5f;
             float labelWidth = 110f;
@@ -184,7 +199,17 @@ namespace LethalMenu.Cheats
         private static void DrawLine(float x, float y, float width)
         {
             GUI.color = new Color(0.4f, 0.8f, 1f, 0.3f);
-            GUI.DrawTexture(new Rect(x, y, width, 1), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(x, y, width, 1), _borderTexture);
+            GUI.color = Color.white;
+        }
+
+        private static void DrawBorder(Rect rect, Color color)
+        {
+            GUI.color = color;
+            GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 1f), _borderTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), _borderTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.y, 1f, rect.height), _borderTexture);
+            GUI.DrawTexture(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), _borderTexture);
             GUI.color = Color.white;
         }
 

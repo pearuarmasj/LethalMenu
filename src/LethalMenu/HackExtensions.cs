@@ -14,34 +14,45 @@ namespace LethalMenu
 
         public static void InitializeDefaults()
         {
+            ToggleFlags.Clear();
             foreach (Hack hack in Enum.GetValues(typeof(Hack)))
-                ToggleFlags[hack] = false;
+            {
+                if (!hack.IsAction())
+                    ToggleFlags[hack] = false;
+            }
         }
+
+        public static bool IsAction(this Hack hack) =>
+            hack >= Hack.SelfRevive;
 
         public static bool IsEnabled(this Hack hack) =>
             ToggleFlags.TryGetValue(hack, out bool val) && val;
 
         public static bool CanBeToggled(this Hack hack) =>
-            ToggleFlags.ContainsKey(hack);
+            !hack.IsAction() && ToggleFlags.ContainsKey(hack);
 
         public static void Toggle(this Hack hack)
         {
             if (!ToggleFlags.TryGetValue(hack, out bool current)) return;
-            bool next = !current;
-            ToggleFlags[hack] = next;
-            if (next) return;
+            ToggleFlags[hack] = !current;
         }
 
         public static void SetEnabled(this Hack hack, bool enabled)
         {
-            if (!ToggleFlags.ContainsKey(hack)) return;
+            if (!hack.CanBeToggled()) return;
             ToggleFlags[hack] = enabled;
         }
 
         public static void Execute(this Hack hack, params object[] args)
         {
-            if (!Executors.TryGetValue(hack, out Delegate del)) return;
-            del.DynamicInvoke(args.Length == 0 ? null : args);
+            if (hack.CanBeToggled())
+            {
+                hack.Toggle();
+                return;
+            }
+
+            if (Executors.TryGetValue(hack, out Delegate del))
+                del.DynamicInvoke(args.Length == 0 ? null : args);
         }
 
         public static string GetDisplayName(this Hack hack)
@@ -52,7 +63,7 @@ namespace LethalMenu
             return name;
         }
 
-        public static void SetKeyBind(this Hack hack, ButtonControl button)
+        public static void SetKeyBind(this Hack hack, ButtonControl? button)
         {
             if (button == null)
                 KeyBinds.Remove(hack);
@@ -74,10 +85,7 @@ namespace LethalMenu
             foreach (var kv in KeyBinds)
             {
                 if (kv.Value == null || !kv.Value.wasPressedThisFrame) continue;
-                if (kv.Key.CanBeToggled())
-                    kv.Key.Toggle();
-                else
-                    kv.Key.Execute();
+                kv.Key.Execute();
             }
         }
     }

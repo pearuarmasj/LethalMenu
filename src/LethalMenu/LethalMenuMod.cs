@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using GameNetcodeStuff;
 using HarmonyLib;
@@ -8,7 +9,6 @@ using LethalMenu.Menu;
 using LethalMenu.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering.HighDefinition;
 
 namespace LethalMenu
 {
@@ -31,10 +31,6 @@ namespace LethalMenu
         // Menu system
         private HackMenu? _menu;
 
-        // Fog tracking
-        private LocalVolumetricFog[]? _fogObjects;
-        private bool _fogWasDisabled = false;
-
         // Game state references
         public static PlayerControllerB? LocalPlayer { get; set; }
         public static StartOfRound? GameInstance { get; set; }
@@ -52,6 +48,9 @@ namespace LethalMenu
         public static List<EntranceTeleport> Entrances { get; } = new();
         public static List<ShipTeleporter> Teleporters { get; } = new();
         public static List<BreakerBox> BreakerBoxes { get; } = new();
+
+        private bool _minesEnabled = true;
+        private bool _turretsEnabled = true;
 
         private void Awake()
         {
@@ -100,27 +99,74 @@ namespace LethalMenu
         {
             Loader.Log("[LethalMenu] Registering cheats...");
             HackExtensions.InitializeDefaults();
-            _cheats.Add(new GodModeCheat());
-            _cheats.Add(new DemiGodCheat());
-            _cheats.Add(new InfiniteStaminaCheat());
-            _cheats.Add(new SpeedHackCheat());
-            _cheats.Add(new JumpHackCheat());
-            _cheats.Add(new NoClipCheat());
-            _cheats.Add(new NightVisionCheat());
-            _cheats.Add(new NoFallDamageCheat());
-            _cheats.Add(new InfiniteBatteryCheat());
-            _cheats.Add(new NoWeightCheat());
-            _cheats.Add(new ESPCheat());
-            _cheats.Add(new EnemyControlCheat());
-            _cheats.Add(new FreeCamCheat());
-            _cheats.Add(new SpectatePlayerCheat());
-            _cheats.Add(new ThirdPersonCheat());
-            _cheats.Add(new InfoDisplayCheat());
-            _cheats.Add(new ItemSlotsCheat());
+            RegisterActionExecutors();
+
+            var cheatTypes = Assembly.GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => typeof(CheatBase).IsAssignableFrom(t) && !t.IsAbstract)
+                .OrderBy(t => t.FullName);
+
+            foreach (var type in cheatTypes)
+            {
+                try
+                {
+                    if (Activator.CreateInstance(type) is CheatBase cheat)
+                        _cheats.Add(cheat);
+                }
+                catch (Exception ex)
+                {
+                    Loader.LogError($"[LethalMenu] Failed to create cheat {type.FullName}: {ex.Message}");
+                }
+            }
+
             Loader.Log($"[LethalMenu] Registered {_cheats.Count} cheats.");
 
             // Load config on startup
             Settings.LoadConfig();
+        }
+
+        private void RegisterActionExecutors()
+        {
+            Hack.SelfRevive.RegisterExecutor(Cheats.NetworkCheats.SelfRevive);
+            Hack.FakeDeath.RegisterExecutor(Cheats.NetworkCheats.FakeDeath);
+            Hack.CancelFakeDeath.RegisterExecutor(Cheats.NetworkCheats.CancelFakeDeath);
+            Hack.TeleportToShip.RegisterExecutor(() => Cheats.NetworkCheats.TeleportToShip());
+            Hack.TeleportToEntrance.RegisterExecutor(() =>
+            {
+                if (LocalPlayer != null) Cheats.NetworkCheats.TeleportPlayerToEntrance(LocalPlayer, true);
+            });
+            Hack.TeleportToFireExit.RegisterExecutor(() =>
+            {
+                if (LocalPlayer != null) Cheats.NetworkCheats.TeleportPlayerToEntrance(LocalPlayer, false);
+            });
+            Hack.KillAllEnemies.RegisterExecutor(Cheats.NetworkCheats.KillAllEnemies);
+            Hack.StunAllEnemies.RegisterExecutor(Cheats.NetworkCheats.StunAllEnemies);
+            Hack.TeleportAllEnemiesAway.RegisterExecutor(TeleportAllEnemiesAway);
+            Hack.TPAllItemsToShip.RegisterExecutor(TeleportAllItemsToShip);
+            Hack.TPNearbyItems.RegisterExecutor(() => TeleportNearbyItemsToPlayer(15f));
+            Hack.UnlockAllDoors.RegisterExecutor(Cheats.NetworkCheats.UnlockAllDoors);
+            Hack.BlowUpAllMines.RegisterExecutor(Cheats.NetworkCheats.BlowUpAllLandmines);
+            Hack.ToggleMines.RegisterExecutor(() =>
+            {
+                _minesEnabled = !_minesEnabled;
+                Cheats.NetworkCheats.ToggleAllLandmines(_minesEnabled);
+            });
+            Hack.ToggleTurrets.RegisterExecutor(() =>
+            {
+                _turretsEnabled = !_turretsEnabled;
+                Cheats.NetworkCheats.ToggleAllTurrets(_turretsEnabled);
+            });
+            Hack.BerserkTurrets.RegisterExecutor(Cheats.NetworkCheats.BerserkAllTurrets);
+            Hack.FlickerLights.RegisterExecutor(Cheats.NetworkCheats.FlickerShipLights);
+            Hack.MaxChaos.RegisterExecutor(Cheats.NetworkCheats.MaxChaos);
+            Hack.ForceShipLeave.RegisterExecutor(Cheats.NetworkCheats.ForceShipLeave);
+            Hack.EjectAllPlayers.RegisterExecutor(Cheats.NetworkCheats.EjectAllPlayers);
+            Hack.ForceStart.RegisterExecutor(Cheats.NetworkCheats.ForceStartGame);
+            Hack.ForceEnd.RegisterExecutor(Cheats.NetworkCheats.ForceEndGame);
+            Hack.ReviveAllPlayers.RegisterExecutor(Cheats.NetworkCheats.ReviveAllPlayers);
+            Hack.TeleportAllToMe.RegisterExecutor(Cheats.NetworkCheats.TeleportAllToMe);
+            Hack.SetCredits.RegisterExecutor(() => Cheats.NetworkCheats.SetCredits(999999));
+            Hack.SellQuota.RegisterExecutor(Cheats.NetworkCheats.SellQuota);
         }
 
         private void InitializeMenu()
@@ -169,15 +215,6 @@ namespace LethalMenu
                 }
             }
 
-            // KillClick - kill enemy on left click
-            UpdateKillClick();
-            
-            // StunClick - stun enemy/turret/mine on middle click
-            UpdateStunClick();
-
-            // NoFog control
-            UpdateFogState();
-
             // Update new runtime features
             UpdateRuntimeFeatures();
 
@@ -190,31 +227,6 @@ namespace LethalMenu
 
         private void UpdateRuntimeFeatures()
         {
-            // AlwaysShowClock - Find and enable the clock UI
-            if (Hack.AlwaysShowClock.IsEnabled())
-            {
-                // The clock is typically hidden in certain states - we need to find it in the HUD hierarchy
-                var clockObj = GameObject.Find("Systems/UI/Canvas/IngamePlayerHUD/TopLeftCorner/Clock");
-                if (clockObj != null) clockObj.SetActive(true);
-            }
-
-            // FOV
-            if (LocalPlayer != null && LocalPlayer.gameplayCamera != null)
-            {
-                if (LocalPlayer.inTerminalMenu)
-                {
-                    LocalPlayer.gameplayCamera.fieldOfView = 66f;
-                }
-                else if (Hack.CustomFOV.IsEnabled())
-                {
-                    LocalPlayer.gameplayCamera.fieldOfView = Settings.FOVValue;
-                }
-                else if (LocalPlayer.gameplayCamera.fieldOfView != 66f)
-                {
-                    LocalPlayer.gameplayCamera.fieldOfView = 66f;
-                }
-            }
-
             // NoVisor
             var visor = GameObject.Find("Systems/Rendering/PlayerHUDHelmetModel/");
             if (visor != null)
@@ -264,9 +276,6 @@ namespace LethalMenu
 
             // Minigun shotgun
             UpdateMinigunShotgun();
-
-            // Breadcrumbs
-            UpdateBreadcrumbs();
         }
 
         private void UpdateMinigunShotgun()
@@ -284,166 +293,94 @@ namespace LethalMenu
             shotgun.ShootGunServerRpc(pos, dir);
         }
 
-        // Breadcrumbs tracking
-        private readonly List<Vector3> _breadcrumbs = new List<Vector3>();
-        private float _lastBreadcrumbTime = 0f;
-
-        private void UpdateBreadcrumbs()
+        private static void TeleportAllEnemiesAway()
         {
-            // Clear breadcrumbs when not in game or player is dead
-            if (LocalPlayer == null || LocalPlayer.isPlayerDead)
+            var farPos = new Vector3(0f, -500f, 0f);
+            foreach (var enemy in Enemies)
             {
-                if (_breadcrumbs.Count > 0) _breadcrumbs.Clear();
-                return;
-            }
-
-            // Check if breadcrumbs are enabled
-            if (!Hack.Breadcrumbs.IsEnabled()) return;
-
-            if (Time.time - _lastBreadcrumbTime >= Settings.BreadcrumbInterval)
-            {
-                _lastBreadcrumbTime = Time.time;
-                var pos = LocalPlayer.transform.position;
-                pos.y -= 0.5f;
-                _breadcrumbs.Add(pos);
-                
-                // Limit max breadcrumbs to prevent memory issues
-                if (_breadcrumbs.Count > 1000)
-                {
-                    _breadcrumbs.RemoveAt(0);
-                }
+                if (enemy == null || enemy.isEnemyDead) continue;
+                enemy.transform.position = farPos;
             }
         }
 
-        private void UpdateKillClick()
+        private static void TeleportAllItemsToShip()
         {
-            if (!Hack.KillClick.IsEnabled()) return;
-            if (Settings.ShowMenu) return; // Don't kill while menu open
-            if (LocalPlayer == null) return;
+            if (GameInstance == null || LocalPlayer == null) return;
 
-            // Check for left mouse click
-            var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
+            var shipBounds = GameInstance.shipInnerRoomBounds;
+            if (shipBounds == null) return;
 
-            // Raycast from camera
-            var camera = LocalPlayer.gameplayCamera;
-            if (camera == null) return;
+            var elevatorTransform = GameInstance.elevatorTransform;
+            var playerPos = LocalPlayer.transform.position;
+            float spawnHeight = playerPos.y + 1.5f;
+            int teleported = 0;
+            int totalValue = 0;
 
-            var ray = new Ray(camera.transform.position, camera.transform.forward);
-            var hits = Physics.RaycastAll(ray, 100f);
-
-            foreach (var hit in hits)
+            foreach (var item in UnityEngine.Object.FindObjectsOfType<GrabbableObject>())
             {
-                // Check for enemy collision detect component
-                var enemyCollider = hit.collider.GetComponent<EnemyAICollisionDetect>();
-                if (enemyCollider != null && enemyCollider.mainScript != null)
+                if (item == null || item.isHeld || item.isHeldByEnemy || item.isPocketed) continue;
+                if (shipBounds.bounds.Contains(item.transform.position)) continue;
+
+                if (elevatorTransform != null)
+                    item.transform.SetParent(elevatorTransform, true);
+
+                item.transform.position = new Vector3(playerPos.x, spawnHeight, playerPos.z);
+                item.startFallingPosition = item.transform.localPosition;
+                item.hasHitGround = false;
+                item.reachedFloorTarget = false;
+                item.fallTime = 0f;
+
+                if (!item.isInShipRoom)
                 {
-                    var enemy = enemyCollider.mainScript;
-                    
-                    // Take ownership and kill
-                    enemy.ChangeEnemyOwnerServerRpc(LocalPlayer.actualClientId);
-                    
-                    if (enemy is NutcrackerEnemyAI nutcracker)
-                    {
-                        nutcracker.KillEnemy();
-                    }
-                    else
-                    {
-                        enemy.KillEnemyServerRpc(true);
-                    }
-                    
-                    Loader.Log($"Killed {enemy.enemyType?.enemyName ?? "enemy"}");
-                    break;
+                    LocalPlayer.SetItemInElevator(true, true, item);
+                    totalValue += item.scrapValue;
                 }
+                else
+                {
+                    item.isInShipRoom = true;
+                    item.isInElevator = true;
+                }
+
+                item.FallToGround(false);
+                teleported++;
             }
+
+            Loader.Log($"Teleported {teleported} items to ship (value: ${totalValue})");
         }
 
-        private void UpdateStunClick()
+        private static void TeleportNearbyItemsToPlayer(float radius)
         {
-            if (!Hack.StunClick.IsEnabled()) return;
-            if (Settings.ShowMenu) return;
-            if (LocalPlayer == null) return;
+            if (LocalPlayer == null || GameInstance == null) return;
 
-            // Check for middle mouse click
-            var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (mouse == null || !mouse.middleButton.wasPressedThisFrame) return;
+            var playerPos = LocalPlayer.transform.position;
+            float spawnHeight = playerPos.y + 1.5f;
+            var shipBounds = GameInstance.shipInnerRoomBounds;
+            bool playerInShip = shipBounds != null && shipBounds.bounds.Contains(playerPos);
+            var elevatorTransform = GameInstance.elevatorTransform;
+            int teleported = 0;
 
-            // Raycast from camera
-            var camera = LocalPlayer.gameplayCamera;
-            if (camera == null) return;
-
-            var ray = new Ray(camera.transform.position, camera.transform.forward);
-            var hits = Physics.RaycastAll(ray, 100f);
-
-            foreach (var hit in hits)
+            foreach (var item in UnityEngine.Object.FindObjectsOfType<GrabbableObject>())
             {
-                // Check for enemy
-                var enemyCollider = hit.collider.GetComponent<EnemyAICollisionDetect>();
-                if (enemyCollider != null && enemyCollider.mainScript != null)
+                if (item == null || item.isHeld || item.isHeldByEnemy || item.isPocketed) continue;
+                if (Vector3.Distance(playerPos, item.transform.position) > radius) continue;
+
+                if (playerInShip && elevatorTransform != null)
                 {
-                    enemyCollider.mainScript.SetEnemyStunned(true, 5f);
-                    HUDManager.Instance?.DisplayTip("Stun", $"Stunned {enemyCollider.mainScript.enemyType?.enemyName}");
-                    return;
+                    item.transform.SetParent(elevatorTransform, true);
+                    item.isInShipRoom = true;
+                    item.isInElevator = true;
                 }
 
-                // Check for turret
-                var turret = hit.collider.GetComponent<Turret>();
-                if (turret != null)
-                {
-                    var terminalObj = turret.GetComponent<TerminalAccessibleObject>();
-                    if (terminalObj != null)
-                    {
-                        terminalObj.CallFunctionFromTerminal();
-                        HUDManager.Instance?.DisplayTip("Stun", "Disabled turret");
-                    }
-                    return;
-                }
+                item.transform.position = new Vector3(playerPos.x, spawnHeight, playerPos.z);
+                item.startFallingPosition = item.transform.localPosition;
+                item.hasHitGround = false;
+                item.reachedFloorTarget = false;
+                item.fallTime = 0f;
+                item.FallToGround(false);
+                teleported++;
+            }
 
-                // Check for landmine
-                var landmine = hit.collider.GetComponent<Landmine>();
-                if (landmine != null)
-                {
-                    var terminalObj = landmine.GetComponent<TerminalAccessibleObject>();
-                    if (terminalObj != null)
-                    {
-                        terminalObj.CallFunctionFromTerminal();
-                        HUDManager.Instance?.DisplayTip("Stun", "Disabled landmine");
-                    }
-                    return;
-                }
-            }
-        }
-
-        private void UpdateFogState()
-        {
-            if (Hack.NoFog.IsEnabled() && !_fogWasDisabled)
-            {
-                // Find and disable all fog
-                _fogObjects = UnityEngine.Object.FindObjectsOfType<LocalVolumetricFog>();
-                foreach (var fog in _fogObjects)
-                {
-                    if (fog != null)
-                    {
-                        fog.enabled = false;
-                    }
-                }
-                _fogWasDisabled = true;
-            }
-            else if (!Hack.NoFog.IsEnabled() && _fogWasDisabled)
-            {
-                // Re-enable fog
-                if (_fogObjects != null)
-                {
-                    foreach (var fog in _fogObjects)
-                    {
-                        if (fog != null)
-                        {
-                            fog.enabled = true;
-                        }
-                    }
-                }
-                _fogWasDisabled = false;
-            }
+            Loader.Log($"Teleported {teleported} nearby items to player");
         }
 
         private void FixedUpdate()
@@ -482,6 +419,8 @@ namespace LethalMenu
                 }
             }
 
+            ApplyHudSkin();
+
             // Draw ESP overlays
             foreach (var cheat in _cheats)
             {
@@ -504,16 +443,19 @@ namespace LethalMenu
                 DrawCrosshair();
             }
 
-            // Draw breadcrumbs
-            if (Hack.Breadcrumbs.IsEnabled())
-            {
-                DrawBreadcrumbs();
-            }
-
             if (Hack.HPDisplay.IsEnabled() && LocalPlayer != null)
             {
                 DrawHPDisplay();
             }
+        }
+
+        private static void ApplyHudSkin()
+        {
+            if (Theme.ThemeLoader.Skin == null)
+                Theme.ThemeLoader.SetTheme(Settings.ThemeName);
+
+            if (Theme.ThemeLoader.Skin != null)
+                GUI.skin = Theme.ThemeLoader.Skin;
         }
 
         private static Texture2D? _crosshairTexture;
@@ -588,56 +530,6 @@ namespace LethalMenu
             _cheats.Clear();
             HackExtensions.InitializeDefaults();
             Instance = null;
-        }
-
-        private static GUIStyle? _breadcrumbStyle;
-
-        private void DrawBreadcrumbs()
-        {
-            if (_breadcrumbStyle == null)
-            {
-                _breadcrumbStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 14,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.MiddleCenter
-                };
-                _breadcrumbStyle.normal.textColor = Color.yellow;
-            }
-
-            var camera = LocalPlayer?.gameplayCamera;
-            if (camera == null) return;
-
-            for (int i = 0; i < _breadcrumbs.Count; i++)
-            {
-                var worldPos = _breadcrumbs[i];
-                
-                // Use WorldToViewportPoint for correct conversion (like reference cheats)
-                var viewport = camera.WorldToViewportPoint(worldPos);
-                
-                // Check if behind camera
-                if (viewport.z <= 0) continue;
-                
-                // Check distance (z is distance in viewport space)
-                if (viewport.z > 100f) continue;
-                
-                // Convert viewport (0-1) to screen coordinates
-                float screenX = viewport.x * Screen.width;
-                float screenY = (1f - viewport.y) * Screen.height; // Flip Y for GUI coordinates
-                
-                // Skip if off screen
-                if (screenX < 0 || screenX > Screen.width || screenY < 0 || screenY > Screen.height) continue;
-
-                // Draw a circle/dot marker
-                var rect = new Rect(screenX - 8, screenY - 8, 16, 16);
-                GUI.color = new Color(1f, 0.9f, 0f, 0.8f); // Yellow with some transparency
-                GUI.DrawTexture(rect, Texture2D.whiteTexture);
-                
-                // Draw the number
-                GUI.color = Color.black;
-                GUI.Label(new Rect(screenX - 15, screenY - 10, 30, 20), i.ToString(), _breadcrumbStyle);
-            }
-            GUI.color = Color.white;
         }
 
         private static GUIStyle? _hpStyle;

@@ -69,68 +69,6 @@ namespace LethalMenu.Menu
                     GUILayout.Label("  N=NoClip | F9=AI Toggle | Z=Release | Del=Kill", _labelStyle);
                 }
             });
-
-            DrawSection("Enemy Actions", () =>
-            {
-                int aliveCount = 0;
-                foreach (var e in LethalMenuMod.Enemies)
-                {
-                    if (e != null && !e.isEnemyDead) aliveCount++;
-                }
-                GUILayout.Label($"Alive Enemies: {aliveCount} / {LethalMenuMod.Enemies.Count}", _labelStyle);
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Kill All", _buttonStyle, GUILayout.Height(28)))
-                {
-                    Cheats.NetworkCheats.KillAllEnemies();
-                }
-                if (GUILayout.Button("Stun All", _buttonStyle, GUILayout.Height(28)))
-                {
-                    Cheats.NetworkCheats.StunAllEnemies();
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Teleport All Away", _buttonStyle, GUILayout.Height(28)))
-                {
-                    var farPos = new Vector3(0, -500, 0);
-                    foreach (var enemy in LethalMenuMod.Enemies)
-                    {
-                        if (enemy != null && !enemy.isEnemyDead)
-                        {
-                            enemy.transform.position = farPos;
-                        }
-                    }
-                }
-                GUILayout.EndHorizontal();
-            });
-
-            DrawSection("Enemy List", () =>
-            {
-                foreach (var enemy in LethalMenuMod.Enemies)
-                {
-                    if (enemy == null || enemy.isEnemyDead) continue;
-
-                    string enemyName = enemy.enemyType?.enemyName ?? "Unknown";
-                    float dist = 0f;
-                    if (LethalMenuMod.LocalPlayer != null)
-                    {
-                        dist = Vector3.Distance(LethalMenuMod.LocalPlayer.transform.position, enemy.transform.position);
-                    }
-
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label($"{enemyName} ({dist:F0}m)", _labelStyle, GUILayout.Width(200));
-                    if (GUILayout.Button("Kill", _buttonStyle, GUILayout.Height(22), GUILayout.Width(50)))
-                    {
-                        enemy.KillEnemyOnOwnerClient(true);
-                    }
-                    if (GUILayout.Button("TP Away", _buttonStyle, GUILayout.Height(22), GUILayout.Width(60)))
-                    {
-                        enemy.transform.position = new Vector3(0, -500, 0);
-                    }
-                    GUILayout.EndHorizontal();
-                }
-            });
         }
 
         #endregion

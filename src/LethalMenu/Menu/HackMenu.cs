@@ -16,8 +16,9 @@ namespace LethalMenu.Menu
         private Rect _windowRect;
         private bool _windowRectInitialized = false;
         private int _selectedTab = 0;
-        private readonly string[] _tabs = { "Self", "Enemies", "Items", "Visuals", "World", "Network", "Terminal", "Browser", "Settings", "Experimentation" };
+        private readonly string[] _tabs = { "Self", "Enemies", "Items", "Visuals", "World", "Network", "Terminal", "Browser", "Settings", "Exp." };
         private Vector2 _scrollPosition;
+        private readonly Vector2[] _tabScrollPositions = new Vector2[10];
         private bool _stylesInitialized = false;
         
         // Resize state
@@ -34,30 +35,29 @@ namespace LethalMenu.Menu
         private string _quotaInput = "130";
         private string _quotaFulfilledInput = "0";
 
-        // Custom styles
+        // Skin-derived styles (refreshed each frame from GUI.skin)
         private GUIStyle? _windowStyle;
         private GUIStyle? _tabStyle;
         private GUIStyle? _selectedTabStyle;
         private GUIStyle? _toggleStyle;
         private GUIStyle? _labelStyle;
-        private GUIStyle? _headerStyle;
         private GUIStyle? _buttonStyle;
         private GUIStyle? _boxStyle;
         private GUIStyle? _textFieldStyle;
 
-        // Colors
-        private readonly Color _accentColor = new Color(0.65f, 0.22f, 0.99f, 1f);       // Purple
-        private readonly Color _bgColor = new Color(0.12f, 0.12f, 0.14f, 0.95f);        // Dark gray
-        private readonly Color _headerColor = new Color(0.08f, 0.08f, 0.1f, 1f);        // Darker
-        private readonly Color _textColor = new Color(0.9f, 0.9f, 0.9f, 1f);            // Light gray
-        private readonly Color _enabledColor = new Color(0.4f, 0.9f, 0.4f, 1f);         // Green
-        private readonly Color _disabledColor = new Color(0.6f, 0.6f, 0.6f, 1f);        // Gray
+        // Colors for custom styles the skin doesn't provide
+        private readonly Color _accentColor = new Color(0.65f, 0.22f, 0.99f, 1f);
+        private readonly Color _enabledColor = new Color(0.4f, 0.9f, 0.4f, 1f);
+        private readonly Color _disabledColor = new Color(0.6f, 0.6f, 0.6f, 1f);
 
-        private Texture2D? _bgTexture;
+        // Textures for custom UI elements (title bar, resize handle)
         private Texture2D? _headerTexture;
-        private Texture2D? _buttonTexture;
-        private Texture2D? _buttonHoverTexture;
-        private Texture2D? _toggleOnTexture;
+        private Texture2D? _resizeHandleTexture;
+
+        // Toggle label styles
+        private GUIStyle? _toggleOnLabelStyle;
+        private GUIStyle? _toggleOffLabelStyle;
+        private GUIStyle? _tooltipStyle;
 
         // Collapsible section style
         private GUIStyle? _collapseButtonStyle;
@@ -85,22 +85,40 @@ namespace LethalMenu.Menu
                 GUI.skin.box.fontSize = Settings.MenuFontSize;
                 GUI.skin.textField.fontSize = Settings.MenuFontSize;
             }
+
+            // Point style fields at current skin (theme or Unity default)
+            _windowStyle = GUI.skin.window;
+            _buttonStyle = GUI.skin.button;
+            _labelStyle = GUI.skin.label;
+            _boxStyle = GUI.skin.box;
+            _textFieldStyle = GUI.skin.textField;
+            _toggleStyle = GUI.skin.toggle;
+            _tabStyle = FindCustomStyle("TabBtn") ?? GUI.skin.button;
+            _selectedTabStyle = FindCustomStyle("SelectedTab") ?? _tabStyle;
+
+            InitStyles();
+        }
+
+        private GUIStyle? FindCustomStyle(string name)
+        {
+            if (GUI.skin.customStyles == null) return null;
+            foreach (var style in GUI.skin.customStyles)
+            {
+                if (style != null && style.name == name) return style;
+            }
+            return null;
         }
 
         public void Draw()
         {
             Stylize();
-            InitStyles();
-            
+
             // Initialize window rect from saved settings (once)
             if (!_windowRectInitialized)
             {
                 _windowRect = new Rect(Settings.WindowX, Settings.WindowY, Settings.WindowWidth, Settings.WindowHeight);
                 _windowRectInitialized = true;
             }
-
-            // Apply custom skin
-            GUI.skin.window = _windowStyle;
 
             // Handle resize before drawing window
             HandleResize();
@@ -176,104 +194,35 @@ namespace LethalMenu.Menu
             if (_stylesInitialized) return;
             _stylesInitialized = true;
 
-            // Create textures
-            _bgTexture = MakeTexture(2, 2, _bgColor);
-            _headerTexture = MakeTexture(2, 2, _headerColor);
-            _buttonTexture = MakeTexture(2, 2, new Color(0.2f, 0.2f, 0.22f, 1f));
-            _buttonHoverTexture = MakeTexture(2, 2, new Color(0.3f, 0.3f, 0.35f, 1f));
-            _toggleOnTexture = MakeTexture(2, 2, _accentColor);
+            // Textures for custom UI elements only
+            _headerTexture = MakeTexture(2, 2, new Color(0.08f, 0.08f, 0.1f, 1f));
+            _resizeHandleTexture = MakeTexture(2, 2, new Color(0.3f, 0.3f, 0.35f, 1f));
 
-            // Window style
-            _windowStyle = new GUIStyle(GUI.skin.window)
+            // Toggle label styles (skin doesn't provide on/off color differentiation)
+            _toggleOnLabelStyle = new GUIStyle(GUI.skin.label)
             {
-                normal = { background = _bgTexture, textColor = _textColor },
-                onNormal = { background = _bgTexture, textColor = _textColor },
-                border = new RectOffset(4, 4, 4, 4),
-                padding = new RectOffset(10, 10, 35, 10)
-            };
-
-            // Tab style
-            _tabStyle = new GUIStyle(GUI.skin.button)
-            {
-                normal = { background = _buttonTexture, textColor = _textColor },
-                hover = { background = _buttonHoverTexture, textColor = _textColor },
-                active = { background = _buttonHoverTexture, textColor = _textColor },
+                normal = { textColor = _enabledColor },
                 fontSize = 13,
-                fontStyle = FontStyle.Normal,
-                alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(8, 8, 6, 6),
-                margin = new RectOffset(2, 2, 0, 0)
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(0, 0, 2, 2)
             };
 
-            // Selected tab style
-            _selectedTabStyle = new GUIStyle(_tabStyle)
-            {
-                normal = { background = _toggleOnTexture, textColor = Color.white },
-                hover = { background = _toggleOnTexture, textColor = Color.white },
-                fontStyle = FontStyle.Bold
-            };
-
-            // Toggle style
-            _toggleStyle = new GUIStyle(GUI.skin.toggle)
+            _toggleOffLabelStyle = new GUIStyle(GUI.skin.label)
             {
                 normal = { textColor = _disabledColor },
-                onNormal = { textColor = _enabledColor },
-                hover = { textColor = _textColor },
-                onHover = { textColor = _enabledColor },
                 fontSize = 13,
-                padding = new RectOffset(20, 0, 2, 2),
-                margin = new RectOffset(4, 4, 4, 4)
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(0, 0, 2, 2)
             };
 
-            // Label style
-            _labelStyle = new GUIStyle(GUI.skin.label)
+            _tooltipStyle = new GUIStyle(GUI.skin.label)
             {
-                normal = { textColor = _textColor },
-                fontSize = 13,
+                normal = { textColor = new Color(0.6f, 0.6f, 0.6f) },
+                fontSize = 11,
                 alignment = TextAnchor.MiddleLeft
             };
 
-            // Header style
-            _headerStyle = new GUIStyle(GUI.skin.label)
-            {
-                normal = { textColor = _accentColor },
-                fontSize = 14,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(0, 0, 5, 5)
-            };
-
-            // Button style
-            _buttonStyle = new GUIStyle(GUI.skin.button)
-            {
-                normal = { background = _buttonTexture, textColor = _textColor },
-                hover = { background = _buttonHoverTexture, textColor = Color.white },
-                active = { background = _toggleOnTexture, textColor = Color.white },
-                fontSize = 13,
-                fontStyle = FontStyle.Normal,
-                alignment = TextAnchor.MiddleCenter,
-                padding = new RectOffset(10, 10, 6, 6)
-            };
-
-            // Box style for sections
-            _boxStyle = new GUIStyle(GUI.skin.box)
-            {
-                normal = { background = _headerTexture, textColor = _textColor },
-                padding = new RectOffset(8, 8, 8, 8),
-                margin = new RectOffset(0, 0, 5, 5)
-            };
-
-            // Text field style
-            _textFieldStyle = new GUIStyle(GUI.skin.textField)
-            {
-                normal = { background = _buttonTexture, textColor = _textColor },
-                focused = { background = _buttonHoverTexture, textColor = Color.white },
-                fontSize = 13,
-                alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(8, 8, 4, 4)
-            };
-
-            // Collapse button style (invisible button for header)
+            // Collapse button style for section headers
             _collapseButtonStyle = new GUIStyle()
             {
                 normal = { textColor = _accentColor },
@@ -304,23 +253,34 @@ namespace LethalMenu.Menu
             GUI.Label(new Rect(10, 5, 200, 20), "<b>LETHAL MENU</b>", new GUIStyle(_labelStyle) { richText = true, fontSize = 14 });
             GUI.Label(new Rect(_windowRect.width - 100, 5, 90, 20), "v1.0", new GUIStyle(_labelStyle) { alignment = TextAnchor.MiddleRight, fontSize = 11 });
 
-            GUILayout.Space(5);
+            GUILayout.Space(35);
 
-            // Draw tabs
-            GUILayout.BeginHorizontal();
-            for (int i = 0; i < _tabs.Length; i++)
+            // Draw tabs in two rows to prevent overflow
+            int tabsPerRow = 5;
+            for (int row = 0; row < 2; row++)
             {
-                var style = (i == _selectedTab) ? _selectedTabStyle : _tabStyle;
-                if (GUILayout.Button(_tabs[i], style, GUILayout.Height(28)))
+                GUILayout.BeginHorizontal();
+                int start = row * tabsPerRow;
+                int end = System.Math.Min(start + tabsPerRow, _tabs.Length);
+                for (int i = start; i < end; i++)
                 {
-                    _selectedTab = i;
+                    var style = (i == _selectedTab) ? _selectedTabStyle : _tabStyle;
+                    if (GUILayout.Button(_tabs[i], style, GUILayout.Height(25), GUILayout.ExpandWidth(true)))
+                    {
+                        if (_selectedTab >= 0 && _selectedTab < _tabScrollPositions.Length)
+                            _tabScrollPositions[_selectedTab] = _scrollPosition;
+                        _selectedTab = i;
+                        _scrollPosition = _tabScrollPositions[i];
+                    }
                 }
+                GUILayout.EndHorizontal();
             }
-            GUILayout.EndHorizontal();
 
             GUILayout.Space(8);
 
             // Draw content in scrollview
+            if (_selectedTab >= 0 && _selectedTab < _tabScrollPositions.Length)
+                _scrollPosition = _tabScrollPositions[_selectedTab];
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUIStyle.none, GUI.skin.verticalScrollbar);
 
             switch (_selectedTab)
@@ -338,10 +298,12 @@ namespace LethalMenu.Menu
             }
 
             GUILayout.EndScrollView();
+            if (_selectedTab >= 0 && _selectedTab < _tabScrollPositions.Length)
+                _tabScrollPositions[_selectedTab] = _scrollPosition;
             
             // Draw resize handle indicator (bottom-right corner)
             Rect handleRect = new Rect(_windowRect.width - ResizeHandleSize, _windowRect.height - ResizeHandleSize, ResizeHandleSize, ResizeHandleSize);
-            GUI.DrawTexture(handleRect, _buttonHoverTexture);
+            GUI.DrawTexture(handleRect, _resizeHandleTexture);
             // Draw diagonal lines to indicate resize
             var handleStyle = new GUIStyle(_labelStyle) { fontSize = 10, alignment = TextAnchor.LowerRight };
             GUI.Label(handleRect, "◢", handleStyle);
@@ -386,11 +348,12 @@ namespace LethalMenu.Menu
         private bool DrawToggle(string label, bool value, string? tooltip = null)
         {
             GUILayout.BeginHorizontal();
-            bool newValue = GUILayout.Toggle(value, label, _toggleStyle);
+            bool newValue = GUILayout.Toggle(value, "", _toggleStyle, GUILayout.Width(20));
+            GUILayout.Label(label, Settings.HackHighlight ? (newValue ? _toggleOnLabelStyle : _toggleOffLabelStyle) : _labelStyle);
             if (!string.IsNullOrEmpty(tooltip))
             {
                 GUILayout.FlexibleSpace();
-                GUILayout.Label(tooltip, new GUIStyle(_labelStyle) { fontSize = 11, normal = { textColor = new Color(0.6f, 0.6f, 0.6f) } });
+                GUILayout.Label(tooltip, _tooltipStyle);
             }
             GUILayout.EndHorizontal();
             return newValue;
@@ -399,28 +362,32 @@ namespace LethalMenu.Menu
         private void DrawHackToggle(Hack hack, string? tooltip = null)
         {
             string label = hack.GetDisplayName();
+            bool enabled = hack.IsEnabled();
             GUILayout.BeginHorizontal();
-            bool newValue = GUILayout.Toggle(hack.IsEnabled(), label, _toggleStyle);
-            if (newValue != hack.IsEnabled())
+            bool newValue = GUILayout.Toggle(enabled, "", _toggleStyle, GUILayout.Width(20));
+            if (newValue != enabled)
                 hack.SetEnabled(newValue);
+            GUILayout.Label(label, Settings.HackHighlight ? (newValue ? _toggleOnLabelStyle : _toggleOffLabelStyle) : _labelStyle);
             if (!string.IsNullOrEmpty(tooltip))
             {
                 GUILayout.FlexibleSpace();
-                GUILayout.Label(tooltip, new GUIStyle(_labelStyle) { fontSize = 11, normal = { textColor = new Color(0.6f, 0.6f, 0.6f) } });
+                GUILayout.Label(tooltip, _tooltipStyle);
             }
             GUILayout.EndHorizontal();
         }
 
         private void DrawHackToggle(Hack hack, string label, string? tooltip)
         {
+            bool enabled = hack.IsEnabled();
             GUILayout.BeginHorizontal();
-            bool newValue = GUILayout.Toggle(hack.IsEnabled(), label, _toggleStyle);
-            if (newValue != hack.IsEnabled())
+            bool newValue = GUILayout.Toggle(enabled, "", _toggleStyle, GUILayout.Width(20));
+            if (newValue != enabled)
                 hack.SetEnabled(newValue);
+            GUILayout.Label(label, Settings.HackHighlight ? (newValue ? _toggleOnLabelStyle : _toggleOffLabelStyle) : _labelStyle);
             if (!string.IsNullOrEmpty(tooltip))
             {
                 GUILayout.FlexibleSpace();
-                GUILayout.Label(tooltip, new GUIStyle(_labelStyle) { fontSize = 11, normal = { textColor = new Color(0.6f, 0.6f, 0.6f) } });
+                GUILayout.Label(tooltip, _tooltipStyle);
             }
             GUILayout.EndHorizontal();
         }

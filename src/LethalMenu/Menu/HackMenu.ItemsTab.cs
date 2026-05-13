@@ -1,14 +1,9 @@
-using System.Linq;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace LethalMenu.Menu
 {
     public partial class HackMenu
     {
-        private int _selectedItemIndex = 0;
-        private string _spawnValue = "100";
-
         #region Items Tab
 
         private void DrawItemsTab()
@@ -85,68 +80,18 @@ namespace LethalMenu.Menu
                 }
                 GUILayout.EndHorizontal();
             });
-
-            DrawSection("Item Spawner (Host Only)", () =>
-            {
-                var allItems = StartOfRound.Instance?.allItemsList?.itemsList;
-                if (allItems == null || allItems.Count == 0)
-                {
-                    GUILayout.Label("No items available", _labelStyle);
-                    return;
-                }
-
-                bool isHost = NetworkManager.Singleton?.IsHost ?? false;
-                if (!isHost)
-                {
-                    GUILayout.Label("Only the host can spawn items", _labelStyle);
-                    return;
-                }
-
-                var spawnableItems = allItems.Where(i => i != null && i.spawnPrefab != null).ToList();
-                if (spawnableItems.Count == 0)
-                {
-                    GUILayout.Label("No spawnable items found", _labelStyle);
-                    return;
-                }
-
-                _selectedItemIndex = Mathf.Clamp(_selectedItemIndex, 0, spawnableItems.Count - 1);
-                var selectedItem = spawnableItems[_selectedItemIndex];
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
-                {
-                    _selectedItemIndex = (_selectedItemIndex - 1 + spawnableItems.Count) % spawnableItems.Count;
-                }
-                GUILayout.Label(selectedItem.itemName, _labelStyle, GUILayout.Width(150));
-                if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
-                {
-                    _selectedItemIndex = (_selectedItemIndex + 1) % spawnableItems.Count;
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Value:", _labelStyle, GUILayout.Width(50));
-                _spawnValue = GUILayout.TextField(_spawnValue, GUILayout.Width(60));
-                if (GUILayout.Button("Spawn", _buttonStyle, GUILayout.Height(25)))
-                {
-                    SpawnItem(selectedItem);
-                }
-                GUILayout.EndHorizontal();
-            });
         }
 
         private void TeleportItemsToShip()
         {
             if (LethalMenuMod.GameInstance == null || LethalMenuMod.LocalPlayer == null) return;
 
-            Vector3 playerPos = LethalMenuMod.LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f;
-
             var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
             if (shipBounds == null) return;
 
             var elevatorTransform = LethalMenuMod.GameInstance.elevatorTransform;
             var localPlayer = LethalMenuMod.LocalPlayer;
+            var shipPos = GetItemTeleportShipPosition();
 
             var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
             int teleported = 0;
@@ -161,7 +106,7 @@ namespace LethalMenu.Menu
                 bool actuallyInShip = shipBounds.bounds.Contains(item.transform.position);
                 if (actuallyInShip) continue;
 
-                var targetPos = new Vector3(playerPos.x, spawnHeight, playerPos.z);
+                var targetPos = shipPos + GetItemTeleportStackOffset(teleported);
 
                 if (elevatorTransform != null)
                 {
@@ -177,6 +122,8 @@ namespace LethalMenu.Menu
                 if (!item.isInShipRoom)
                 {
                     localPlayer.SetItemInElevator(true, true, item);
+                    if (item.itemProperties != null && item.itemProperties.isScrap && !item.scrapPersistedThroughRounds)
+                        RoundManager.Instance?.CollectNewScrapForThisRound(item);
                     totalValue += item.scrapValue;
                 }
                 else
@@ -190,6 +137,31 @@ namespace LethalMenu.Menu
             }
 
             Loader.Log($"Teleported {teleported} items to ship (value: ${totalValue})");
+        }
+
+        private Vector3 GetItemTeleportShipPosition()
+        {
+            var gameInstance = LethalMenuMod.GameInstance;
+            if (gameInstance?.middleOfShipNode != null)
+                return gameInstance.middleOfShipNode.position + Vector3.up * 1.5f;
+
+            if (gameInstance?.insideShipPositions is { Length: > 0 } && gameInstance.insideShipPositions[0] != null)
+                return gameInstance.insideShipPositions[0].position + Vector3.up * 1.5f;
+
+            if (gameInstance?.elevatorTransform != null)
+                return gameInstance.elevatorTransform.position + Vector3.up * 1.5f;
+
+            return LethalMenuMod.LocalPlayer != null
+                ? LethalMenuMod.LocalPlayer.transform.position + Vector3.up * 1.5f
+                : Vector3.up * 1.5f;
+        }
+
+        private static Vector3 GetItemTeleportStackOffset(int index)
+        {
+            var x = (index % 5 - 2) * 0.35f;
+            var z = (index / 5 % 5 - 2) * 0.35f;
+            var y = index / 25 * 0.2f;
+            return new Vector3(x, y, z);
         }
 
         private void TeleportNearbyItemsToPlayer(float radius)
@@ -237,35 +209,6 @@ namespace LethalMenu.Menu
 
             Loader.Log($"Teleported {teleported} nearby items to player");
         }
-
-        private void SpawnItem(Item item)
-        {
-            if (LethalMenuMod.LocalPlayer == null || item?.spawnPrefab == null) return;
-            if (StartOfRound.Instance?.propsContainer == null) return;
-
-            int value = 100;
-            int.TryParse(_spawnValue, out value);
-
-            try
-            {
-                var spawnPos = LethalMenuMod.LocalPlayer.gameplayCamera.transform.position +
-                               LethalMenuMod.LocalPlayer.gameplayCamera.transform.forward * 2f;
-
-                var obj = Object.Instantiate(item.spawnPrefab, spawnPos, Quaternion.identity, StartOfRound.Instance.propsContainer);
-                var grabbable = obj.GetComponent<GrabbableObject>();
-                if (grabbable != null)
-                {
-                    grabbable.SetScrapValue(value);
-                    grabbable.fallTime = 0f;
-                }
-                obj.GetComponent<NetworkObject>()?.Spawn();
-            }
-            catch (System.Exception ex)
-            {
-                Loader.LogError($"Failed to spawn item: {ex.Message}");
-            }
-        }
-
         #endregion
     }
 }

@@ -120,9 +120,9 @@ namespace LethalMenu
         /// When the last query was performed
         public static DateTime LastQueryTime { get; private set; } = DateTime.MinValue;
 
-        /// Whether we're currently in a game (can't query).
+        /// Whether we're currently in a Steam lobby.
         /// Defensive - returns true (blocking) on any error.
-        public static bool IsInGame
+        public static bool IsInSteamLobby
         {
             get
             {
@@ -138,6 +138,36 @@ namespace LethalMenu
                     // On error, assume we're in game to be safe
                     return true;
                 }
+            }
+        }
+
+        /// Whether a live round/lobby scene is active. LC may clear currentLobby after game start.
+        public static bool IsInActiveGame
+        {
+            get
+            {
+                try
+                {
+                    return StartOfRound.Instance != null;
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+        }
+
+        public static bool IsInGame => IsInSteamLobby || IsInActiveGame;
+
+        public static bool CanRefreshLobbies => !IsInGame;
+
+        public static string QueryBlockReason
+        {
+            get
+            {
+                if (IsInSteamLobby) return "Cannot live-refresh while in a Steam lobby.";
+                if (IsInActiveGame) return "Cannot live-refresh during a run; cached servers stay visible.";
+                return "";
             }
         }
 
@@ -177,11 +207,11 @@ namespace LethalMenu
         /// Only works from main menu - crashes if called while in a game.
         public static async void RefreshLobbies()
         {
-            // CRITICAL: Block queries while in a game to prevent native crashes
-            if (IsInGame)
+            // CRITICAL: Block live Steam queries while in a lobby/run to prevent native crashes.
+            if (!CanRefreshLobbies)
             {
-                StatusMessage = "Cannot query while in game.\nReturn to main menu first.";
-                Debug.Log("[ServerBrowser] Query blocked - currently in a lobby");
+                StatusMessage = QueryBlockReason;
+                Debug.Log($"[ServerBrowser] Query blocked - {StatusMessage}");
                 return;
             }
 
@@ -303,10 +333,10 @@ namespace LethalMenu
                 }
 
                 // CRITICAL: Check if we joined a game during the query
-                if (IsInGame)
+                if (!CanRefreshLobbies)
                 {
-                    StatusMessage = "Query aborted - joined a game";
-                    Debug.Log("[ServerBrowser] Joined game during query");
+                    StatusMessage = "Query aborted - entered lobby/run";
+                    Debug.Log("[ServerBrowser] Entered lobby/run during query");
                     return;
                 }
 

@@ -24,6 +24,53 @@ namespace LethalMenu.Menu
         private int _selectedAllMoonIndex = 0;
         private Vector2 _allMoonsScrollPos;
 
+        private static Item[] GetBuyableItems(Terminal terminal)
+        {
+            return terminal.buyableItemsList ?? System.Array.Empty<Item>();
+        }
+
+        private static BuyableVehicle[] GetBuyableVehicles(Terminal terminal)
+        {
+            return terminal.buyableVehicles ?? System.Array.Empty<BuyableVehicle>();
+        }
+
+        private static SelectableLevel[] GetMoonCatalogue(Terminal terminal, StartOfRound startOfRound)
+        {
+            if (terminal.moonsCatalogueList != null && terminal.moonsCatalogueList.Length > 0)
+                return terminal.moonsCatalogueList;
+
+            return startOfRound.levels ?? System.Array.Empty<SelectableLevel>();
+        }
+
+        private static int GetSalePercent(Terminal terminal, int saleIndex)
+        {
+            if (terminal.itemSalesPercentages == null || saleIndex < 0 || saleIndex >= terminal.itemSalesPercentages.Length)
+                return 100;
+
+            int percent = terminal.itemSalesPercentages[saleIndex];
+            return percent <= 0 ? 100 : percent;
+        }
+
+        private static void EnsureTerminalCollections(Terminal terminal)
+        {
+            terminal.orderedItemsFromTerminal ??= new System.Collections.Generic.List<int>();
+            terminal.ShipDecorSelection ??= new System.Collections.Generic.List<TerminalNode>();
+
+            int requiredSalesSlots = (terminal.buyableItemsList?.Length ?? 0) + (terminal.buyableVehicles?.Length ?? 0);
+            if (requiredSalesSlots <= 0)
+                return;
+
+            if (terminal.itemSalesPercentages != null && terminal.itemSalesPercentages.Length >= requiredSalesSlots)
+                return;
+
+            int[] oldSales = terminal.itemSalesPercentages ?? System.Array.Empty<int>();
+            int[] newSales = new int[requiredSalesSlots];
+            for (int i = 0; i < newSales.Length; i++)
+                newSales[i] = i < oldSales.Length && oldSales[i] > 0 ? oldSales[i] : 100;
+
+            terminal.itemSalesPercentages = newSales;
+        }
+
         /// Checks if a scene exists in the game's build.
         private bool SceneExists(string sceneName)
         {
@@ -83,6 +130,11 @@ namespace LethalMenu.Menu
                 return;
             }
 
+            EnsureTerminalCollections(terminal);
+            var buyableItems = GetBuyableItems(terminal);
+            var buyableVehicles = GetBuyableVehicles(terminal);
+            var moonCatalogue = GetMoonCatalogue(terminal, startOfRound);
+
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Moon Manager", _buttonStyle, GUILayout.Height(28)))
                 _moonManager.IsOpen = !_moonManager.IsOpen;
@@ -95,7 +147,7 @@ namespace LethalMenu.Menu
 
             // Credits and dropship status
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Credits: ${terminal.groupCredits}", _headerStyle);
+            GUILayout.Label($"Credits: ${terminal.groupCredits}", _labelStyle);
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("+1k", _buttonStyle, GUILayout.Width(40)))
             {
@@ -129,11 +181,11 @@ namespace LethalMenu.Menu
 
                 // Get vehicle name if one is queued
                 string? vehicleName = null;
-                if (hasVehicle && terminal.buyableVehicles != null
+                if (hasVehicle
                     && terminal.orderedVehicleFromTerminal >= 0
-                    && terminal.orderedVehicleFromTerminal < terminal.buyableVehicles.Length)
+                    && terminal.orderedVehicleFromTerminal < buyableVehicles.Length)
                 {
-                    vehicleName = terminal.buyableVehicles[terminal.orderedVehicleFromTerminal]?.vehicleDisplayName ?? "Cruiser";
+                    vehicleName = buyableVehicles[terminal.orderedVehicleFromTerminal]?.vehicleDisplayName ?? "Cruiser";
                 }
                 else if (hasVehicle)
                 {
@@ -174,10 +226,9 @@ namespace LethalMenu.Menu
                 string currentWeather = startOfRound.currentLevel?.currentWeather.ToString() ?? "None";
                 GUILayout.Label($"Current: {startOfRound.currentLevel?.PlanetName ?? "Unknown"} ({currentWeather})", _labelStyle);
 
-                // Moon list with weather - use moonsCatalogueList (actual routable moons)
-                var moonCatalogue = terminal.moonsCatalogueList;
+                // Moon list with weather - use moonsCatalogueList when present, fall back to StartOfRound levels.
                 _moonScrollPos = GUILayout.BeginScrollView(_moonScrollPos, GUILayout.Height(130));
-                if (moonCatalogue != null && moonCatalogue.Length > 0)
+                if (moonCatalogue.Length > 0)
                 {
                     for (int i = 0; i < moonCatalogue.Length; i++)
                     {
@@ -205,7 +256,7 @@ namespace LethalMenu.Menu
                 // Get the actual level ID for the selected moon
                 int selectedLevelID = -1;
                 SelectableLevel? selectedLevel = null;
-                if (moonCatalogue != null && _selectedMoonIndex >= 0 && _selectedMoonIndex < moonCatalogue.Length)
+                if (_selectedMoonIndex >= 0 && _selectedMoonIndex < moonCatalogue.Length)
                 {
                     selectedLevel = moonCatalogue[_selectedMoonIndex];
                     selectedLevelID = selectedLevel?.levelID ?? -1;
@@ -236,7 +287,7 @@ namespace LethalMenu.Menu
                 }
                 if (GUILayout.Button("Route FREE", _buttonStyle))
                 {
-                    startOfRound.ChangeLevelServerRpc(selectedLevelID, 999999);
+                    startOfRound.ChangeLevelServerRpc(selectedLevelID, terminal.groupCredits);
                     Loader.Log($"[Terminal] Routed FREE to {selectedLevel?.PlanetName} (levelID={selectedLevelID})");
                 }
                 GUI.enabled = true;
@@ -250,7 +301,7 @@ namespace LethalMenu.Menu
                     var lvl = startOfRound.levels[i];
                     if (lvl != null && lvl.PlanetName != null && lvl.PlanetName.ToLower().Contains("gordion"))
                     {
-                        companyLevelID = i;
+                        companyLevelID = lvl.levelID;
                         break;
                     }
                 }
@@ -263,7 +314,7 @@ namespace LethalMenu.Menu
                     }
                     if (GUILayout.Button("Company FREE", _buttonStyle))
                     {
-                        startOfRound.ChangeLevelServerRpc(companyLevelID, 999999);
+                        startOfRound.ChangeLevelServerRpc(companyLevelID, terminal.groupCredits);
                         Loader.Log($"[Terminal] Routed FREE to Company (levelID={companyLevelID})");
                     }
                 }
@@ -333,7 +384,7 @@ namespace LethalMenu.Menu
                     if (startOfRound.levels != null && _selectedAllMoonIndex >= 0 && _selectedAllMoonIndex < startOfRound.levels.Length)
                     {
                         selectedAllLevel = startOfRound.levels[_selectedAllMoonIndex];
-                        selectedAllLevelID = _selectedAllMoonIndex; // levels array index = levelID for routing
+                        selectedAllLevelID = selectedAllLevel?.levelID ?? -1;
                     }
 
                     // Check if selected moon is in catalogue (it shouldn't be if shown here, but double check)
@@ -358,7 +409,7 @@ namespace LethalMenu.Menu
                         {
                             InjectMoonIntoCatalogue(terminal, selectedAllLevel);
                         }
-                        startOfRound.ChangeLevelServerRpc(selectedAllLevelID, 999999);
+                        startOfRound.ChangeLevelServerRpc(selectedAllLevelID, terminal.groupCredits);
                         Loader.Log($"[Terminal] Routed FREE (ALL) to {selectedAllLevel?.PlanetName} (levelID={selectedAllLevelID}) [injected={!selectedInCatalogue}]");
                     }
                     GUI.enabled = true;
@@ -430,10 +481,10 @@ namespace LethalMenu.Menu
                         startOfRound.inShipPhase = true; // CRITICAL: must be true for StartGame() to work
 
                         // Force add self to fully loaded players if missing
-                        ulong myClientId = GameNetworkManager.Instance.localPlayerController.playerClientId;
-                        if (startOfRound.fullyLoadedPlayers != null && !startOfRound.fullyLoadedPlayers.Contains(myClientId))
+                        var localPlayer = GameNetworkManager.Instance?.localPlayerController;
+                        if (localPlayer != null && startOfRound.fullyLoadedPlayers != null && !startOfRound.fullyLoadedPlayers.Contains(localPlayer.playerClientId))
                         {
-                            startOfRound.fullyLoadedPlayers.Add(myClientId);
+                            startOfRound.fullyLoadedPlayers.Add(localPlayer.playerClientId);
                         }
 
                         Loader.Log($"[Terminal] Force Land: After setup - inShipPhase={startOfRound.inShipPhase}, fullyLoadedPlayers={startOfRound.fullyLoadedPlayers?.Count}");
@@ -467,9 +518,12 @@ namespace LethalMenu.Menu
                         if (startOfRound.fullyLoadedPlayers != null)
                         {
                             startOfRound.fullyLoadedPlayers.Clear();
-                            for (int i = 0; i <= startOfRound.connectedPlayersAmount; i++)
+                            var allPlayers = startOfRound.allPlayerScripts;
+                            int playerCount = allPlayers?.Length ?? 0;
+                            int maxIndex = System.Math.Min(startOfRound.connectedPlayersAmount, playerCount - 1);
+                            for (int i = 0; i <= maxIndex; i++)
                             {
-                                var player = startOfRound.allPlayerScripts[i];
+                                var player = allPlayers![i];
                                 if (player != null)
                                 {
                                     startOfRound.fullyLoadedPlayers.Add(player.playerClientId);
@@ -521,8 +575,19 @@ namespace LethalMenu.Menu
                         }
 
                         // Hide loading screen
-                        HUDManager.Instance.loadingText.enabled = false;
-                        HUDManager.Instance.loadingDarkenScreen.enabled = false;
+                        var hud = HUDManager.Instance;
+                        if (hud != null)
+                        {
+                            if (hud.loadingText != null)
+                                hud.loadingText.enabled = false;
+
+                            var loadingScreenField = typeof(HUDManager).GetField("LoadingScreen");
+                            if (loadingScreenField?.GetValue(hud) is Animator loadingScreen)
+                                loadingScreen.SetBool("IsLoading", false);
+                            var darkenField = typeof(HUDManager).GetField("loadingDarkenScreen");
+                            if (darkenField?.GetValue(hud) is Behaviour darkenScreen)
+                                darkenScreen.enabled = false;
+                        }
 
                         Loader.Log("[Terminal] Reset complete - should be back in orbit");
                     }
@@ -536,30 +601,27 @@ namespace LethalMenu.Menu
                 // ====== CONSUMABLE ITEMS ======
                 GUILayout.Label("--- Consumable Items ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
-                if (terminal.buyableItemsList == null || terminal.buyableItemsList.Length == 0)
+                if (buyableItems.Length == 0)
                 {
                     GUILayout.Label("No items available", _labelStyle);
                 }
                 else
                 {
                     _shopScrollPos = GUILayout.BeginScrollView(_shopScrollPos, GUILayout.Height(120));
-                    for (int i = 0; i < terminal.buyableItemsList.Length; i++)
+                    for (int i = 0; i < buyableItems.Length; i++)
                     {
-                        var item = terminal.buyableItemsList[i];
+                        var item = buyableItems[i];
                         if (item == null) continue;
 
                         int basePrice = item.creditsWorth;
                         int price = basePrice;
                         string saleTag = "";
 
-                        if (terminal.itemSalesPercentages != null && i < terminal.itemSalesPercentages.Length)
+                        int salePercent = GetSalePercent(terminal, i);
+                        if (salePercent < 100)
                         {
-                            int salePercent = terminal.itemSalesPercentages[i];
-                            if (salePercent < 100)
-                            {
-                                price = (int)(basePrice * (salePercent / 100f));
-                                saleTag = $" SALE {100 - salePercent}% OFF";
-                            }
+                            price = (int)(basePrice * (salePercent / 100f));
+                            saleTag = $" SALE {100 - salePercent}% OFF";
                         }
 
                         GUILayout.BeginHorizontal();
@@ -576,6 +638,7 @@ namespace LethalMenu.Menu
                     GUILayout.Label("Qty:", _labelStyle, GUILayout.Width(30));
                     _buyQuantity = GUILayout.TextField(_buyQuantity, GUILayout.Width(35));
 
+                    GUI.enabled = _selectedBuyItemIndex >= 0 && _selectedBuyItemIndex < buyableItems.Length;
                     if (GUILayout.Button("Buy", _buttonStyle))
                     {
                         BuyItems(terminal, _selectedBuyItemIndex, false);
@@ -584,6 +647,7 @@ namespace LethalMenu.Menu
                     {
                         BuyItems(terminal, _selectedBuyItemIndex, true);
                     }
+                    GUI.enabled = true;
                     GUILayout.EndHorizontal();
                 }
 
@@ -652,29 +716,26 @@ namespace LethalMenu.Menu
                 // ====== VEHICLES (Cruiser etc.) ======
                 GUILayout.Label("--- Vehicles ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
-                if (terminal.buyableVehicles == null || terminal.buyableVehicles.Length == 0)
+                if (buyableVehicles.Length == 0)
                 {
                     GUILayout.Label("No vehicles available", _labelStyle);
                 }
                 else
                 {
-                    for (int i = 0; i < terminal.buyableVehicles.Length; i++)
+                    for (int i = 0; i < buyableVehicles.Length; i++)
                     {
-                        var vehicle = terminal.buyableVehicles[i];
+                        var vehicle = buyableVehicles[i];
                         if (vehicle == null) continue;
 
                         int price = vehicle.creditsWorth;
                         // Check for sale on vehicles (index is after buyableItemsList)
-                        int saleIndex = (terminal.buyableItemsList?.Length ?? 0) + i;
+                        int saleIndex = buyableItems.Length + i;
                         string saleTag = "";
-                        if (terminal.itemSalesPercentages != null && saleIndex < terminal.itemSalesPercentages.Length)
+                        int salePercent = GetSalePercent(terminal, saleIndex);
+                        if (salePercent < 100)
                         {
-                            int salePercent = terminal.itemSalesPercentages[saleIndex];
-                            if (salePercent < 100)
-                            {
-                                price = (int)(vehicle.creditsWorth * (salePercent / 100f));
-                                saleTag = $" SALE";
-                            }
+                            price = (int)(vehicle.creditsWorth * (salePercent / 100f));
+                            saleTag = $" SALE";
                         }
 
                         GUILayout.BeginHorizontal();
@@ -866,6 +927,14 @@ namespace LethalMenu.Menu
 
         private void BuyItems(Terminal terminal, int itemIndex, bool free)
         {
+            EnsureTerminalCollections(terminal);
+            var buyableItems = GetBuyableItems(terminal);
+            if (itemIndex < 0 || itemIndex >= buyableItems.Length)
+            {
+                Loader.Log("[Terminal] Invalid item index");
+                return;
+            }
+
             if (!int.TryParse(_buyQuantity, out int qty) || qty <= 0) qty = 1;
             if (qty > 12) qty = 12; // Server rejects > 12 items at once
 
@@ -874,11 +943,8 @@ namespace LethalMenu.Menu
                 items[i] = itemIndex;
 
             // Calculate cost
-            int itemPrice = terminal.buyableItemsList[itemIndex]?.creditsWorth ?? 0;
-            if (terminal.itemSalesPercentages != null && itemIndex < terminal.itemSalesPercentages.Length)
-            {
-                itemPrice = (int)(itemPrice * (terminal.itemSalesPercentages[itemIndex] / 100f));
-            }
+            int itemPrice = buyableItems[itemIndex]?.creditsWorth ?? 0;
+            itemPrice = (int)(itemPrice * (GetSalePercent(terminal, itemIndex) / 100f));
             int totalCost = itemPrice * qty;
 
             int newCredits;
@@ -901,19 +967,20 @@ namespace LethalMenu.Menu
             // Call BuyItemsServerRpc - this adds items to orderedItemsFromTerminal and syncs credits
             terminal.BuyItemsServerRpc(items, newCredits, terminal.numberOfItemsInDropship);
 
-            var itemName = terminal.buyableItemsList[itemIndex]?.itemName ?? "item";
+            var itemName = buyableItems[itemIndex]?.itemName ?? "item";
             Loader.Log($"[Terminal] Ordered {qty}x {itemName}{(free ? " (FREE)" : $" (${totalCost})")}");
         }
 
         private void BuyUnlockable(StartOfRound startOfRound, Terminal terminal, int unlockableId, int itemCost, bool free)
         {
-            if (unlockableId < 0 || unlockableId >= startOfRound.unlockablesList.unlockables.Count)
+            var unlockables = startOfRound.unlockablesList?.unlockables;
+            if (unlockables == null || unlockableId < 0 || unlockableId >= unlockables.Count)
             {
                 Loader.Log("[Terminal] Invalid unlockable ID");
                 return;
             }
 
-            var unlock = startOfRound.unlockablesList.unlockables[unlockableId];
+            var unlock = unlockables[unlockableId];
             if (unlock.hasBeenUnlockedByPlayer)
             {
                 Loader.Log($"[Terminal] {unlock.unlockableName} already owned");
@@ -944,13 +1011,15 @@ namespace LethalMenu.Menu
 
         private void BuyVehicle(Terminal terminal, int vehicleIndex, int price, bool free)
         {
-            if (terminal.buyableVehicles == null || vehicleIndex < 0 || vehicleIndex >= terminal.buyableVehicles.Length)
+            EnsureTerminalCollections(terminal);
+            var buyableVehicles = GetBuyableVehicles(terminal);
+            if (vehicleIndex < 0 || vehicleIndex >= buyableVehicles.Length)
             {
                 Loader.Log("[Terminal] Invalid vehicle index");
                 return;
             }
 
-            var vehicle = terminal.buyableVehicles[vehicleIndex];
+            var vehicle = buyableVehicles[vehicleIndex];
             if (vehicle == null)
             {
                 Loader.Log("[Terminal] Vehicle not found");
@@ -1063,6 +1132,9 @@ namespace LethalMenu.Menu
                 return;
             }
 
+            EnsureTerminalCollections(terminal);
+            var buyableItems = GetBuyableItems(terminal);
+
             // Check if we're the host - only host can spawn network objects
             if (!startOfRound.IsServer && !startOfRound.IsHost)
             {
@@ -1077,14 +1149,20 @@ namespace LethalMenu.Menu
             }
 
             // Get spawn position - center of ship
-            var spawnPos = startOfRound.middleOfShipNode?.position ?? startOfRound.playerSpawnPositions[0].position;
+            Vector3 spawnPos;
+            if (startOfRound.middleOfShipNode != null)
+                spawnPos = startOfRound.middleOfShipNode.position;
+            else if (startOfRound.playerSpawnPositions != null && startOfRound.playerSpawnPositions.Length > 0 && startOfRound.playerSpawnPositions[0] != null)
+                spawnPos = startOfRound.playerSpawnPositions[0].position;
+            else
+                spawnPos = startOfRound.transform.position;
 
             int spawned = 0;
             foreach (int itemIndex in terminal.orderedItemsFromTerminal)
             {
-                if (itemIndex < 0 || itemIndex >= terminal.buyableItemsList.Length) continue;
+                if (itemIndex < 0 || itemIndex >= buyableItems.Length) continue;
 
-                var item = terminal.buyableItemsList[itemIndex];
+                var item = buyableItems[itemIndex];
                 if (item?.spawnPrefab == null) continue;
 
                 try

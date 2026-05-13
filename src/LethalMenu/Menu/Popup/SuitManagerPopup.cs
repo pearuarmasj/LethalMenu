@@ -6,6 +6,25 @@ namespace LethalMenu.Menu.Popup
     {
         public SuitManagerPopup() : base("Suit Manager", 20004, 350, 400) { }
 
+        private static void WearSuit(StartOfRound instance, int suitId)
+        {
+            var player = instance.localPlayerController ?? GameNetworkManager.Instance?.localPlayerController;
+            if (player == null)
+                return;
+
+            var suitRacks = Object.FindObjectsOfType<UnlockableSuit>();
+            foreach (var suitRack in suitRacks)
+            {
+                if (suitRack == null) continue;
+                if (suitRack.suitID != suitId) continue;
+
+                suitRack.SwitchSuitToThis(player);
+                return;
+            }
+
+            UnlockableSuit.SwitchSuitForPlayer(player, suitId, true);
+        }
+
         protected override void DrawBody()
         {
             var instance = StartOfRound.Instance;
@@ -27,8 +46,7 @@ namespace LethalMenu.Menu.Popup
                 GUILayout.Label(item.unlockableName ?? $"Suit {i}", GUILayout.Width(200));
                 if (GUILayout.Button("Wear", GUILayout.Width(60)))
                 {
-                    if (instance.localPlayerController != null)
-                        UnlockableSuit.SwitchSuitForPlayer(instance.localPlayerController, i, true);
+                    WearSuit(instance, i);
                 }
                 GUILayout.EndHorizontal();
             }

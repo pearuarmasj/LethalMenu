@@ -1,4 +1,6 @@
 using Newtonsoft.Json;
+using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace LethalMenu.Util
@@ -17,6 +19,24 @@ namespace LethalMenu.Util
             this.a = a;
         }
 
+        public RGBAColor(string hex)
+        {
+            if (string.IsNullOrWhiteSpace(hex))
+                hex = "FFFFFFFF";
+
+            hex = hex.Trim().TrimStart('#');
+            if (hex.Length == 6)
+                hex += "FF";
+
+            if (hex.Length != 8)
+                throw new ArgumentException("Hex color must be RRGGBB or RRGGBBAA.", nameof(hex));
+
+            r = int.Parse(hex.Substring(0, 2), NumberStyles.HexNumber) / 255f;
+            g = int.Parse(hex.Substring(2, 2), NumberStyles.HexNumber) / 255f;
+            b = int.Parse(hex.Substring(4, 2), NumberStyles.HexNumber) / 255f;
+            a = int.Parse(hex.Substring(6, 2), NumberStyles.HexNumber) / 255f;
+        }
+
         [JsonConstructor]
         public RGBAColor(float r, float g, float b, float a)
         {
@@ -31,6 +51,12 @@ namespace LethalMenu.Util
             int green = Mathf.Clamp((int)(g * 255), 0, 255);
             int blue = Mathf.Clamp((int)(b * 255), 0, 255);
             return ((red << 16) | (green << 8) | blue).ToString("X6");
+        }
+
+        public string GetHexCodeAlpha()
+        {
+            int alpha = Mathf.Clamp((int)(a * 255), 0, 255);
+            return $"{GetHexCode()}{alpha:X2}";
         }
     }
 }

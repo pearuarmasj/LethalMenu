@@ -34,6 +34,18 @@ namespace LethalMenu.Menu
                 GUILayout.Label($"Font: {Settings.MenuFontSize}", _labelStyle, GUILayout.Width(80));
                 Settings.MenuFontSize = (int)GUILayout.HorizontalSlider(Settings.MenuFontSize, 8, 24, GUILayout.Width(200));
                 GUILayout.EndHorizontal();
+
+                Settings.HackHighlight = GUILayout.Toggle(Settings.HackHighlight, "Highlight active hacks", _toggleStyle);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Slider: {Settings.SliderWidth}", _labelStyle, GUILayout.Width(80));
+                Settings.SliderWidth = (int)GUILayout.HorizontalSlider(Settings.SliderWidth, 50, 120, GUILayout.Width(200));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"Textbox: {Settings.TextboxWidth}", _labelStyle, GUILayout.Width(80));
+                Settings.TextboxWidth = (int)GUILayout.HorizontalSlider(Settings.TextboxWidth, 50, 120, GUILayout.Width(200));
+                GUILayout.EndHorizontal();
             });
 
             DrawSection("Menu Settings", () =>

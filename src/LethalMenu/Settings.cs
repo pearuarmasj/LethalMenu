@@ -76,6 +76,9 @@ namespace LethalMenu
         public static string ThemeName { get; set; } = "Default";
         public static float MenuAlpha { get; set; } = 1f;
         public static int MenuFontSize { get; set; } = 14;
+        public static int SliderWidth { get; set; } = 80;
+        public static int TextboxWidth { get; set; } = 80;
+        public static bool HackHighlight { get; set; } = true;
 
         // Fake death state (runtime only, not persisted)
         public static bool FakeDeath { get; set; } = false;
@@ -158,6 +161,18 @@ namespace LethalMenu
                     ["ThemeName"] = ThemeName,
                     ["MenuAlpha"] = MenuAlpha,
                     ["MenuFontSize"] = MenuFontSize,
+                    ["SliderWidth"] = SliderWidth,
+                    ["TextboxWidth"] = TextboxWidth,
+                    ["HackHighlight"] = HackHighlight,
+
+                    ["CrosshairColor"] = ColorToJson(CrosshairColor),
+                    ["PlayerColor"] = ColorToJson(PlayerColor),
+                    ["EnemyColor"] = ColorToJson(EnemyColor),
+                    ["ItemColor"] = ColorToJson(ItemColor),
+                    ["DoorColor"] = ColorToJson(DoorColor),
+                    ["MineColor"] = ColorToJson(MineColor),
+                    ["TurretColor"] = ColorToJson(TurretColor),
+                    ["FuseboxColor"] = ColorToJson(FuseboxColor),
 
                     ["KickedHostIds"] = new JArray(KickedHostIds.Select(id => (long)id)),
 
@@ -218,6 +233,18 @@ namespace LethalMenu
                 ThemeName = config["ThemeName"]?.Value<string>() ?? ThemeName;
                 MenuAlpha = config["MenuAlpha"]?.Value<float>() ?? MenuAlpha;
                 MenuFontSize = config["MenuFontSize"]?.Value<int>() ?? MenuFontSize;
+                SliderWidth = config["SliderWidth"]?.Value<int>() ?? SliderWidth;
+                TextboxWidth = config["TextboxWidth"]?.Value<int>() ?? TextboxWidth;
+                HackHighlight = config["HackHighlight"]?.Value<bool>() ?? HackHighlight;
+
+                CrosshairColor = LoadColor(config, "CrosshairColor", CrosshairColor);
+                PlayerColor = LoadColor(config, "PlayerColor", PlayerColor);
+                EnemyColor = LoadColor(config, "EnemyColor", EnemyColor);
+                ItemColor = LoadColor(config, "ItemColor", ItemColor);
+                DoorColor = LoadColor(config, "DoorColor", DoorColor);
+                MineColor = LoadColor(config, "MineColor", MineColor);
+                TurretColor = LoadColor(config, "TurretColor", TurretColor);
+                FuseboxColor = LoadColor(config, "FuseboxColor", FuseboxColor);
 
                 if (config["KickedHostIds"] is JArray kickedArray)
                 {
@@ -316,6 +343,9 @@ namespace LethalMenu
                 NightVisionIntensity = 10000f;
                 NightVisionRange = 10000f;
                 ItemSlotCount = 4;
+                SliderWidth = 80;
+                TextboxWidth = 80;
+                HackHighlight = true;
 
                 Loader.Log("Config reset to defaults");
             }
@@ -323,6 +353,29 @@ namespace LethalMenu
             {
                 Loader.Log($"Failed to reset config: {ex.Message}");
             }
+        }
+
+        private static JObject ColorToJson(Color color)
+        {
+            return new JObject
+            {
+                ["r"] = color.r,
+                ["g"] = color.g,
+                ["b"] = color.b,
+                ["a"] = color.a,
+            };
+        }
+
+        private static Color LoadColor(JObject config, string key, Color fallback)
+        {
+            if (config[key] is not JObject color)
+                return fallback;
+
+            return new Color(
+                color["r"]?.Value<float>() ?? fallback.r,
+                color["g"]?.Value<float>() ?? fallback.g,
+                color["b"]?.Value<float>() ?? fallback.b,
+                color["a"]?.Value<float>() ?? fallback.a);
         }
 
         #endregion

@@ -1,11 +1,13 @@
 using GameNetcodeStuff;
 using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace LethalMenu.Patches
 {
     /// Invisibility - sends fake position to server, restores on client.
-    [HarmonyPatch(typeof(PlayerControllerB))]
+    [HarmonyPatch]
     public static class InvisibilityPatches
     {
         private static Vector3 _lastRealPos;
@@ -14,50 +16,54 @@ namespace LethalMenu.Patches
         private static bool _lastExhausted;
         private static bool _lastGrounded;
 
-        [HarmonyPatch("UpdatePlayerPositionServerRpc")]
-        [HarmonyPrefix]
-        public static void UpdatePositionServerPrefix(
-            PlayerControllerB __instance,
-            ref Vector3 newPos,
-            ref bool inElevator,
-            ref bool inShipRoom,
-            ref bool exhausted,
-            ref bool isPlayerGrounded)
+        public static IEnumerable<MethodBase> TargetMethods()
         {
-            if (!Hack.Invisibility.IsEnabled()) return;
-            if (__instance != LethalMenuMod.LocalPlayer) return;
+            var playerType = typeof(PlayerControllerB);
+            var modernPositionRpc = AccessTools.Method(playerType, "UpdatePlayerPositionRpc");
+            if (modernPositionRpc != null)
+            {
+                yield return modernPositionRpc;
+                yield break;
+            }
 
-            _lastRealPos = newPos;
-            _lastInElevator = inElevator;
-            _lastInShipRoom = inShipRoom;
-            _lastExhausted = exhausted;
-            _lastGrounded = isPlayerGrounded;
+            var oldServerRpc = AccessTools.Method(playerType, "UpdatePlayerPositionServerRpc");
+            if (oldServerRpc != null)
+                yield return oldServerRpc;
 
-            newPos = new Vector3(0f, -100f, 0f);
-            inElevator = false;
-            inShipRoom = false;
-            exhausted = false;
-            isPlayerGrounded = true;
+            var oldClientRpc = AccessTools.Method(playerType, "UpdatePlayerPositionClientRpc");
+            if (oldClientRpc != null)
+                yield return oldClientRpc;
         }
 
-        [HarmonyPatch("UpdatePlayerPositionClientRpc")]
         [HarmonyPrefix]
-        public static void UpdatePositionClientPrefix(
-            PlayerControllerB __instance,
-            ref Vector3 newPos,
-            ref bool inElevator,
-            ref bool isInShip,
-            ref bool exhausted,
-            ref bool isPlayerGrounded)
+        public static void UpdatePositionPrefix(PlayerControllerB __instance, MethodBase __originalMethod, object[] __args)
         {
             if (!Hack.Invisibility.IsEnabled()) return;
             if (__instance != LethalMenuMod.LocalPlayer) return;
+            if (__args.Length < 5 || __args[0] is not Vector3 newPos) return;
 
-            newPos = _lastRealPos;
-            inElevator = _lastInElevator;
-            isInShip = _lastInShipRoom;
-            exhausted = _lastExhausted;
-            isPlayerGrounded = _lastGrounded;
+            string methodName = __originalMethod.Name;
+            if (methodName == "UpdatePlayerPositionClientRpc")
+            {
+                __args[0] = _lastRealPos;
+                __args[1] = _lastInElevator;
+                __args[2] = _lastInShipRoom;
+                __args[3] = _lastExhausted;
+                __args[4] = _lastGrounded;
+                return;
+            }
+
+            _lastRealPos = newPos;
+            _lastInElevator = __args[1] is bool inElevator && inElevator;
+            _lastInShipRoom = __args[2] is bool inShipRoom && inShipRoom;
+            _lastExhausted = __args[3] is bool exhausted && exhausted;
+            _lastGrounded = !(__args[4] is bool grounded) || grounded;
+
+            __args[0] = new Vector3(0f, -100f, 0f);
+            __args[1] = false;
+            __args[2] = false;
+            __args[3] = false;
+            __args[4] = true;
         }
     }
 

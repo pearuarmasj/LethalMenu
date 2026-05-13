@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Linq;
+using LethalMenu.Mixins;
 
 namespace LethalMenu.Menu.Popup
 {
-    public class LootManagerPopup : PopupMenu
+    public class LootManagerPopup : PopupMenu, IItemManipulator, ITeleporter
     {
         public LootManagerPopup() : base("Loot Manager", 20006, 400, 400) { }
 
@@ -18,6 +19,14 @@ namespace LethalMenu.Menu.Popup
             GUILayout.Label($"Total Scrap: {scrapCount} items (${totalValue})");
             GUILayout.Label($"In Ship: {shipCount} items (${shipValue})");
             GUILayout.Space(5);
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("TP All to Ship", GUILayout.Height(28)))
+                this.TeleportAllItemsToShip();
+            if (GUILayout.Button("Sell Quota", GUILayout.Height(28)))
+                Cheats.NetworkCheats.SellQuota();
+            GUILayout.EndHorizontal();
+            GUILayout.Space(8);
 
             GUILayout.Label("--- Ship Inventory ---");
             foreach (var item in items)

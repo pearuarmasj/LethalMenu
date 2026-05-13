@@ -8,9 +8,24 @@ namespace LethalMenu.Menu
 
         private Vector2 _browserScrollPosition = Vector2.zero;
         private string _browserTagFilter = "";
+        private Texture2D? _browserDefaultBg;
+        private Texture2D? _browserKickedBg;
+        private Texture2D? _browserIncompatibleBg;
+        private Texture2D? _browserStartedBg;
+
+        private void EnsureBrowserTextures()
+        {
+            _browserDefaultBg ??= MakeTexture(1, 1, new Color(0.15f, 0.15f, 0.15f, 0.9f));
+            _browserKickedBg ??= MakeTexture(1, 1, new Color(0.4f, 0.1f, 0.1f, 0.9f));
+            _browserIncompatibleBg ??= MakeTexture(1, 1, new Color(0.3f, 0.2f, 0.1f, 0.9f));
+            _browserStartedBg ??= MakeTexture(1, 1, new Color(0.2f, 0.2f, 0.3f, 0.9f));
+        }
 
         private void DrawBrowserTab()
         {
+            EnsureBrowserTextures();
+            var lobbies = ServerBrowser.Lobbies;
+
             // Hot-swap status (if active)
             if (ServerHotSwap.IsHotSwapping || !string.IsNullOrEmpty(ServerHotSwap.Status))
             {
@@ -42,13 +57,18 @@ namespace LethalMenu.Menu
 
                 // Refresh button
                 GUILayout.BeginHorizontal();
-                GUI.enabled = !ServerBrowser.IsQuerying;
-                if (GUILayout.Button(ServerBrowser.IsQuerying ? "Querying..." : "Refresh Servers", _buttonStyle, GUILayout.Height(30)))
+                bool canRefresh = !ServerBrowser.IsQuerying && ServerBrowser.CanRefreshLobbies;
+                GUI.enabled = canRefresh;
+                string refreshText = ServerBrowser.IsQuerying ? "Querying..." : "Refresh Servers";
+                if (GUILayout.Button(refreshText, _buttonStyle, GUILayout.Height(30)))
                 {
                     ServerBrowser.RefreshLobbies();
                 }
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
+
+                if (!ServerBrowser.CanRefreshLobbies)
+                    GUILayout.Label(ServerBrowser.QueryBlockReason, _tooltipStyle);
             });
 
             DrawSection("Filters", () =>
@@ -81,9 +101,9 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection($"Servers ({ServerBrowser.Lobbies.Count})", () =>
+            DrawSection($"Servers ({lobbies.Count})", () =>
             {
-                if (ServerBrowser.Lobbies.Count == 0)
+                if (lobbies.Count == 0)
                 {
                     GUILayout.Label("No servers to display. Click 'Refresh Servers' above.", _labelStyle);
                     return;
@@ -91,7 +111,7 @@ namespace LethalMenu.Menu
 
                 _browserScrollPosition = GUILayout.BeginScrollView(_browserScrollPosition, GUILayout.Height(350));
 
-                foreach (var lobby in ServerBrowser.Lobbies)
+                foreach (var lobby in lobbies)
                 {
                     DrawLobbyEntry(lobby);
                 }
@@ -103,19 +123,15 @@ namespace LethalMenu.Menu
         private void DrawLobbyEntry(ServerBrowser.LobbyInfo lobby)
         {
             // Determine background color
-            Color bgColor = new Color(0.15f, 0.15f, 0.15f, 0.9f);
+            Texture2D? bgTex = _browserDefaultBg;
             if (lobby.IsKickedHost)
-                bgColor = new Color(0.4f, 0.1f, 0.1f, 0.9f); // Red for kicked hosts
+                bgTex = _browserKickedBg; // Red for kicked hosts
             else if (!lobby.IsCompatible)
-                bgColor = new Color(0.3f, 0.2f, 0.1f, 0.9f); // Orange for incompatible
+                bgTex = _browserIncompatibleBg; // Orange for incompatible
             else if (lobby.IsStarted)
-                bgColor = new Color(0.2f, 0.2f, 0.3f, 0.9f); // Blue-ish for started
+                bgTex = _browserStartedBg; // Blue-ish for started
 
-            // Create a colored box background
             GUIStyle entryStyle = new GUIStyle(_boxStyle);
-            Texture2D bgTex = new Texture2D(1, 1);
-            bgTex.SetPixel(0, 0, bgColor);
-            bgTex.Apply();
             entryStyle.normal.background = bgTex;
 
             GUILayout.BeginVertical(entryStyle);
@@ -189,7 +205,7 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
 
                 // Join button (normal - goes through main menu)
-                bool canJoin = lobby.IsCompatible && lobby.IsJoinable && lobby.MemberCount < 4;
+                bool canJoin = lobby.IsCompatible && lobby.IsJoinable && lobby.MemberCount < 4 && !ServerBrowser.IsInActiveGame;
                 GUI.enabled = canJoin;
                 if (GUILayout.Button("Join", _buttonStyle, GUILayout.Height(25), GUILayout.Width(50)))
                 {
