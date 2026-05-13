@@ -1,3 +1,4 @@
+using LethalMenu.Mixins;
 using UnityEngine;
 
 namespace LethalMenu.Menu
@@ -72,142 +73,14 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("TP All to Ship", _buttonStyle, GUILayout.Height(28)))
                 {
-                    TeleportItemsToShip();
+                    this.TeleportAllItemsToShip();
                 }
                 if (GUILayout.Button("TP Nearby to Me", _buttonStyle, GUILayout.Height(28)))
                 {
-                    TeleportNearbyItemsToPlayer(15f);
+                    this.TeleportNearbyItemsToPlayer(15f);
                 }
                 GUILayout.EndHorizontal();
             });
-        }
-
-        private void TeleportItemsToShip()
-        {
-            if (LethalMenuMod.GameInstance == null || LethalMenuMod.LocalPlayer == null) return;
-
-            var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
-            if (shipBounds == null) return;
-
-            var elevatorTransform = LethalMenuMod.GameInstance.elevatorTransform;
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            var shipPos = GetItemTeleportShipPosition();
-
-            var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
-            int teleported = 0;
-            int totalValue = 0;
-
-            foreach (var item in allItems)
-            {
-                if (item == null) continue;
-                if (item.isHeld || item.isHeldByEnemy) continue;
-                if (item.isPocketed) continue;
-
-                bool actuallyInShip = shipBounds.bounds.Contains(item.transform.position);
-                if (actuallyInShip) continue;
-
-                var targetPos = shipPos + GetItemTeleportStackOffset(teleported);
-
-                if (elevatorTransform != null)
-                {
-                    item.transform.SetParent(elevatorTransform, true);
-                }
-
-                item.transform.position = targetPos;
-                item.startFallingPosition = item.transform.localPosition;
-                item.hasHitGround = false;
-                item.reachedFloorTarget = false;
-                item.fallTime = 0f;
-
-                if (!item.isInShipRoom)
-                {
-                    localPlayer.SetItemInElevator(true, true, item);
-                    if (item.itemProperties != null && item.itemProperties.isScrap && !item.scrapPersistedThroughRounds)
-                        RoundManager.Instance?.CollectNewScrapForThisRound(item);
-                    totalValue += item.scrapValue;
-                }
-                else
-                {
-                    item.isInShipRoom = true;
-                    item.isInElevator = true;
-                }
-
-                item.FallToGround(false);
-                teleported++;
-            }
-
-            Loader.Log($"Teleported {teleported} items to ship (value: ${totalValue})");
-        }
-
-        private Vector3 GetItemTeleportShipPosition()
-        {
-            var gameInstance = LethalMenuMod.GameInstance;
-            if (gameInstance?.middleOfShipNode != null)
-                return gameInstance.middleOfShipNode.position + Vector3.up * 1.5f;
-
-            if (gameInstance?.insideShipPositions is { Length: > 0 } && gameInstance.insideShipPositions[0] != null)
-                return gameInstance.insideShipPositions[0].position + Vector3.up * 1.5f;
-
-            if (gameInstance?.elevatorTransform != null)
-                return gameInstance.elevatorTransform.position + Vector3.up * 1.5f;
-
-            return LethalMenuMod.LocalPlayer != null
-                ? LethalMenuMod.LocalPlayer.transform.position + Vector3.up * 1.5f
-                : Vector3.up * 1.5f;
-        }
-
-        private static Vector3 GetItemTeleportStackOffset(int index)
-        {
-            var x = (index % 5 - 2) * 0.35f;
-            var z = (index / 5 % 5 - 2) * 0.35f;
-            var y = index / 25 * 0.2f;
-            return new Vector3(x, y, z);
-        }
-
-        private void TeleportNearbyItemsToPlayer(float radius)
-        {
-            if (LethalMenuMod.LocalPlayer == null || LethalMenuMod.GameInstance == null) return;
-
-            var playerPos = LethalMenuMod.LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f;
-
-            var shipBounds = LethalMenuMod.GameInstance.shipInnerRoomBounds;
-            bool playerInShip = shipBounds != null && shipBounds.bounds.Contains(playerPos);
-
-            var elevatorTransform = LethalMenuMod.GameInstance.elevatorTransform;
-
-            var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
-            int teleported = 0;
-
-            foreach (var item in allItems)
-            {
-                if (item == null) continue;
-                if (item.isHeld || item.isHeldByEnemy) continue;
-                if (item.isPocketed) continue;
-
-                float dist = Vector3.Distance(playerPos, item.transform.position);
-                if (dist <= radius)
-                {
-                    if (playerInShip && elevatorTransform != null)
-                    {
-                        item.transform.SetParent(elevatorTransform, true);
-                        item.isInShipRoom = true;
-                        item.isInElevator = true;
-                    }
-
-                    var targetPos = new Vector3(playerPos.x, spawnHeight, playerPos.z);
-                    item.transform.position = targetPos;
-                    item.startFallingPosition = item.transform.localPosition;
-                    item.hasHitGround = false;
-                    item.reachedFloorTarget = false;
-                    item.fallTime = 0f;
-                    item.FallToGround(false);
-
-                    teleported++;
-                }
-            }
-
-            Loader.Log($"Teleported {teleported} nearby items to player");
         }
         #endregion
     }

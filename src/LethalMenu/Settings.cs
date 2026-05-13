@@ -140,10 +140,19 @@ namespace LethalMenu
                     toggles[kv.Key.ToString()] = kv.Value;
                 }
 
+                var keyBinds = new JObject();
+                foreach (var kv in HackExtensions.KeyBinds)
+                {
+                    string keyCode = kv.Key.GetKeyBindCode();
+                    if (!string.IsNullOrWhiteSpace(keyCode))
+                        keyBinds[kv.Key.ToString()] = keyCode;
+                }
+
                 var config = new JObject
                 {
                     ["Version"] = 2,
                     ["ToggleFlags"] = toggles,
+                    ["KeyBinds"] = keyBinds,
 
                     ["ItemSlotCount"] = ItemSlotCount,
                     ["SpeedMultiplier"] = SpeedMultiplier,
@@ -264,6 +273,8 @@ namespace LethalMenu
                 WindowWidth = config["WindowWidth"]?.Value<float>() ?? WindowWidth;
                 WindowHeight = config["WindowHeight"]?.Value<float>() ?? WindowHeight;
 
+                LoadKeyBinds(config);
+
                 Loader.Log($"Config loaded (v{version}) from {ConfigPath}");
             }
             catch (Exception ex)
@@ -283,6 +294,24 @@ namespace LethalMenu
                 {
                     hack.SetEnabled(prop.Value.Value<bool>());
                 }
+            }
+        }
+
+        private static void LoadKeyBinds(JObject config)
+        {
+            HackExtensions.ClearKeyBinds();
+
+            if (config["KeyBinds"] is not JObject keyBinds)
+                return;
+
+            foreach (var prop in keyBinds.Properties())
+            {
+                if (!Enum.TryParse(prop.Name, out Hack hack))
+                    continue;
+
+                string? keyName = prop.Value.Value<string>();
+                if (!hack.SetKeyBind(keyName))
+                    Loader.Log($"Failed to load keybind {prop.Name}: {keyName}");
             }
         }
 
@@ -346,6 +375,15 @@ namespace LethalMenu
                 SliderWidth = 80;
                 TextboxWidth = 80;
                 HackHighlight = true;
+                CrosshairColor = Color.white;
+                PlayerColor = Color.green;
+                EnemyColor = Color.red;
+                ItemColor = Color.yellow;
+                DoorColor = Color.cyan;
+                MineColor = new Color(1f, 0.5f, 0f);
+                TurretColor = Color.magenta;
+                FuseboxColor = new Color(1f, 1f, 0.5f);
+                HackExtensions.ClearKeyBinds();
 
                 Loader.Log("Config reset to defaults");
             }

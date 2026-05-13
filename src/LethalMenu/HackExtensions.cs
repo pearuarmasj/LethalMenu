@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
 namespace LethalMenu
@@ -71,8 +72,64 @@ namespace LethalMenu
                 KeyBinds[hack] = button;
         }
 
+        public static bool SetKeyBind(this Hack hack, string? keyName)
+        {
+            if (string.IsNullOrWhiteSpace(keyName))
+            {
+                hack.SetKeyBind((ButtonControl?)null);
+                return true;
+            }
+
+            if (!Enum.TryParse(keyName, true, out Key key))
+                return false;
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return false;
+
+            var control = keyboard[key];
+            if (control == null)
+                return false;
+
+            hack.SetKeyBind(control);
+            return true;
+        }
+
         public static ButtonControl? GetKeyBind(this Hack hack) =>
             KeyBinds.TryGetValue(hack, out ButtonControl btn) ? btn : null;
+
+        public static string GetKeyBindCode(this Hack hack)
+        {
+            if (!KeyBinds.TryGetValue(hack, out ButtonControl btn))
+                return string.Empty;
+
+            return btn is KeyControl keyControl ? keyControl.keyCode.ToString() : btn.name;
+        }
+
+        public static string GetKeyBindDisplayName(this Hack hack)
+        {
+            if (!KeyBinds.TryGetValue(hack, out ButtonControl btn))
+                return "Unbound";
+
+            return string.IsNullOrWhiteSpace(btn.displayName) ? btn.name : btn.displayName;
+        }
+
+        public static KeyControl? GetPressedKeyboardKey()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return null;
+
+            foreach (var key in keyboard.allKeys)
+            {
+                if (key.wasPressedThisFrame)
+                    return key;
+            }
+
+            return null;
+        }
+
+        public static void ClearKeyBinds() => KeyBinds.Clear();
 
         public static void RegisterExecutor(this Hack hack, Action action) =>
             Executors[hack] = action;

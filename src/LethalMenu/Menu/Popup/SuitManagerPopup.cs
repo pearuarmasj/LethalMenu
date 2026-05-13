@@ -37,13 +37,20 @@ namespace LethalMenu.Menu.Popup
             var unlockables = instance.unlockablesList?.unlockables;
             if (unlockables == null) return;
 
+            var terminal = Object.FindObjectOfType<Terminal>();
+            int credits = terminal?.groupCredits ?? 0;
+
             for (int i = 0; i < unlockables.Count; i++)
             {
                 var item = unlockables[i];
                 if (item == null || item.suitMaterial == null) continue;
 
+                bool owned = item.hasBeenUnlockedByPlayer || item.alreadyUnlocked;
+
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(item.unlockableName ?? $"Suit {i}", GUILayout.Width(200));
+                GUILayout.Label($"{item.unlockableName ?? $"Suit {i}"} {(owned ? "[OWNED]" : "")}", GUILayout.Width(190));
+                if (!owned && GUILayout.Button("Unlock", GUILayout.Width(70)))
+                    instance.BuyShipUnlockableServerRpc(i, credits);
                 if (GUILayout.Button("Wear", GUILayout.Width(60)))
                 {
                     WearSuit(instance, i);

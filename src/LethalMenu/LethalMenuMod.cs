@@ -6,6 +6,7 @@ using GameNetcodeStuff;
 using HarmonyLib;
 using LethalMenu.Cheats;
 using LethalMenu.Menu;
+using LethalMenu.Mixins;
 using LethalMenu.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -15,7 +16,7 @@ namespace LethalMenu
     /// <summary>
     /// Main mod MonoBehaviour - manages cheats, patches, and game state.
     /// </summary>
-    public class LethalMenuMod : MonoBehaviour
+    public class LethalMenuMod : MonoBehaviour, IItemManipulator, IEnemyPrompter
     {
         private const string HarmonyId = "com.lethalmenu.mod";
 
@@ -141,9 +142,9 @@ namespace LethalMenu
             });
             Hack.KillAllEnemies.RegisterExecutor(Cheats.NetworkCheats.KillAllEnemies);
             Hack.StunAllEnemies.RegisterExecutor(Cheats.NetworkCheats.StunAllEnemies);
-            Hack.TeleportAllEnemiesAway.RegisterExecutor(TeleportAllEnemiesAway);
-            Hack.TPAllItemsToShip.RegisterExecutor(TeleportAllItemsToShip);
-            Hack.TPNearbyItems.RegisterExecutor(() => TeleportNearbyItemsToPlayer(15f));
+            Hack.TeleportAllEnemiesAway.RegisterExecutor(() => this.TeleportAllEnemiesAway());
+            Hack.TPAllItemsToShip.RegisterExecutor(() => this.TeleportAllItemsToShip());
+            Hack.TPNearbyItems.RegisterExecutor(() => this.TeleportNearbyItemsToPlayer(15f));
             Hack.UnlockAllDoors.RegisterExecutor(Cheats.NetworkCheats.UnlockAllDoors);
             Hack.BlowUpAllMines.RegisterExecutor(Cheats.NetworkCheats.BlowUpAllLandmines);
             Hack.ToggleMines.RegisterExecutor(() =>
@@ -291,96 +292,6 @@ namespace LethalMenu
             var pos = LocalPlayer.transform.position - LocalPlayer.gameplayCamera.transform.up * 0.45f;
             var dir = LocalPlayer.gameplayCamera.transform.forward;
             shotgun.ShootGunServerRpc(pos, dir);
-        }
-
-        private static void TeleportAllEnemiesAway()
-        {
-            var farPos = new Vector3(0f, -500f, 0f);
-            foreach (var enemy in Enemies)
-            {
-                if (enemy == null || enemy.isEnemyDead) continue;
-                enemy.transform.position = farPos;
-            }
-        }
-
-        private static void TeleportAllItemsToShip()
-        {
-            if (GameInstance == null || LocalPlayer == null) return;
-
-            var shipBounds = GameInstance.shipInnerRoomBounds;
-            if (shipBounds == null) return;
-
-            var elevatorTransform = GameInstance.elevatorTransform;
-            var playerPos = LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f;
-            int teleported = 0;
-            int totalValue = 0;
-
-            foreach (var item in UnityEngine.Object.FindObjectsOfType<GrabbableObject>())
-            {
-                if (item == null || item.isHeld || item.isHeldByEnemy || item.isPocketed) continue;
-                if (shipBounds.bounds.Contains(item.transform.position)) continue;
-
-                if (elevatorTransform != null)
-                    item.transform.SetParent(elevatorTransform, true);
-
-                item.transform.position = new Vector3(playerPos.x, spawnHeight, playerPos.z);
-                item.startFallingPosition = item.transform.localPosition;
-                item.hasHitGround = false;
-                item.reachedFloorTarget = false;
-                item.fallTime = 0f;
-
-                if (!item.isInShipRoom)
-                {
-                    LocalPlayer.SetItemInElevator(true, true, item);
-                    totalValue += item.scrapValue;
-                }
-                else
-                {
-                    item.isInShipRoom = true;
-                    item.isInElevator = true;
-                }
-
-                item.FallToGround(false);
-                teleported++;
-            }
-
-            Loader.Log($"Teleported {teleported} items to ship (value: ${totalValue})");
-        }
-
-        private static void TeleportNearbyItemsToPlayer(float radius)
-        {
-            if (LocalPlayer == null || GameInstance == null) return;
-
-            var playerPos = LocalPlayer.transform.position;
-            float spawnHeight = playerPos.y + 1.5f;
-            var shipBounds = GameInstance.shipInnerRoomBounds;
-            bool playerInShip = shipBounds != null && shipBounds.bounds.Contains(playerPos);
-            var elevatorTransform = GameInstance.elevatorTransform;
-            int teleported = 0;
-
-            foreach (var item in UnityEngine.Object.FindObjectsOfType<GrabbableObject>())
-            {
-                if (item == null || item.isHeld || item.isHeldByEnemy || item.isPocketed) continue;
-                if (Vector3.Distance(playerPos, item.transform.position) > radius) continue;
-
-                if (playerInShip && elevatorTransform != null)
-                {
-                    item.transform.SetParent(elevatorTransform, true);
-                    item.isInShipRoom = true;
-                    item.isInElevator = true;
-                }
-
-                item.transform.position = new Vector3(playerPos.x, spawnHeight, playerPos.z);
-                item.startFallingPosition = item.transform.localPosition;
-                item.hasHitGround = false;
-                item.reachedFloorTarget = false;
-                item.fallTime = 0f;
-                item.FallToGround(false);
-                teleported++;
-            }
-
-            Loader.Log($"Teleported {teleported} nearby items to player");
         }
 
         private void FixedUpdate()

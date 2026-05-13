@@ -36,5 +36,15 @@ namespace LethalMenu.Mixins
                 enemy.SetEnemyStunned(true, duration);
             }
         }
+
+        public static void TeleportAllEnemiesAway(this IEnemyPrompter _)
+        {
+            var farPos = new Vector3(0f, -500f, 0f);
+            foreach (var enemy in LethalMenuMod.Enemies)
+            {
+                if (enemy == null || enemy.isEnemyDead) continue;
+                enemy.transform.position = farPos;
+            }
+        }
     }
 }

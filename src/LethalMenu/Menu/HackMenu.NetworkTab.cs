@@ -12,11 +12,7 @@ namespace LethalMenu.Menu
         private string _chatMessageInput = "";
         private string _signalMessageInput = "";
 
-        // Host powers state
-        private int _selectedEnemyIndex = 0;
-        private string[]? _cachedEnemyNames = null;
         private int _selectedMimicPlayerIndex = 0;
-        private int _selectedUnlockableIndex = 0;
 
         private bool RequireHost()
         {
@@ -124,7 +120,7 @@ namespace LethalMenu.Menu
                 }
                 if (GUILayout.Button("Sell Quota", _buttonStyle, GUILayout.Width(80)))
                 {
-                    Cheats.NetworkCheats.SellQuota();
+                    Hack.SellQuota.Execute();
                 }
                 GUILayout.EndHorizontal();
 
@@ -207,22 +203,22 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Force Ship Leave", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.ForceShipLeave();
+                    Hack.ForceShipLeave.Execute();
                 }
                 if (GUILayout.Button("Eject All Players", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.EjectAllPlayers();
+                    Hack.EjectAllPlayers.Execute();
                 }
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Force Start", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.ForceStartGame();
+                    Hack.ForceStart.Execute();
                 }
                 if (GUILayout.Button("Force End", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.ForceEndGame();
+                    Hack.ForceEnd.Execute();
                 }
                 GUILayout.EndHorizontal();
 
@@ -389,11 +385,11 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Revive All Players", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.ReviveAllPlayers();
+                    Hack.ReviveAllPlayers.Execute();
                 }
                 if (GUILayout.Button("Teleport All To Me", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.TeleportAllToMe();
+                    Hack.TeleportAllToMe.Execute();
                 }
                 GUILayout.EndHorizontal();
             });
@@ -407,7 +403,7 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Unlock All", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.UnlockAllDoors();
+                    Hack.UnlockAllDoors.Execute();
                 }
                 if (GUILayout.Button("Lock All", _buttonStyle))
                 {
@@ -524,58 +520,6 @@ namespace LethalMenu.Menu
                 }
             });
 
-            // Enemy Spawning (Host Only)
-            DrawSection("Enemy Spawning (Host)", () =>
-            {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
-
-                GUILayout.Label("Spawn Enemy:", _labelStyle);
-
-                if (_cachedEnemyNames == null || _cachedEnemyNames.Length == 0)
-                {
-                    _cachedEnemyNames = Cheats.NetworkCheats.GetAvailableEnemyNames();
-                }
-
-                if (_cachedEnemyNames.Length > 0)
-                {
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
-                        _selectedEnemyIndex = (_selectedEnemyIndex - 1 + _cachedEnemyNames.Length) % _cachedEnemyNames.Length;
-                    _selectedEnemyIndex = Mathf.Clamp(_selectedEnemyIndex, 0, _cachedEnemyNames.Length - 1);
-                    GUILayout.Label(_cachedEnemyNames[_selectedEnemyIndex], _labelStyle, GUILayout.Width(150));
-                    if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
-                        _selectedEnemyIndex = (_selectedEnemyIndex + 1) % _cachedEnemyNames.Length;
-                    if (GUILayout.Button("Refresh", _buttonStyle, GUILayout.Width(60)))
-                        _cachedEnemyNames = Cheats.NetworkCheats.GetAvailableEnemyNames();
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Spawn At Me", _buttonStyle))
-                    {
-                        var pos = LethalMenuMod.LocalPlayer?.transform.position ?? Vector3.zero;
-                        bool isOutside = _cachedEnemyNames[_selectedEnemyIndex].StartsWith("[O]");
-                        Cheats.NetworkCheats.SpawnEnemy(_cachedEnemyNames[_selectedEnemyIndex], pos, isOutside);
-                    }
-                    if (GUILayout.Button("Spawn At Camera", _buttonStyle))
-                    {
-                        var pos = Camera.main?.transform.position ?? Vector3.zero;
-                        bool isOutside = _cachedEnemyNames[_selectedEnemyIndex].StartsWith("[O]");
-                        Cheats.NetworkCheats.SpawnEnemy(_cachedEnemyNames[_selectedEnemyIndex], pos, isOutside);
-                    }
-                    GUILayout.EndHorizontal();
-                }
-                else
-                {
-                    GUILayout.Label("  No enemies available (land on a moon)", _labelStyle);
-                }
-
-                var hostPlayers = Cheats.NetworkCheats.GetAllPlayers();
-                if (hostPlayers.Length > 0 && GUILayout.Button("Spawn Mimic of Selected", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpawnMimic(hostPlayers[Mathf.Clamp(_selectedMimicPlayerIndex, 0, hostPlayers.Length - 1)]);
-                }
-            });
-
             DrawSection("Player Actions", () =>
             {
                 var players = Cheats.NetworkCheats.GetAllPlayers();
@@ -684,67 +628,6 @@ namespace LethalMenu.Menu
                 }
             });
 
-            DrawSection("Enemy Actions", () =>
-            {
-                var enemies = Cheats.NetworkCheats.GetAllEnemies();
-                GUILayout.Label($"Alive enemies: {enemies.Length}", _labelStyle);
-
-                if (GUILayout.Button("KILL ALL ENEMIES", _buttonStyle, GUILayout.Height(30)))
-                {
-                    Cheats.NetworkCheats.KillAllEnemies();
-                }
-            });
-
-            DrawSection("Ship Unlockables", () =>
-            {
-                var unlockables = Cheats.NetworkCheats.GetShipUnlockables();
-                var locked = unlockables.Where(u => !u.unlocked).ToArray();
-
-                if (locked.Length > 0)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Unlock:", _labelStyle, GUILayout.Width(50));
-                    _selectedUnlockableIndex = Mathf.Clamp(_selectedUnlockableIndex, 0, locked.Length - 1);
-
-                    if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
-                        _selectedUnlockableIndex = (_selectedUnlockableIndex - 1 + locked.Length) % locked.Length;
-                    GUILayout.Label(locked[_selectedUnlockableIndex].name, _labelStyle, GUILayout.Width(150));
-                    if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
-                        _selectedUnlockableIndex = (_selectedUnlockableIndex + 1) % locked.Length;
-                    GUILayout.EndHorizontal();
-
-                    if (GUILayout.Button("Unlock Selected (Free)", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.UnlockShipUpgrade(locked[_selectedUnlockableIndex].id);
-                    }
-                }
-                else
-                {
-                    GUILayout.Label("All unlockables obtained.", _labelStyle);
-                }
-            });
-
-            DrawSection("Ship Inventory", () =>
-            {
-                var (scrapCount, totalItems, rawValue, adjustedValue) = CalculateShipInventory();
-                var gameInstance = StartOfRound.Instance;
-                float buyRate = gameInstance?.companyBuyingRate ?? 0f;
-
-                GUILayout.Label($"Items in Ship: {totalItems} ({scrapCount} with value)", _labelStyle);
-                GUILayout.Label($"Raw Scrap Value: ${rawValue}", _labelStyle);
-                GUILayout.Label($"Company Buy Rate: {buyRate:P0}", _labelStyle);
-                GUILayout.Label($"Sell Value: ${adjustedValue}", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = _enabledColor } });
-            });
-
-            DrawSection("Sell Items (Company Planet Only)", () =>
-            {
-                if (GUILayout.Button("SELL ALL ITEMS", _buttonStyle, GUILayout.Height(35)))
-                {
-                    SellAllItemsNaturally();
-                }
-                GUILayout.Label("Places items on counter, triggers sell.", _labelStyle);
-            });
-
             // Malicious section - only show if enabled
             DrawSection("Trolling / Malicious (USE RESPONSIBLY)", () =>
             {
@@ -777,7 +660,7 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.DeskDoorSpam, "Desk Door", null);
                 if (GUILayout.Button("Flicker Lights", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.FlickerShipLights();
+                    Hack.FlickerLights.Execute();
                 }
                 GUILayout.EndHorizontal();
 
@@ -788,7 +671,7 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("MAX CHAOS", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.MaxChaos();
+                    Hack.MaxChaos.Execute();
                 }
                 if (GUILayout.Button("Terminal Crash", _buttonStyle))
                 {
@@ -896,7 +779,7 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Blow Up All Mines", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.BlowUpAllLandmines();
+                    Hack.BlowUpAllMines.Execute();
                 }
                 if (GUILayout.Button("Mines OFF", _buttonStyle))
                 {
@@ -919,7 +802,7 @@ namespace LethalMenu.Menu
                 }
                 if (GUILayout.Button("Berserk Turrets", _buttonStyle))
                 {
-                    Cheats.NetworkCheats.BerserkAllTurrets();
+                    Hack.BerserkTurrets.Execute();
                 }
                 GUILayout.EndHorizontal();
             });

@@ -35,7 +35,7 @@ namespace LethalMenu.Menu
                     GUILayout.Space(5);
                     if (GUILayout.Button("Self Revive", _buttonStyle, GUILayout.Height(28)))
                     {
-                        Cheats.NetworkCheats.SelfRevive();
+                        Hack.SelfRevive.Execute();
                     }
                     GUILayout.Label("  Respawn at ship (client-side)", _labelStyle);
                 }
@@ -47,9 +47,9 @@ namespace LethalMenu.Menu
                     if (GUILayout.Button(Settings.FakeDeath ? "Cancel Fake Death" : "Fake Death", _buttonStyle, GUILayout.Height(28)))
                     {
                         if (Settings.FakeDeath)
-                            Cheats.NetworkCheats.CancelFakeDeath();
+                            Hack.CancelFakeDeath.Execute();
                         else
-                            Cheats.NetworkCheats.FakeDeath();
+                            Hack.FakeDeath.Execute();
                     }
                     GUILayout.EndHorizontal();
                     if (Settings.FakeDeath)
@@ -104,17 +104,17 @@ namespace LethalMenu.Menu
 
                 if (GUILayout.Button("Teleport to Ship", _buttonStyle, GUILayout.Height(28)))
                 {
-                    this.TeleportToShip();
+                    Hack.TeleportToShip.Execute();
                 }
 
                 if (GUILayout.Button("Teleport to Main Entrance", _buttonStyle, GUILayout.Height(28)))
                 {
-                    this.TeleportToEntrance(true);
+                    Hack.TeleportToEntrance.Execute();
                 }
 
                 if (GUILayout.Button("Teleport to Fire Exit", _buttonStyle, GUILayout.Height(28)))
                 {
-                    this.TeleportToEntrance(false);
+                    Hack.TeleportToFireExit.Execute();
                 }
             });
         }
