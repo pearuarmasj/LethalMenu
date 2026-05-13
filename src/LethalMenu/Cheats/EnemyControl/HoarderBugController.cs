@@ -84,6 +84,11 @@ namespace LethalMenu.Cheats.EnemyControl
             if (enemy.heldItem == null)
             {
                 var nearbyItem = enemy.FindNearbyItem(2.0f);
+                if (nearbyItem is LungProp lung && lung.isLungDocked)
+                {
+                    lung.EquipItem();
+                    return;
+                }
                 if (nearbyItem != null)
                 {
                     GrabItem(enemy, nearbyItem);
@@ -136,5 +141,7 @@ namespace LethalMenu.Cheats.EnemyControl
             enemy.heldItem != null ? "Drop Item" : (enemy.IsBehaviourState(State.ChasingPlayer) ? "Calm Down" : "Aggressive");
 
         public float InteractRange(HoarderBugAI _) => 1.0f;
+
+        public bool CanUseEntranceDoors(HoarderBugAI _) => false;
     }
 }
