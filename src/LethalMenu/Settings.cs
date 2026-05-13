@@ -106,6 +106,29 @@ namespace LethalMenu
         public static Color TurretColor { get; set; } = Color.magenta;
         public static Color FuseboxColor { get; set; } = new Color(1f, 1f, 0.5f);
 
+        // Cham system
+        public static Color ChamColor { get; set; } = Color.white;
+        public static bool UseSingleChamColor { get; set; } = false;
+        public static float ChamDistance { get; set; } = 0f;
+
+        public static Color PlayerChamColor { get; set; } = Color.green;
+        public static Color EnemyChamColor { get; set; } = Color.red;
+        public static Color ItemChamColor { get; set; } = Color.yellow;
+        public static Color LandmineChamColor { get; set; } = new Color(1f, 0.5f, 0f);
+        public static Color TurretChamColor { get; set; } = new Color(1f, 0.25f, 0f);
+        public static Color DoorChamColor { get; set; } = new Color(0.5f, 0.5f, 1f);
+        public static Color BigDoorChamColor { get; set; } = new Color(0.25f, 0.25f, 1f);
+        public static Color ShipDoorChamColor { get; set; } = Color.white;
+        public static Color BreakerChamColor { get; set; } = Color.magenta;
+        public static Color EnemyVentChamColor { get; set; } = new Color(0.5f, 0f, 0.5f);
+        public static Color ItemDropshipChamColor { get; set; } = Color.cyan;
+        public static Color CruiserChamColor { get; set; } = new Color(1f, 0.78f, 0f);
+        public static Color MoldSporeChamColor { get; set; } = new Color(0f, 0.78f, 0f);
+        public static Color MineshaftElevatorChamColor { get; set; } = new Color(0.7f, 0.7f, 0.7f);
+        public static Color EntranceChamColor { get; set; } = new Color(0f, 0.5f, 1f);
+        public static Color SpikeRoofTrapChamColor { get; set; } = new Color(1f, 0f, 0.25f);
+        public static Color SteamValveChamColor { get; set; } = Color.white;
+
         // Debug
         public static string DebugMessage { get; set; } = "";
 
@@ -196,6 +219,27 @@ namespace LethalMenu
                     ["TurretColor"] = ColorToJson(TurretColor),
                     ["FuseboxColor"] = ColorToJson(FuseboxColor),
 
+                    ["ChamColor"] = ColorToJson(ChamColor),
+                    ["PlayerChamColor"] = ColorToJson(PlayerChamColor),
+                    ["EnemyChamColor"] = ColorToJson(EnemyChamColor),
+                    ["ItemChamColor"] = ColorToJson(ItemChamColor),
+                    ["LandmineChamColor"] = ColorToJson(LandmineChamColor),
+                    ["TurretChamColor"] = ColorToJson(TurretChamColor),
+                    ["DoorChamColor"] = ColorToJson(DoorChamColor),
+                    ["BigDoorChamColor"] = ColorToJson(BigDoorChamColor),
+                    ["ShipDoorChamColor"] = ColorToJson(ShipDoorChamColor),
+                    ["BreakerChamColor"] = ColorToJson(BreakerChamColor),
+                    ["EnemyVentChamColor"] = ColorToJson(EnemyVentChamColor),
+                    ["ItemDropshipChamColor"] = ColorToJson(ItemDropshipChamColor),
+                    ["CruiserChamColor"] = ColorToJson(CruiserChamColor),
+                    ["MoldSporeChamColor"] = ColorToJson(MoldSporeChamColor),
+                    ["MineshaftElevatorChamColor"] = ColorToJson(MineshaftElevatorChamColor),
+                    ["EntranceChamColor"] = ColorToJson(EntranceChamColor),
+                    ["SpikeRoofTrapChamColor"] = ColorToJson(SpikeRoofTrapChamColor),
+                    ["SteamValveChamColor"] = ColorToJson(SteamValveChamColor),
+                    ["UseSingleChamColor"] = UseSingleChamColor,
+                    ["ChamDistance"] = ChamDistance,
+
                     ["KickedHostIds"] = new JArray(KickedHostIds.Select(id => (long)id)),
 
                     ["CollapsedSections"] = new JArray(CollapsedSections),
@@ -273,6 +317,28 @@ namespace LethalMenu
                 MineColor = LoadColor(config, "MineColor", MineColor);
                 TurretColor = LoadColor(config, "TurretColor", TurretColor);
                 FuseboxColor = LoadColor(config, "FuseboxColor", FuseboxColor);
+
+                ChamColor = LoadColor(config, "ChamColor", ChamColor);
+                PlayerChamColor = LoadColor(config, "PlayerChamColor", PlayerChamColor);
+                EnemyChamColor = LoadColor(config, "EnemyChamColor", EnemyChamColor);
+                ItemChamColor = LoadColor(config, "ItemChamColor", ItemChamColor);
+                LandmineChamColor = LoadColor(config, "LandmineChamColor", LandmineChamColor);
+                TurretChamColor = LoadColor(config, "TurretChamColor", TurretChamColor);
+                DoorChamColor = LoadColor(config, "DoorChamColor", DoorChamColor);
+                BigDoorChamColor = LoadColor(config, "BigDoorChamColor", BigDoorChamColor);
+                ShipDoorChamColor = LoadColor(config, "ShipDoorChamColor", ShipDoorChamColor);
+                BreakerChamColor = LoadColor(config, "BreakerChamColor", BreakerChamColor);
+                EnemyVentChamColor = LoadColor(config, "EnemyVentChamColor", EnemyVentChamColor);
+                ItemDropshipChamColor = LoadColor(config, "ItemDropshipChamColor", ItemDropshipChamColor);
+                CruiserChamColor = LoadColor(config, "CruiserChamColor", CruiserChamColor);
+                MoldSporeChamColor = LoadColor(config, "MoldSporeChamColor", MoldSporeChamColor);
+                MineshaftElevatorChamColor = LoadColor(config, "MineshaftElevatorChamColor", MineshaftElevatorChamColor);
+                EntranceChamColor = LoadColor(config, "EntranceChamColor", EntranceChamColor);
+                SpikeRoofTrapChamColor = LoadColor(config, "SpikeRoofTrapChamColor", SpikeRoofTrapChamColor);
+                SteamValveChamColor = LoadColor(config, "SteamValveChamColor", SteamValveChamColor);
+
+                UseSingleChamColor = config["UseSingleChamColor"]?.Value<bool>() ?? UseSingleChamColor;
+                ChamDistance = config["ChamDistance"]?.Value<float>() ?? ChamDistance;
 
                 if (config["KickedHostIds"] is JArray kickedArray)
                 {

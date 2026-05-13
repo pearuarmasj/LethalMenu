@@ -27,6 +27,15 @@ namespace LethalMenu
         InfoDisplayMoon, InfoDisplayTime, NoVisor, NoCameraShake, NoDepthOfField,
         FullRenderResolution, CustomFOV, Breadcrumbs, NoFog,
         MinimalGUIMod, ClearVisionMod, RadarPatch, EnemyDeathNotification,
+        SteamValveESP, BigDoorESP, ShipDoorESP, EnemyVentESP, ItemDropshipESP,
+        CruiserESP, MoldSporeESP, MineshaftElevatorESP, EntranceESP, SpikeRoofTrapESP,
+
+        // === Chams ===
+        EnableChams,
+        PlayerChams, EnemyChams, ItemChams, LandmineChams, TurretChams,
+        DoorChams, BigDoorChams, ShipDoorChams, BreakerChams, EnemyVentChams,
+        ItemDropshipChams, CruiserChams, MoldSporeChams, MineshaftElevatorChams,
+        EntranceChams, SpikeRoofTrapChams, SteamValveChams,
 
         // === World ===
         BridgeNeverFalls, AutoOpenDropship, ShipDoorInSpace, NoShipDoorClose, Shoplifter,
