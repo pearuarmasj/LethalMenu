@@ -37,6 +37,7 @@ namespace LethalMenu.Cheats.EnemyControl
             { typeof(DocileLocustBeesAI), new DocileLocustBeesController() },
             { typeof(DoublewingAI), new DoublewingController() },
             { typeof(FlowerSnakeEnemy), new FlowerSnakeController() },
+            { typeof(RadMechAI), new RadMechController() },
         };
 
         /// 
