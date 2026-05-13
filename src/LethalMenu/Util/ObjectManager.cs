@@ -38,6 +38,15 @@ namespace LethalMenu.Util
             CollectEntrances();
             CollectTeleporters();
             CollectBreakerBoxes();
+            CollectSteamValves();
+            CollectBigDoors();
+            CollectHangarShipDoors();
+            CollectEnemyVents();
+            CollectItemDropships();
+            CollectVehicles();
+            CollectMoldSpores();
+            CollectMineshaftElevators();
+            CollectSpikeRoofTraps();
         }
 
         private static void CollectPlayers()
@@ -164,6 +173,71 @@ namespace LethalMenu.Util
                     LethalMenuMod.BreakerBoxes.Add(box);
                 }
             }
+        }
+
+        private static void CollectSteamValves()
+        {
+            LethalMenuMod.SteamValves.Clear();
+            foreach (var v in Object.FindObjectsOfType<SteamValveHazard>())
+                if (v != null) LethalMenuMod.SteamValves.Add(v);
+        }
+
+        private static void CollectBigDoors()
+        {
+            LethalMenuMod.BigDoors.Clear();
+            foreach (var d in Object.FindObjectsOfType<TerminalAccessibleObject>())
+                if (d != null && d.isBigDoor) LethalMenuMod.BigDoors.Add(d);
+        }
+
+        private static void CollectHangarShipDoors()
+        {
+            LethalMenuMod.HangarShipDoors.Clear();
+            foreach (var d in Object.FindObjectsOfType<HangarShipDoor>())
+                if (d != null) LethalMenuMod.HangarShipDoors.Add(d);
+        }
+
+        private static void CollectEnemyVents()
+        {
+            LethalMenuMod.EnemyVents.Clear();
+            foreach (var v in Object.FindObjectsOfType<EnemyVent>())
+                if (v != null) LethalMenuMod.EnemyVents.Add(v);
+        }
+
+        private static void CollectItemDropships()
+        {
+            LethalMenuMod.ItemDropships.Clear();
+            foreach (var d in Object.FindObjectsOfType<ItemDropship>())
+                if (d != null) LethalMenuMod.ItemDropships.Add(d);
+        }
+
+        private static void CollectVehicles()
+        {
+            LethalMenuMod.Vehicles.Clear();
+            foreach (var v in Object.FindObjectsOfType<VehicleController>())
+                if (v != null) LethalMenuMod.Vehicles.Add(v);
+        }
+
+        private static void CollectMoldSpores()
+        {
+            LethalMenuMod.MoldSpores.Clear();
+            foreach (var go in Object.FindObjectsOfType<GameObject>())
+                if (go != null && go.name.StartsWith("MoldSpore", System.StringComparison.Ordinal))
+                    LethalMenuMod.MoldSpores.Add(go);
+        }
+
+        private static void CollectMineshaftElevators()
+        {
+            LethalMenuMod.MineshaftElevators.Clear();
+            foreach (var e in Object.FindObjectsOfType<MineshaftElevatorController>())
+                if (e != null) LethalMenuMod.MineshaftElevators.Add(e);
+        }
+
+        private static void CollectSpikeRoofTraps()
+        {
+            LethalMenuMod.SpikeRoofTraps.Clear();
+            foreach (var go in Object.FindObjectsOfType<GameObject>())
+                if (go != null && go.name.StartsWith("AnimContainer", System.StringComparison.Ordinal))
+                    LethalMenuMod.SpikeRoofTraps.Add(go);
         }
     }
 }

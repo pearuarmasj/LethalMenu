@@ -49,6 +49,15 @@ namespace LethalMenu
         public static List<EntranceTeleport> Entrances { get; } = new();
         public static List<ShipTeleporter> Teleporters { get; } = new();
         public static List<BreakerBox> BreakerBoxes { get; } = new();
+        public static List<SteamValveHazard> SteamValves { get; } = new();
+        public static List<TerminalAccessibleObject> BigDoors { get; } = new();
+        public static List<HangarShipDoor> HangarShipDoors { get; } = new();
+        public static List<EnemyVent> EnemyVents { get; } = new();
+        public static List<ItemDropship> ItemDropships { get; } = new();
+        public static List<VehicleController> Vehicles { get; } = new();
+        public static List<GameObject> MoldSpores { get; } = new();
+        public static List<MineshaftElevatorController> MineshaftElevators { get; } = new();
+        public static List<GameObject> SpikeRoofTraps { get; } = new();
 
         private bool _minesEnabled = true;
         private bool _turretsEnabled = true;
