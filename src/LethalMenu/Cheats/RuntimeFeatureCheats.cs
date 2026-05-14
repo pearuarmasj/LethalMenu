@@ -35,47 +35,42 @@ namespace LethalMenu.Cheats
         }
     }
 
+    /// Disables every LocalVolumetricFog component. Re-scans each frame so new fogs (moon travel,
+    /// weather) get caught; tracks what we touched so toggle-off restores them.
     public class NoFogCheat : CheatBase
     {
         public override string Name => "No Fog";
         public override Hack HackType => Hack.NoFog;
 
-        private LocalVolumetricFog[]? _fogObjects;
-        private bool _fogWasDisabled;
+        private readonly System.Collections.Generic.HashSet<LocalVolumetricFog> _disabled = new();
+        private bool _wasEnabled;
 
         public override void OnUpdate()
         {
-            if (IsEnabled && !_fogWasDisabled)
+            if (IsEnabled)
             {
-                _fogObjects = Object.FindObjectsOfType<LocalVolumetricFog>();
-                foreach (var fog in _fogObjects)
-                    if (fog != null)
-                        fog.enabled = false;
-
-                _fogWasDisabled = true;
-            }
-            else if (!IsEnabled && _fogWasDisabled)
-            {
-                if (_fogObjects != null)
+                foreach (var fog in Object.FindObjectsOfType<LocalVolumetricFog>())
                 {
-                    foreach (var fog in _fogObjects)
-                        if (fog != null)
-                            fog.enabled = true;
+                    if (fog == null || !fog.enabled) continue;
+                    fog.enabled = false;
+                    _disabled.Add(fog);
                 }
-
-                _fogWasDisabled = false;
+                _wasEnabled = true;
+            }
+            else if (_wasEnabled)
+            {
+                RestoreAll();
+                _wasEnabled = false;
             }
         }
 
-        public override void OnDisable()
+        public override void OnDisable() => RestoreAll();
+
+        private void RestoreAll()
         {
-            if (_fogObjects == null) return;
-
-            foreach (var fog in _fogObjects)
-                if (fog != null)
-                    fog.enabled = true;
-
-            _fogWasDisabled = false;
+            foreach (var fog in _disabled)
+                if (fog != null) fog.enabled = true;
+            _disabled.Clear();
         }
     }
 
