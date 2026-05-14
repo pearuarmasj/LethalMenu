@@ -143,6 +143,13 @@ namespace LethalMenu.Menu
             if (GUILayout.Button("Unlockables", _buttonStyle, GUILayout.Height(28)))
                 _unlockablesManager.IsOpen = !_unlockablesManager.IsOpen;
             GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Bestiary", _buttonStyle, GUILayout.Height(28)))
+                _bestiaryManager.IsOpen = !_bestiaryManager.IsOpen;
+            if (GUILayout.Button("Storage", _buttonStyle, GUILayout.Height(28)))
+                _storageManager.IsOpen = !_storageManager.IsOpen;
+            GUILayout.EndHorizontal();
             GUILayout.Space(5);
 
             // Credits and dropship status

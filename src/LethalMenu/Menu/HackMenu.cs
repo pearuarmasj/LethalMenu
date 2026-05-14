@@ -70,6 +70,14 @@ namespace LethalMenu.Menu
         private readonly UnlockablesManagerPopup _unlockablesManager = new();
         private readonly LootManagerPopup _lootManager = new();
         private readonly MoonManagerPopup _moonManager = new();
+        private readonly CreaturePreviewPopup _creaturePreview = new();
+        private readonly BestiaryManagerPopup _bestiaryManager;
+        private readonly StorageManagerPopup _storageManager = new();
+
+        public HackMenu()
+        {
+            _bestiaryManager = new BestiaryManagerPopup(_creaturePreview);
+        }
 
         private void Stylize()
         {
@@ -135,6 +143,9 @@ namespace LethalMenu.Menu
             _unlockablesManager.Draw();
             _lootManager.Draw();
             _moonManager.Draw();
+            _bestiaryManager.Draw();
+            _creaturePreview.Draw();
+            _storageManager.Draw();
 
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - _windowRect.width);
