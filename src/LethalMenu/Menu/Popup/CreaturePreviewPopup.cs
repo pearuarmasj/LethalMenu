@@ -883,9 +883,15 @@ namespace LethalMenu.Menu.Popup
             string materialInfo = _materialMode == MaterialMode.Textured
                 ? $"  Textures: {_texturedMaterialCount}/{_texturedMaterialCount + _missingTextureMaterialCount}"
                 : string.Empty;
-            string shaderInfo = string.IsNullOrWhiteSpace(_resolvedShaderName) ? string.Empty : $"  Shader: {_resolvedShaderName}";
-            string srcShaderInfo = string.IsNullOrWhiteSpace(_firstSourceShaderName) ? string.Empty : $"  SrcShader: {_firstSourceShaderName}";
-            string texInfo = string.IsNullOrWhiteSpace(_firstTextureInfo) ? string.Empty : $"  Tex: {_firstTextureInfo}";
+            string shaderInfo = _materialMode == MaterialMode.Original || string.IsNullOrWhiteSpace(_resolvedShaderName)
+                ? string.Empty
+                : $"  Shader: {_resolvedShaderName}";
+            string srcShaderInfo = _materialMode == MaterialMode.Original || string.IsNullOrWhiteSpace(_firstSourceShaderName)
+                ? string.Empty
+                : $"  SrcShader: {_firstSourceShaderName}";
+            string texInfo = _materialMode == MaterialMode.Original || string.IsNullOrWhiteSpace(_firstTextureInfo)
+                ? string.Empty
+                : $"  Tex: {_firstTextureInfo}";
             _debugInfo = $"Source: {_previewSource}  Renderers: {_rendererCount}  Material: {GetMaterialModeLabel()}{materialInfo}{shaderInfo}{srcShaderInfo}{texInfo}  Bounds: {bounds.size.x:F2}, {bounds.size.y:F2}, {bounds.size.z:F2}";
 
             return true;
