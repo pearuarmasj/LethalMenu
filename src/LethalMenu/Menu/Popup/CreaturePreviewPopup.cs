@@ -334,6 +334,10 @@ namespace LethalMenu.Menu.Popup
 
         private GameObject? CreatePreviewInstance(Transform parent)
         {
+            var liveInstance = TryCreateLivePreviewInstance(parent);
+            if (liveInstance != null)
+                return liveInstance;
+
             var bundledPrefab = FindBundledPreviewPrefab();
             if (bundledPrefab != null)
             {
@@ -344,6 +348,44 @@ namespace LethalMenu.Menu.Popup
             }
 
             return null;
+        }
+
+        private GameObject? TryCreateLivePreviewInstance(Transform parent)
+        {
+            var sourcePrefab = _enemyType?.enemyPrefab;
+            if (sourcePrefab == null)
+                return null;
+
+            GameObject? staging = null;
+            GameObject? instance = null;
+            try
+            {
+                staging = new GameObject("LethalMenu Preview Staging") { hideFlags = HideFlags.HideAndDontSave };
+                staging.SetActive(false);
+
+                instance = UnityEngine.Object.Instantiate(sourcePrefab, staging.transform);
+                instance.name = $"LethalMenu Live Preview {sourcePrefab.name}";
+
+                StripDangerousComponents(instance);
+                StripRuntimeComponents(instance);
+                DisableAnimationComponents(instance);
+                SnapToIdlePose(instance);
+
+                instance.transform.SetParent(parent, worldPositionStays: false);
+                UnityEngine.Object.Destroy(staging);
+                staging = null;
+
+                _previewSource = "Live prefab";
+                return instance;
+            }
+            catch (Exception)
+            {
+                if (instance != null)
+                    UnityEngine.Object.Destroy(instance);
+                if (staging != null)
+                    UnityEngine.Object.Destroy(staging);
+                return null;
+            }
         }
 
         private GameObject? FindBundledPreviewPrefab()
