@@ -14,7 +14,7 @@ namespace LethalMenu.Menu.Popup
 
         private EnemyType? _enemyType;
         private string? _creatureName;
-        private string _previewSource = "Bundled model";
+        private string _previewSource = "Unknown";
         private string? _missingModelHint;
         private GameObject? _previewRoot;
         private GameObject? _modelInstance;
@@ -289,6 +289,7 @@ namespace LethalMenu.Menu.Popup
             _firstSourceShaderName = null;
             _firstTextureInfo = null;
             _missingModelHint = null;
+            _previewSource = "Unknown";
 
             try
             {
@@ -308,7 +309,7 @@ namespace LethalMenu.Menu.Popup
                 _modelInstance = CreatePreviewInstance(_previewRoot.transform);
                 if (_modelInstance == null)
                 {
-                    _error = "Preview AssetBundle prefab not found.";
+                    _error = "No preview available for this enemy.";
                     _debugInfo = _missingModelHint;
                     DisposePreview();
                     return;
@@ -374,8 +375,9 @@ namespace LethalMenu.Menu.Popup
                 _previewSource = "Live prefab";
                 return instance;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.LogError($"[CreaturePreview] Live-prefab instantiation failed for '{_enemyType?.enemyName ?? _creatureName ?? "(unknown)"}': {ex}");
                 if (instance != null)
                     UnityEngine.Object.Destroy(instance);
                 if (staging != null)
