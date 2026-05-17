@@ -13,9 +13,20 @@ namespace LethalMenu.Menu.Popup
 
         public void Show(PlayerControllerB? preselectTarget = null)
         {
+            var targets = BuildTargetList(LethalMenuMod.LocalPlayer);
             _targetIndex = 0;
+            if (preselectTarget != null)
+            {
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    if (targets[i].Player == preselectTarget)
+                    {
+                        _targetIndex = i;
+                        break;
+                    }
+                }
+            }
             IsOpen = true;
-            // preselectTarget wiring is added in a later task once the target list exists.
         }
 
         protected override void DrawBody()
@@ -55,14 +66,22 @@ namespace LethalMenu.Menu.Popup
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                bool externalEnabled = pair.CanTeleportExternal;
+                var target = targets[_targetIndex].Player;
+
+                bool externalEnabled = pair.CanTeleportExternal && target != null;
                 GUI.enabled = externalEnabled;
-                GUILayout.Button(externalEnabled ? "External" : "External (—)");
+                if (GUILayout.Button(pair.CanTeleportExternal ? "External" : "External (—)") && externalEnabled)
+                {
+                    Cheats.NetworkCheats.TeleportPlayerToSpecificEntrance(target!, pair.InsideSide!);
+                }
                 GUI.enabled = true;
 
-                bool internalEnabled = pair.CanTeleportInternal;
+                bool internalEnabled = pair.CanTeleportInternal && target != null;
                 GUI.enabled = internalEnabled;
-                GUILayout.Button(internalEnabled ? "Internal" : "Internal (—)");
+                if (GUILayout.Button(pair.CanTeleportInternal ? "Internal" : "Internal (—)") && internalEnabled)
+                {
+                    Cheats.NetworkCheats.TeleportPlayerToSpecificEntrance(target!, pair.OutsideSide!);
+                }
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
 
