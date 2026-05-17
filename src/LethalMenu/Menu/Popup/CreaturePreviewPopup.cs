@@ -1030,7 +1030,8 @@ namespace LethalMenu.Menu.Popup
                 path.Contains("map dot") ||
                 path.Contains("map") ||
                 path.Contains("radar") ||
-                path.Contains("terminal"))
+                path.Contains("terminal") ||
+                path.Contains("trigger"))
                 return false;
 
             foreach (var material in renderer.sharedMaterials)
@@ -1047,7 +1048,8 @@ namespace LethalMenu.Menu.Popup
             string name = material.name.ToLowerInvariant();
             return name.Contains("testtrigger") ||
                 name.Contains("ghostsheet") ||
-                name.Contains("mapdot");
+                name.Contains("mapdot") ||
+                name.Contains("defaulthdmaterial");
         }
 
         private static string GetTransformPath(Transform transform)
