@@ -107,14 +107,9 @@ namespace LethalMenu.Menu
                     Hack.TeleportToShip.Execute();
                 }
 
-                if (GUILayout.Button("Teleport to Main Entrance", _buttonStyle, GUILayout.Height(28)))
+                if (GUILayout.Button("Entrance Teleporter…", _buttonStyle, GUILayout.Height(28)))
                 {
-                    Hack.TeleportToEntrance.Execute();
-                }
-
-                if (GUILayout.Button("Teleport to Fire Exit", _buttonStyle, GUILayout.Height(28)))
-                {
-                    Hack.TeleportToFireExit.Execute();
+                    EntranceTeleporter.Show();
                 }
             });
         }
