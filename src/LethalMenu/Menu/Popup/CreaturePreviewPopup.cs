@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 
 namespace LethalMenu.Menu.Popup
 {
@@ -11,6 +13,7 @@ namespace LethalMenu.Menu.Popup
         private static readonly Vector3 PreviewPosition = new(10000f, -10000f, 10000f);
         private static readonly System.Collections.Generic.List<AssetBundle> PreviewBundles = new();
         private static bool _previewBundlesLoaded;
+        private static string? _loadedBundleInfo;
 
         private EnemyType? _enemyType;
         private string? _creatureName;
@@ -22,14 +25,29 @@ namespace LethalMenu.Menu.Popup
         private GameObject? _lightObject;
         private Camera? _camera;
         private RenderTexture? _renderTexture;
-        private Animator[] _animators = Array.Empty<Animator>();
+        private Material? _previewMaterial;
+        private readonly System.Collections.Generic.List<Material> _runtimeMaterials = new();
+        private Texture? _debugTexture;
         private float _yaw = 180f;
         private bool _autoRotate = true;
+        private MaterialMode _materialMode = MaterialMode.Textured;
         private int _rendererCount;
+        private int _texturedMaterialCount;
+        private int _missingTextureMaterialCount;
         private string? _debugInfo;
         private string? _error;
+        private string? _resolvedShaderName;
+        private string? _firstSourceShaderName;
+        private string? _firstTextureInfo;
 
         public CreaturePreviewPopup() : base("Creature Preview", 20010, 540, 470) { }
+
+        private enum MaterialMode
+        {
+            Textured,
+            Flat,
+            Original
+        }
 
         public void Show(EnemyType enemyType, string? creatureName = null)
         {
@@ -245,6 +263,11 @@ namespace LethalMenu.Menu.Popup
                 _yaw = 180f;
             if (GUILayout.Button("Rebuild", GUILayout.Width(80)))
                 RebuildPreview();
+            if (GUILayout.Button($"Material: {GetMaterialModeLabel()}", GUILayout.Width(150)))
+            {
+                CycleMaterialMode();
+                RebuildPreview();
+            }
             GUILayout.EndHorizontal();
 
             if (!string.IsNullOrWhiteSpace(_debugInfo))
@@ -259,9 +282,16 @@ namespace LethalMenu.Menu.Popup
         private void RebuildPreview()
         {
             DisposePreview();
+            ReloadPreviewBundles();
             _error = null;
             _debugInfo = null;
+            _debugTexture = null;
             _rendererCount = 0;
+            _texturedMaterialCount = 0;
+            _missingTextureMaterialCount = 0;
+            _resolvedShaderName = null;
+            _firstSourceShaderName = null;
+            _firstTextureInfo = null;
             _missingModelHint = null;
 
             try
@@ -366,6 +396,7 @@ namespace LethalMenu.Menu.Popup
                 return;
 
             _previewBundlesLoaded = true;
+            _loadedBundleInfo = null;
             string previewDirectory = GetPreviewDirectory();
             if (!Directory.Exists(previewDirectory))
             {
@@ -382,13 +413,33 @@ namespace LethalMenu.Menu.Popup
                 {
                     var bundle = AssetBundle.LoadFromFile(file);
                     if (bundle != null)
+                    {
                         PreviewBundles.Add(bundle);
+                        var timestamp = File.GetLastWriteTime(file).ToString("yyyy-MM-dd HH:mm:ss");
+                        string info = $"{Path.GetFileName(file)} ({timestamp})";
+                        _loadedBundleInfo = string.IsNullOrWhiteSpace(_loadedBundleInfo)
+                            ? info
+                            : $"{_loadedBundleInfo}, {info}";
+                    }
                 }
                 catch
                 {
                     // Ignore non-bundle files; this folder can also hold notes/source exports.
                 }
             }
+        }
+
+        private static void ReloadPreviewBundles()
+        {
+            foreach (var bundle in PreviewBundles)
+            {
+                if (bundle != null)
+                    bundle.Unload(true);
+            }
+
+            PreviewBundles.Clear();
+            _previewBundlesLoaded = false;
+            LoadPreviewBundles();
         }
 
         private static bool LooksLikePreviewBundleFile(string file)
@@ -410,9 +461,9 @@ namespace LethalMenu.Menu.Popup
         {
             SetLayerRecursive(model, PreviewLayer);
             StripRuntimeComponents(model);
-            ForcePreviewRenderersVisible(model);
-            PrepareAnimators(model);
+            DisableAnimationComponents(model);
             model.SetActive(true);
+            ForcePreviewRenderersVisible(model);
 
             if (!NormalizeModel(model))
             {
@@ -437,7 +488,7 @@ namespace LethalMenu.Menu.Popup
 
             _camera = _cameraObject.AddComponent<Camera>();
             _camera.clearFlags = CameraClearFlags.SolidColor;
-            _camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            _camera.backgroundColor = Color.black;
             _camera.cullingMask = 1 << PreviewLayer;
             _camera.nearClipPlane = 0.01f;
             _camera.farClipPlane = 20f;
@@ -445,7 +496,60 @@ namespace LethalMenu.Menu.Popup
             _camera.orthographicSize = 1.25f;
             _camera.targetTexture = _renderTexture;
             _camera.forceIntoRenderTexture = true;
+            _camera.allowHDR = false;
+            _camera.allowMSAA = false;
+            _camera.useOcclusionCulling = false;
             _camera.enabled = false;
+
+            ConfigureHDRPCameraIsolation(_camera);
+        }
+
+        private static void ConfigureHDRPCameraIsolation(Camera camera)
+        {
+            try
+            {
+                var hdData = camera.gameObject.GetComponent<HDAdditionalCameraData>()
+                    ?? camera.gameObject.AddComponent<HDAdditionalCameraData>();
+
+                hdData.clearColorMode = HDAdditionalCameraData.ClearColorMode.Color;
+                hdData.backgroundColorHDR = Color.black;
+                hdData.clearDepth = true;
+                hdData.volumeLayerMask = 0;
+                hdData.probeLayerMask = 0;
+                hdData.customRenderingSettings = true;
+
+                var frameSettings = hdData.renderingPathCustomFrameSettings;
+                var overrideMask = hdData.renderingPathCustomFrameSettingsOverrideMask;
+
+                void Override(FrameSettingsField field, bool value)
+                {
+                    int index = (int)field;
+                    overrideMask.mask[(uint)index] = true;
+                    frameSettings.SetEnabled(field, value);
+                }
+
+                Override(FrameSettingsField.Postprocess, false);
+                Override(FrameSettingsField.ExposureControl, false);
+                Override(FrameSettingsField.AtmosphericScattering, false);
+                Override(FrameSettingsField.Volumetrics, false);
+                Override(FrameSettingsField.SkyReflection, false);
+                Override(FrameSettingsField.SSR, false);
+                Override(FrameSettingsField.SSAO, false);
+                Override(FrameSettingsField.ContactShadows, false);
+                Override(FrameSettingsField.ShadowMaps, false);
+                Override(FrameSettingsField.Shadowmask, false);
+                Override(FrameSettingsField.ScreenSpaceShadows, false);
+                Override(FrameSettingsField.MotionVectors, false);
+                Override(FrameSettingsField.ObjectMotionVectors, false);
+                Override(FrameSettingsField.TransparentObjects, true);
+                Override(FrameSettingsField.OpaqueObjects, true);
+
+                hdData.renderingPathCustomFrameSettings = frameSettings;
+                hdData.renderingPathCustomFrameSettingsOverrideMask = overrideMask;
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void CreatePreviewLight()
@@ -454,11 +558,30 @@ namespace LethalMenu.Menu.Popup
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
+            _lightObject.transform.position = PreviewPosition + new Vector3(0f, 5f, -3f);
             _lightObject.transform.rotation = Quaternion.Euler(35f, -35f, 0f);
+            _lightObject.layer = PreviewLayer;
+
             var light = _lightObject.AddComponent<Light>();
             light.type = LightType.Directional;
             light.intensity = 1.4f;
             light.cullingMask = 1 << PreviewLayer;
+            light.shadows = LightShadows.None;
+            light.color = Color.white;
+
+            try
+            {
+                var hdLight = _lightObject.AddComponent<HDAdditionalLightData>();
+                hdLight.intensity = 30000f;
+                hdLight.lightUnit = LightUnit.Lux;
+                hdLight.affectsVolumetric = false;
+                hdLight.useContactShadow.useOverride = true;
+                hdLight.useContactShadow.@override = false;
+                hdLight.EnableShadows(false);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private static void StripRuntimeComponents(GameObject root)
@@ -494,29 +617,192 @@ namespace LethalMenu.Menu.Popup
                 behaviour.enabled = false;
         }
 
-        private void PrepareAnimators(GameObject root)
+        private static void DisableAnimationComponents(GameObject root)
         {
-            _animators = root.GetComponentsInChildren<Animator>(true);
-            foreach (var animator in _animators)
+            foreach (var animator in root.GetComponentsInChildren<Animator>(true))
             {
-                animator.enabled = true;
-                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
-                animator.Rebind();
-                animator.Update(0f);
+                animator.applyRootMotion = false;
+                animator.enabled = false;
             }
+
+            foreach (var animation in root.GetComponentsInChildren<Animation>(true))
+                animation.enabled = false;
         }
 
         private void ForcePreviewRenderersVisible(GameObject root)
         {
+            DisableNonCreatureRenderers(root);
             var renderers = GetPreviewRenderers(root);
             _rendererCount = renderers.Length;
             foreach (var renderer in renderers)
             {
                 renderer.gameObject.SetActive(true);
+                renderer.gameObject.layer = PreviewLayer;
                 renderer.enabled = true;
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
+
+                if (renderer is SkinnedMeshRenderer skinned)
+                {
+                    skinned.updateWhenOffscreen = true;
+                    skinned.forceMatrixRecalculationPerRender = true;
+                }
+
+                switch (_materialMode)
+                {
+                    case MaterialMode.Flat:
+                        ApplyFlatMaterial(renderer);
+                        break;
+                    case MaterialMode.Textured:
+                        ApplyTexturePreviewMaterials(renderer);
+                        break;
+                    case MaterialMode.Original:
+                        break;
+                }
+            }
+        }
+
+        private void ApplyFlatMaterial(Renderer renderer)
+        {
+            var previewMaterial = GetFlatMaterial();
+            var materials = renderer.sharedMaterials;
+            if (materials == null || materials.Length == 0)
+            {
+                renderer.sharedMaterial = previewMaterial;
+                return;
+            }
+
+            for (int i = 0; i < materials.Length; i++)
+                materials[i] = previewMaterial;
+            renderer.sharedMaterials = materials;
+        }
+
+        private void ApplyTexturePreviewMaterials(Renderer renderer)
+        {
+            var materials = renderer.sharedMaterials;
+            if (materials == null || materials.Length == 0)
+                return;
+
+            for (int i = 0; i < materials.Length; i++)
+                materials[i] = CreateRenderableMaterialCopy(materials[i]);
+            renderer.sharedMaterials = materials;
+        }
+
+        private Material CreateRenderableMaterialCopy(Material? source)
+        {
+            Texture? texture = FindMainTexture(source);
+            if (texture != null)
+            {
+                _texturedMaterialCount++;
+                if (_debugTexture == null)
+                {
+                    _debugTexture = texture;
+                    var tex2d = texture as Texture2D;
+                    _firstTextureInfo = $"{texture.name} {texture.width}x{texture.height} {(tex2d != null ? tex2d.format.ToString() : texture.GetType().Name)}";
+                }
+            }
+            else
+            {
+                _missingTextureMaterialCount++;
+            }
+
+            Color color = texture == null ? GetMaterialColor(source, GetFallbackCreatureColor()) : Color.white;
+            Shader shader = texture != null
+                ? FindTexturePreviewShader()
+                : FindFlatPreviewShader();
+
+            _resolvedShaderName ??= shader != null ? shader.name : "(null)";
+            _firstSourceShaderName ??= source?.shader != null ? source.shader.name : "(null)";
+
+            var material = new Material(shader)
+            {
+                name = $"LethalMenu Preview {source?.name ?? "Material"}",
+                hideFlags = HideFlags.HideAndDontSave,
+                color = color
+            };
+
+            SetMaterialColor(material, color);
+            if (texture != null)
+                SetMaterialTexture(material, texture);
+
+            if (material.HasProperty("_Mode"))
+                material.SetFloat("_Mode", 0f);
+            if (material.HasProperty("_SrcBlend"))
+                material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            if (material.HasProperty("_DstBlend"))
+                material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.Zero);
+            if (material.HasProperty("_ZWrite"))
+                material.SetFloat("_ZWrite", 1f);
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.DisableKeyword("_ALPHABLEND_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            if (material.HasProperty("_Cutoff"))
+                material.SetFloat("_Cutoff", 0f);
+            material.renderQueue = -1;
+
+            if (material.HasProperty("_Glossiness"))
+                material.SetFloat("_Glossiness", 0.15f);
+            if (material.HasProperty("_Metallic"))
+                material.SetFloat("_Metallic", 0f);
+
+            _runtimeMaterials.Add(material);
+            return material;
+        }
+
+        private static Shader FindTexturePreviewShader()
+        {
+            return Shader.Find("HDRP/Unlit") ??
+                Shader.Find("HDRP/Lit") ??
+                Shader.Find("Unlit/Texture") ??
+                Shader.Find("Mobile/Diffuse") ??
+                Shader.Find("Legacy Shaders/Diffuse") ??
+                Shader.Find("Sprites/Default") ??
+                Shader.Find("Standard");
+        }
+
+        private static Shader FindFlatPreviewShader()
+        {
+            return Shader.Find("HDRP/Unlit") ??
+                Shader.Find("Unlit/Color") ??
+                Shader.Find("Hidden/Internal-Colored") ??
+                Shader.Find("Sprites/Default") ??
+                Shader.Find("Standard");
+        }
+
+        private string GetMaterialModeLabel()
+        {
+            switch (_materialMode)
+            {
+                case MaterialMode.Textured:
+                    return "Textured";
+                case MaterialMode.Flat:
+                    return "Flat";
+                case MaterialMode.Original:
+                    return "Original";
+                default:
+                    return _materialMode.ToString();
+            }
+        }
+
+        private void CycleMaterialMode()
+        {
+            _materialMode = _materialMode switch
+            {
+                MaterialMode.Textured => MaterialMode.Flat,
+                MaterialMode.Flat => MaterialMode.Original,
+                _ => MaterialMode.Textured
+            };
+        }
+
+        private static void DisableNonCreatureRenderers(GameObject root)
+        {
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer is MeshRenderer || renderer is SkinnedMeshRenderer)
+                {
+                    if (!IsCreatureRenderer(renderer))
+                        renderer.enabled = false;
+                }
             }
         }
 
@@ -548,7 +834,14 @@ namespace LethalMenu.Menu.Popup
             CenterModel(model, bounds);
 
             _rendererCount = renderers.Length;
-            _debugInfo = $"Source: {_previewSource}  Renderers: {_rendererCount}  Bounds: {bounds.size.x:F2}, {bounds.size.y:F2}, {bounds.size.z:F2}";
+            string materialInfo = _materialMode == MaterialMode.Textured
+                ? $"  Textures: {_texturedMaterialCount}/{_texturedMaterialCount + _missingTextureMaterialCount}"
+                : string.Empty;
+            string bundleInfo = string.IsNullOrWhiteSpace(_loadedBundleInfo) ? string.Empty : $"  Bundle: {_loadedBundleInfo}";
+            string shaderInfo = string.IsNullOrWhiteSpace(_resolvedShaderName) ? string.Empty : $"  Shader: {_resolvedShaderName}";
+            string srcShaderInfo = string.IsNullOrWhiteSpace(_firstSourceShaderName) ? string.Empty : $"  SrcShader: {_firstSourceShaderName}";
+            string texInfo = string.IsNullOrWhiteSpace(_firstTextureInfo) ? string.Empty : $"  Tex: {_firstTextureInfo}";
+            _debugInfo = $"Source: {_previewSource}  Renderers: {_rendererCount}  Material: {GetMaterialModeLabel()}{materialInfo}{shaderInfo}{srcShaderInfo}{texInfo}  Bounds: {bounds.size.x:F2}, {bounds.size.y:F2}, {bounds.size.z:F2}{bundleInfo}";
 
             return true;
         }
@@ -559,11 +852,126 @@ namespace LethalMenu.Menu.Popup
             var previewRenderers = new System.Collections.Generic.List<Renderer>();
             foreach (var renderer in allRenderers)
             {
-                if (renderer is MeshRenderer || renderer is SkinnedMeshRenderer)
+                if ((renderer is MeshRenderer || renderer is SkinnedMeshRenderer) && IsCreatureRenderer(renderer))
                     previewRenderers.Add(renderer);
             }
 
             return previewRenderers.ToArray();
+        }
+
+        private static bool IsCreatureRenderer(Renderer renderer)
+        {
+            string path = GetTransformPath(renderer.transform).ToLowerInvariant();
+            return !path.Contains("scannode") &&
+                !path.Contains("scan node") &&
+                !path.Contains("scan") &&
+                !path.Contains("mapdot") &&
+                !path.Contains("map dot") &&
+                !path.Contains("map") &&
+                !path.Contains("radar") &&
+                !path.Contains("terminal");
+        }
+
+        private static string GetTransformPath(Transform transform)
+        {
+            string path = transform.name;
+            while (transform.parent != null)
+            {
+                transform = transform.parent;
+                path = transform.name + "/" + path;
+            }
+
+            return path;
+        }
+
+        private Material GetFlatMaterial()
+        {
+            if (_previewMaterial != null)
+                return _previewMaterial;
+
+            Shader shader = Shader.Find("Unlit/Color") ??
+                FindFlatPreviewShader();
+
+            Color color = GetFallbackCreatureColor();
+            _previewMaterial = new Material(shader)
+            {
+                name = "LethalMenu Creature Preview Material",
+                hideFlags = HideFlags.HideAndDontSave,
+                color = color
+            };
+
+            SetMaterialColor(_previewMaterial, color);
+
+            if (_previewMaterial.HasProperty("_Glossiness"))
+                _previewMaterial.SetFloat("_Glossiness", 0.15f);
+            if (_previewMaterial.HasProperty("_Metallic"))
+                _previewMaterial.SetFloat("_Metallic", 0f);
+
+            return _previewMaterial;
+        }
+
+        private static Color GetFallbackCreatureColor()
+        {
+            return new Color(0.38f, 0.35f, 0.30f, 1f);
+        }
+
+        private static Color GetMaterialColor(Material? material, Color fallback)
+        {
+            if (material == null)
+                return fallback;
+
+            foreach (string property in new[] { "_Color", "_BaseColor", "_TintColor" })
+            {
+                if (!material.HasProperty(property))
+                    continue;
+
+                Color color = material.GetColor(property);
+                if (color.maxColorComponent > 0.04f)
+                    return color;
+            }
+
+            return fallback;
+        }
+
+        private static Texture? FindMainTexture(Material? material)
+        {
+            if (material == null)
+                return null;
+
+            foreach (string property in new[] { "_MainTex", "_BaseMap", "_BaseColorMap", "_BaseColorTexture", "_UnlitColorMap", "_Albedo", "_DiffuseMap" })
+            {
+                if (!material.HasProperty(property))
+                    continue;
+
+                Texture texture = material.GetTexture(property);
+                if (texture != null)
+                    return texture;
+            }
+
+            return material.mainTexture;
+        }
+
+        private static void SetMaterialTexture(Material material, Texture texture)
+        {
+            foreach (string property in new[] { "_MainTex", "_BaseMap", "_BaseColorMap", "_BaseColorTexture", "_UnlitColorMap", "_Albedo", "_DiffuseMap" })
+            {
+                if (material.HasProperty(property))
+                    material.SetTexture(property, texture);
+            }
+
+            material.mainTexture = texture;
+        }
+
+        private static void SetMaterialColor(Material material, Color color)
+        {
+            if (material.HasProperty("_Color"))
+                material.SetColor("_Color", color);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", color);
+            if (material.HasProperty("_UnlitColor"))
+                material.SetColor("_UnlitColor", color);
+            if (material.HasProperty("_TintColor"))
+                material.SetColor("_TintColor", color);
         }
 
         private static void CenterModel(GameObject model, Bounds bounds)
@@ -589,13 +997,6 @@ namespace LethalMenu.Menu.Popup
             var previousActive = RenderTexture.active;
             try
             {
-                float deltaTime = Mathf.Max(Time.unscaledDeltaTime, 1f / 60f);
-                foreach (var animator in _animators)
-                {
-                    if (animator != null && animator.enabled)
-                        animator.Update(deltaTime);
-                }
-
                 _camera.targetTexture = _renderTexture;
                 _camera.Render();
             }
@@ -613,6 +1014,13 @@ namespace LethalMenu.Menu.Popup
             Rect rect = GUILayoutUtility.GetRect(500f, 320f, GUILayout.ExpandWidth(true), GUILayout.Height(320f));
             GUI.Box(rect, GUIContent.none);
             GUI.DrawTexture(rect, _renderTexture, ScaleMode.ScaleToFit, false);
+
+            if (_materialMode == MaterialMode.Textured && _debugTexture != null)
+            {
+                Rect textureRect = new(rect.x + 8f, rect.y + 8f, 88f, 88f);
+                GUI.Box(textureRect, GUIContent.none);
+                GUI.DrawTexture(textureRect, _debugTexture, ScaleMode.ScaleToFit, true);
+            }
         }
 
         private static void SetLayerRecursive(GameObject obj, int layer)
@@ -634,6 +1042,19 @@ namespace LethalMenu.Menu.Popup
                 _renderTexture = null;
             }
 
+            if (_previewMaterial != null)
+            {
+                UnityEngine.Object.Destroy(_previewMaterial);
+                _previewMaterial = null;
+            }
+
+            foreach (var material in _runtimeMaterials)
+            {
+                if (material != null)
+                    UnityEngine.Object.Destroy(material);
+            }
+            _runtimeMaterials.Clear();
+
             if (_modelInstance != null)
                 UnityEngine.Object.Destroy(_modelInstance);
             if (_previewRoot != null)
@@ -648,7 +1069,6 @@ namespace LethalMenu.Menu.Popup
             _cameraObject = null;
             _lightObject = null;
             _camera = null;
-            _animators = Array.Empty<Animator>();
         }
     }
 }
