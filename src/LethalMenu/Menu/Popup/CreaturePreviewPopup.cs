@@ -32,7 +32,7 @@ namespace LethalMenu.Menu.Popup
         private Texture? _debugTexture;
         private float _yaw = 180f;
         private bool _autoRotate = true;
-        private MaterialMode _materialMode = MaterialMode.Textured;
+        private MaterialMode _materialMode = MaterialMode.Original;
         private int _rendererCount;
         private int _texturedMaterialCount;
         private int _missingTextureMaterialCount;
@@ -873,9 +873,9 @@ namespace LethalMenu.Menu.Popup
         {
             _materialMode = _materialMode switch
             {
+                MaterialMode.Original => MaterialMode.Textured,
                 MaterialMode.Textured => MaterialMode.Flat,
-                MaterialMode.Flat => MaterialMode.Original,
-                _ => MaterialMode.Textured
+                _ => MaterialMode.Original
             };
         }
 
