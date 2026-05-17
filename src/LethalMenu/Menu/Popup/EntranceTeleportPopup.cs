@@ -20,8 +20,55 @@ namespace LethalMenu.Menu.Popup
 
         protected override void DrawBody()
         {
+            var localPlayer = LethalMenuMod.LocalPlayer;
+            var targets = BuildTargetList(localPlayer);
+            if (_targetIndex < 0 || _targetIndex >= targets.Count)
+                _targetIndex = 0;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Target:", GUILayout.Width(60));
+            if (GUILayout.Button(targets[_targetIndex].Label))
+                _targetIndex = (_targetIndex + 1) % targets.Count;
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(4f);
+
             var pairs = BuildEntrancePairs();
-            GUILayout.Label($"(Found {pairs.Count} entrance pair(s). target index: {_targetIndex})");
+            if (pairs.Count == 0)
+            {
+                GUILayout.Label("No entrances on this moon.");
+                return;
+            }
+
+            foreach (var pair in pairs)
+            {
+                string distanceLabel = localPlayer != null
+                    ? $"{Vector3.Distance(localPlayer.transform.position, pair.ListPosition):F1} m"
+                    : "— m";
+
+                GUILayout.BeginVertical(GUI.skin.box);
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(pair.Label);
+                GUILayout.FlexibleSpace();
+                GUILayout.Label(distanceLabel);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                bool externalEnabled = pair.CanTeleportExternal;
+                GUI.enabled = externalEnabled;
+                GUILayout.Button(externalEnabled ? "External" : "External (—)");
+                GUI.enabled = true;
+
+                bool internalEnabled = pair.CanTeleportInternal;
+                GUI.enabled = internalEnabled;
+                GUILayout.Button(internalEnabled ? "Internal" : "Internal (—)");
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+
+                GUILayout.EndVertical();
+                GUILayout.Space(2f);
+            }
         }
 
         private static List<EntrancePair> BuildEntrancePairs()
@@ -39,6 +86,23 @@ namespace LethalMenu.Menu.Popup
                 .ToList();
         }
 
+        private static List<TargetEntry> BuildTargetList(PlayerControllerB? localPlayer)
+        {
+            var result = new List<TargetEntry>
+            {
+                new() { Label = "Self (you)", Player = localPlayer },
+            };
+
+            foreach (var p in LethalMenuMod.Players
+                .Where(p => p != null && p != localPlayer)
+                .OrderBy(p => p.playerUsername))
+            {
+                result.Add(new TargetEntry { Label = p.playerUsername, Player = p });
+            }
+
+            return result;
+        }
+
         private sealed class EntrancePair
         {
             public int Id;
@@ -54,6 +118,12 @@ namespace LethalMenu.Menu.Popup
 
             public bool CanTeleportExternal => InsideSide != null;
             public bool CanTeleportInternal => OutsideSide != null;
+        }
+
+        private sealed class TargetEntry
+        {
+            public string Label = "";
+            public PlayerControllerB? Player;
         }
     }
 }
