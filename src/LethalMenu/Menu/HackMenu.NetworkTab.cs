@@ -650,16 +650,10 @@ namespace LethalMenu.Menu
                         Cheats.NetworkCheats.TeleportPlayerViaShipTeleporter(players[_selectedPlayerIndex]);
                     }
 
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("TP to Main Entrance", _buttonStyle))
+                    if (GUILayout.Button("Entrance Teleporter…", _buttonStyle, GUILayout.Height(28)))
                     {
-                        Cheats.NetworkCheats.TeleportPlayerToEntrance(players[_selectedPlayerIndex], true);
+                        EntranceTeleporter.Show(players[_selectedPlayerIndex]);
                     }
-                    if (GUILayout.Button("TP to Fire Exit", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerToEntrance(players[_selectedPlayerIndex], false);
-                    }
-                    GUILayout.EndHorizontal();
                 }
                 else
                 {
