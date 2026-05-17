@@ -616,7 +616,7 @@ namespace LethalMenu.Menu.Popup
             try
             {
                 var hdLight = _lightObject.AddComponent<HDAdditionalLightData>();
-                hdLight.intensity = 30000f;
+                hdLight.intensity = 300f;
                 hdLight.lightUnit = LightUnit.Lux;
                 hdLight.affectsVolumetric = false;
                 hdLight.useContactShadow.useOverride = true;
