@@ -73,6 +73,9 @@ namespace LethalMenu.Menu
         private readonly CreaturePreviewPopup _creaturePreview = new();
         private readonly BestiaryManagerPopup _bestiaryManager;
         private readonly StorageManagerPopup _storageManager = new();
+        private readonly EntranceTeleportPopup _entranceTeleporter = new();
+
+        public EntranceTeleportPopup EntranceTeleporter => _entranceTeleporter;
 
         public HackMenu()
         {
@@ -146,6 +149,7 @@ namespace LethalMenu.Menu
             _bestiaryManager.Draw();
             _creaturePreview.Draw();
             _storageManager.Draw();
+            _entranceTeleporter.Draw();
 
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - _windowRect.width);
