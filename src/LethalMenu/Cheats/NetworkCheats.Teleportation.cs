@@ -113,7 +113,7 @@ namespace LethalMenu.Cheats
             }
 
             // Find the ship teleporter (not inverse)
-            var teleporters = UnityEngine.Object.FindObjectsOfType<ShipTeleporter>();
+            var teleporters = UnityEngine.Object.FindObjectsOfType<ShipTeleporter>(includeInactive: true);
             var normalTeleporter = teleporters.FirstOrDefault(t => t != null && !t.isInverseTeleporter);
 
             if (normalTeleporter == null)

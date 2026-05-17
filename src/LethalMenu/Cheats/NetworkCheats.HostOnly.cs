@@ -39,7 +39,7 @@ namespace LethalMenu.Cheats
         /// Unlocks all doors in the facility.
         public static void UnlockAllDoors()
         {
-            var doors = Object.FindObjectsOfType<DoorLock>();
+            var doors = Object.FindObjectsOfType<DoorLock>(includeInactive: true);
             if (doors == null || doors.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Unlock Doors", "No doors found.");
@@ -63,7 +63,7 @@ namespace LethalMenu.Cheats
         /// Locks all doors in the facility. Host only for full effect.
         public static void LockAllDoors()
         {
-            var doors = Object.FindObjectsOfType<DoorLock>();
+            var doors = Object.FindObjectsOfType<DoorLock>(includeInactive: true);
             if (doors == null || doors.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Lock Doors", "No doors found.");

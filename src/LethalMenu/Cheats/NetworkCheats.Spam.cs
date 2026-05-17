@@ -120,7 +120,7 @@ namespace LethalMenu.Cheats
         /// Fire all shotguns on the map.
         public static void ShootAllShotguns()
         {
-            var shotguns = Object.FindObjectsOfType<ShotgunItem>();
+            var shotguns = Object.FindObjectsOfType<ShotgunItem>(includeInactive: true);
             if (shotguns == null || shotguns.Length == 0)
             {
                 Debug.Log("[NetworkCheats] No shotguns found.");
@@ -351,7 +351,7 @@ namespace LethalMenu.Cheats
             {
                 _lastCarHornSpam = time;
                 _spamCounter++;
-                var cars = Object.FindObjectsOfType<VehicleController>();
+                var cars = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 var localPlayer = LethalMenuMod.LocalPlayer;
                 int playerId = localPlayer != null ? (int)localPlayer.playerClientId : -1;
                 foreach (var car in cars)

@@ -220,7 +220,7 @@ namespace LethalMenu.Util
         private static void CollectMoldSpores()
         {
             LethalMenuMod.MoldSpores.Clear();
-            foreach (var go in Object.FindObjectsOfType<GameObject>())
+            foreach (var go in Object.FindObjectsOfType<GameObject>(includeInactive: true))
                 if (go != null && go.name.StartsWith("MoldSpore", System.StringComparison.Ordinal))
                     LethalMenuMod.MoldSpores.Add(go);
         }
@@ -235,7 +235,7 @@ namespace LethalMenu.Util
         private static void CollectSpikeRoofTraps()
         {
             LethalMenuMod.SpikeRoofTraps.Clear();
-            foreach (var go in Object.FindObjectsOfType<GameObject>())
+            foreach (var go in Object.FindObjectsOfType<GameObject>(includeInactive: true))
                 if (go != null && go.name.StartsWith("AnimContainer", System.StringComparison.Ordinal))
                     LethalMenuMod.SpikeRoofTraps.Add(go);
         }

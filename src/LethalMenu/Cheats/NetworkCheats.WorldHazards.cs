@@ -9,7 +9,7 @@ namespace LethalMenu.Cheats
         /// Blow up all landmines on the map.
         public static void BlowUpAllLandmines()
         {
-            var landmines = Object.FindObjectsOfType<Landmine>();
+            var landmines = Object.FindObjectsOfType<Landmine>(includeInactive: true);
             if (landmines == null || landmines.Length == 0)
             {
                 Debug.Log("[NetworkCheats] No landmines found.");
@@ -31,7 +31,7 @@ namespace LethalMenu.Cheats
         /// Toggle all landmines enabled/disabled state.
         public static void ToggleAllLandmines(bool enable)
         {
-            var landmines = Object.FindObjectsOfType<Landmine>();
+            var landmines = Object.FindObjectsOfType<Landmine>(includeInactive: true);
             if (landmines == null || landmines.Length == 0) return;
 
             foreach (var mine in landmines)
@@ -47,7 +47,7 @@ namespace LethalMenu.Cheats
         /// Toggle all turrets enabled/disabled state.
         public static void ToggleAllTurrets(bool enable)
         {
-            var turrets = Object.FindObjectsOfType<Turret>();
+            var turrets = Object.FindObjectsOfType<Turret>(includeInactive: true);
             if (turrets == null || turrets.Length == 0) return;
 
             foreach (var turret in turrets)
@@ -63,7 +63,7 @@ namespace LethalMenu.Cheats
         /// Makes all turrets go berserk mode (fires at everything).
         public static void BerserkAllTurrets()
         {
-            var turrets = Object.FindObjectsOfType<Turret>();
+            var turrets = Object.FindObjectsOfType<Turret>(includeInactive: true);
             if (turrets == null || turrets.Length == 0) return;
 
             foreach (var turret in turrets)

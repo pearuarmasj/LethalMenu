@@ -205,7 +205,7 @@ namespace LethalMenu.Cheats
             }
 
             // Backup: check nearby enemies we're looking at
-            foreach (var enemy in UnityEngine.Object.FindObjectsOfType<EnemyAI>())
+            foreach (var enemy in UnityEngine.Object.FindObjectsOfType<EnemyAI>(includeInactive: true))
             {
                 if (enemy == null || enemy.isEnemyDead) continue;
 

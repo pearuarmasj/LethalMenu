@@ -52,7 +52,7 @@ namespace LethalMenu.Menu
             DrawSection("Item Teleport", () =>
             {
                 var gameInstance = StartOfRound.Instance;
-                var allItems = Object.FindObjectsOfType<GrabbableObject>();
+                var allItems = Object.FindObjectsOfType<GrabbableObject>(includeInactive: true);
 
                 int totalItems = 0;
                 int inShipCount = 0;

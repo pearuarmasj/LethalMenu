@@ -12,7 +12,7 @@ namespace LethalMenu.Cheats
         /// Spin all ship objects, then snap them back to their default placement when the spin ends.
         public static void SpinShipObjects(float duration = 5f)
         {
-            var shipObjects = UnityEngine.Object.FindObjectsOfType<PlaceableShipObject>();
+            var shipObjects = UnityEngine.Object.FindObjectsOfType<PlaceableShipObject>(includeInactive: true);
             if (shipObjects == null || shipObjects.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Spin", "No ship objects found.");
@@ -35,7 +35,7 @@ namespace LethalMenu.Cheats
         /// so other players see the reset.
         public static void ResetAllShipObjects()
         {
-            var shipObjects = UnityEngine.Object.FindObjectsOfType<PlaceableShipObject>();
+            var shipObjects = UnityEngine.Object.FindObjectsOfType<PlaceableShipObject>(includeInactive: true);
             if (shipObjects == null || shipObjects.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Reset Ship", "No ship objects found.");

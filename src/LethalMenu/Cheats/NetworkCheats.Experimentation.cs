@@ -19,7 +19,7 @@ namespace LethalMenu.Cheats
         /// Detonate all landmines via private TriggerMineOnLocalClientByExiting (LOCAL ONLY).
         public static void ExperimentalDetonateLandmines()
         {
-            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>();
+            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>(includeInactive: true);
             if (mines == null || mines.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No landmines found.");
@@ -48,7 +48,7 @@ namespace LethalMenu.Cheats
         /// Play the landmine detonation animation locally without network RPC.
         public static void ExperimentalPlayMineAnimation()
         {
-            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>();
+            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>(includeInactive: true);
             if (mines == null || mines.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No landmines found.");
@@ -76,7 +76,7 @@ namespace LethalMenu.Cheats
         /// Modes: 0=Detection, 1=Charging, 2=Firing, 3=Berserk
         public static void ExperimentalSetTurretMode(int mode)
         {
-            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>();
+            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>(includeInactive: true);
             if (turrets == null || turrets.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No turrets found.");
@@ -113,7 +113,7 @@ namespace LethalMenu.Cheats
         /// Toggle turret enabled state locally via private ToggleTurretEnabledLocalClient (LOCAL ONLY).
         public static void ExperimentalToggleTurretsLocal(bool enabled)
         {
-            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>();
+            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>(includeInactive: true);
             if (turrets == null || turrets.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No turrets found.");
@@ -141,7 +141,7 @@ namespace LethalMenu.Cheats
         /// Toggle landmine enabled state locally (LOCAL ONLY).
         public static void ExperimentalToggleLandminesLocal(bool enabled)
         {
-            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>();
+            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>(includeInactive: true);
             if (mines == null || mines.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No landmines found.");
@@ -391,7 +391,7 @@ namespace LethalMenu.Cheats
         /// Explode all landmines via PUBLIC ExplodeMineServerRpc (RequireOwnership=false).
         public static void ExplodeMinesViaRpc()
         {
-            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>();
+            var mines = UnityEngine.Object.FindObjectsOfType<Landmine>(includeInactive: true);
             if (mines == null || mines.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No landmines found.");
@@ -419,7 +419,7 @@ namespace LethalMenu.Cheats
         /// Force turrets berserk via PUBLIC EnterBerserkModeServerRpc (RequireOwnership=false).
         public static void TurretsBerserkViaRpc()
         {
-            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>();
+            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>(includeInactive: true);
             if (turrets == null || turrets.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No turrets found.");
@@ -449,7 +449,7 @@ namespace LethalMenu.Cheats
         /// Toggle all turrets via PUBLIC ToggleTurretServerRpc (RequireOwnership=false).
         public static void ToggleTurretsViaRpc(bool enabled)
         {
-            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>();
+            var turrets = UnityEngine.Object.FindObjectsOfType<Turret>(includeInactive: true);
             if (turrets == null || turrets.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "No turrets found.");

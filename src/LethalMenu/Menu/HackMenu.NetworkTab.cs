@@ -264,7 +264,7 @@ namespace LethalMenu.Menu
             {
                 if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
 
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 int vehicleCount = vehicles?.Length ?? 0;
                 GUILayout.Label($"Vehicles on map: {vehicleCount}", _labelStyle);
 

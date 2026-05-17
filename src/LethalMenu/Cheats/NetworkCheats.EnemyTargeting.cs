@@ -22,7 +22,7 @@ namespace LethalMenu.Cheats
             var localPlayer = LethalMenuMod.LocalPlayer;
             if (localPlayer == null) return;
 
-            var enemies = UnityEngine.Object.FindObjectsOfType<EnemyAI>();
+            var enemies = UnityEngine.Object.FindObjectsOfType<EnemyAI>(includeInactive: true);
             if (enemies == null || enemies.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Mob", "No enemies found.");
@@ -77,7 +77,7 @@ namespace LethalMenu.Cheats
         /// Stun all enemies near a position.
         public static void StunEnemiesAtPosition(Vector3 position, float radius = 10f, float stunDuration = 5f)
         {
-            var enemies = UnityEngine.Object.FindObjectsOfType<EnemyAI>();
+            var enemies = UnityEngine.Object.FindObjectsOfType<EnemyAI>(includeInactive: true);
             int count = 0;
 
             foreach (var enemy in enemies)

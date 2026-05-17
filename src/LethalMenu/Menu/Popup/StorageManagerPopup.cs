@@ -161,7 +161,7 @@ namespace LethalMenu.Menu.Popup
             if (unlockables == null)
                 return result;
 
-            foreach (var placeable in Object.FindObjectsOfType<PlaceableShipObject>())
+            foreach (var placeable in Object.FindObjectsOfType<PlaceableShipObject>(includeInactive: true))
             {
                 if (placeable == null)
                     continue;

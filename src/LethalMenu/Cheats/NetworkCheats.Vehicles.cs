@@ -48,7 +48,7 @@ namespace LethalMenu.Cheats
         /// Toggle car horn on all vehicles.
         public static void ToggleCarHorns(bool on)
         {
-            var vehicles = Object.FindObjectsOfType<VehicleController>();
+            var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
             if (vehicles == null || vehicles.Length == 0)
             {
                 Debug.Log("[NetworkCheats] No vehicles found.");
@@ -79,7 +79,7 @@ namespace LethalMenu.Cheats
 
         private static System.Collections.IEnumerator SpamCarHornsCoroutine(int iterations)
         {
-            var vehicles = Object.FindObjectsOfType<VehicleController>();
+            var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
             if (vehicles == null || vehicles.Length == 0) yield break;
 
             var localPlayer = LethalMenuMod.LocalPlayer;
@@ -102,7 +102,7 @@ namespace LethalMenu.Cheats
         /// Explode all vehicles (Cruisers).
         public static void ExplodeAllVehicles()
         {
-            var vehicles = Object.FindObjectsOfType<VehicleController>();
+            var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
             if (vehicles == null || vehicles.Length == 0)
             {
                 Debug.Log("[NetworkCheats] No vehicles found.");
@@ -132,7 +132,7 @@ namespace LethalMenu.Cheats
             // If no specific vehicle, find the first one
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] HijackVehicle: No vehicles found.");
@@ -153,7 +153,7 @@ namespace LethalMenu.Cheats
         {
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] EjectVehicleDriver: No vehicles found.");
@@ -184,7 +184,7 @@ namespace LethalMenu.Cheats
 
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] AddVehicleTurbo: No vehicles found.");
@@ -205,7 +205,7 @@ namespace LethalMenu.Cheats
         {
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] UseVehicleTurbo: No vehicles found.");
@@ -226,7 +226,7 @@ namespace LethalMenu.Cheats
 
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] SetVehicleEngineHealth: No vehicles found.");
@@ -263,7 +263,7 @@ namespace LethalMenu.Cheats
 
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] ShiftVehicleGear: No vehicles found.");
@@ -284,7 +284,7 @@ namespace LethalMenu.Cheats
         {
             if (vehicle == null)
             {
-                var vehicles = Object.FindObjectsOfType<VehicleController>();
+                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
                 if (vehicles == null || vehicles.Length == 0)
                 {
                     Debug.Log("[NetworkCheats] SetVehicleRadio: No vehicles found.");
@@ -304,7 +304,7 @@ namespace LethalMenu.Cheats
         /// Explode all jetpacks.
         public static void ExplodeAllJetpacks()
         {
-            var items = Object.FindObjectsOfType<JetpackItem>();
+            var items = Object.FindObjectsOfType<JetpackItem>(includeInactive: true);
             if (items == null || items.Length == 0)
             {
                 Debug.Log("[NetworkCheats] No jetpacks found.");

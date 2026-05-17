@@ -16,7 +16,7 @@ namespace LethalMenu.Mixins
 
             var elevatorTransform = startOfRound.elevatorTransform;
             var shipPos = GetShipDropPosition(startOfRound);
-            var allItems = Object.FindObjectsOfType<GrabbableObject>();
+            var allItems = Object.FindObjectsOfType<GrabbableObject>(includeInactive: true);
             var teleported = 0;
             var totalValue = 0;
 
@@ -62,7 +62,7 @@ namespace LethalMenu.Mixins
             var teleported = 0;
             var totalValue = 0;
 
-            foreach (var item in Object.FindObjectsOfType<GrabbableObject>())
+            foreach (var item in Object.FindObjectsOfType<GrabbableObject>(includeInactive: true))
             {
                 if (item == null || item.isHeld || item.isHeldByEnemy || item.isPocketed)
                     continue;
@@ -103,7 +103,7 @@ namespace LethalMenu.Mixins
                 return (0, 0, 0, 0);
 
             var shipBounds = startOfRound.shipBounds;
-            var allItems = Object.FindObjectsOfType<GrabbableObject>();
+            var allItems = Object.FindObjectsOfType<GrabbableObject>(includeInactive: true);
             var scrapCount = 0;
             var totalItems = 0;
             var rawValue = 0;
@@ -149,7 +149,7 @@ namespace LethalMenu.Mixins
             var itemsToSell = new List<GrabbableObject>();
             var rawValue = 0;
 
-            foreach (var item in Object.FindObjectsOfType<GrabbableObject>())
+            foreach (var item in Object.FindObjectsOfType<GrabbableObject>(includeInactive: true))
             {
                 if (item == null || item.itemProperties == null) continue;
                 if (item.isHeld || item.isHeldByEnemy) continue;

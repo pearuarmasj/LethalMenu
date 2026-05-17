@@ -40,7 +40,7 @@ namespace LethalMenu.Cheats
         /// Toggle all big doors (ship doors, facility doors).
         public static void ToggleBigDoors()
         {
-            var bigDoors = UnityEngine.Object.FindObjectsOfType<TerminalAccessibleObject>();
+            var bigDoors = UnityEngine.Object.FindObjectsOfType<TerminalAccessibleObject>(includeInactive: true);
             if (bigDoors == null || bigDoors.Length == 0)
             {
                 HUDManager.Instance?.DisplayTip("Big Doors", "No big doors found.");
@@ -351,7 +351,7 @@ namespace LethalMenu.Cheats
 
             float buyRate = StartOfRound.Instance?.companyBuyingRate ?? 1f;
 
-            var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>();
+            var allItems = UnityEngine.Object.FindObjectsOfType<GrabbableObject>(includeInactive: true);
             var sellableItems = new System.Collections.Generic.List<GrabbableObject>();
             
             foreach (var item in allItems)
@@ -435,7 +435,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            var jetpacks = UnityEngine.Object.FindObjectsOfType<JetpackItem>();
+            var jetpacks = UnityEngine.Object.FindObjectsOfType<JetpackItem>(includeInactive: true);
             JetpackItem? jetpack = null;
             
             foreach (var j in jetpacks)
