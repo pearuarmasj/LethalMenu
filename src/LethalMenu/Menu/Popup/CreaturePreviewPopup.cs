@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Reflection;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 
@@ -584,6 +586,27 @@ namespace LethalMenu.Menu.Popup
             }
         }
 
+        private static void StripDangerousComponents(GameObject root)
+        {
+            foreach (var behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (behaviour != null)
+                    UnityEngine.Object.DestroyImmediate(behaviour);
+            }
+
+            foreach (var networkObject in root.GetComponentsInChildren<NetworkObject>(true))
+            {
+                if (networkObject != null)
+                    UnityEngine.Object.DestroyImmediate(networkObject);
+            }
+
+            foreach (var agent in root.GetComponentsInChildren<NavMeshAgent>(true))
+            {
+                if (agent != null)
+                    UnityEngine.Object.DestroyImmediate(agent);
+            }
+        }
+
         private static void StripRuntimeComponents(GameObject root)
         {
             foreach (var camera in root.GetComponentsInChildren<Camera>(true))
@@ -627,6 +650,26 @@ namespace LethalMenu.Menu.Popup
 
             foreach (var animation in root.GetComponentsInChildren<Animation>(true))
                 animation.enabled = false;
+        }
+
+        private static void SnapToIdlePose(GameObject root)
+        {
+            foreach (var animator in root.GetComponentsInChildren<Animator>(true))
+            {
+                if (animator == null || animator.runtimeAnimatorController == null)
+                    continue;
+
+                try
+                {
+                    animator.Play("Idle", 0, 0f);
+                    animator.Update(0f);
+                }
+                catch
+                {
+                }
+
+                animator.enabled = false;
+            }
         }
 
         private void ForcePreviewRenderersVisible(GameObject root)
