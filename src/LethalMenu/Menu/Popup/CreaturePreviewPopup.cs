@@ -616,7 +616,7 @@ namespace LethalMenu.Menu.Popup
             try
             {
                 var hdLight = _lightObject.AddComponent<HDAdditionalLightData>();
-                hdLight.intensity = 300f;
+                hdLight.intensity = 225f;
                 hdLight.lightUnit = LightUnit.Lux;
                 hdLight.affectsVolumetric = false;
                 hdLight.useContactShadow.useOverride = true;
@@ -776,6 +776,19 @@ namespace LethalMenu.Menu.Popup
         private Material CreateRenderableMaterialCopy(Material? source)
         {
             Texture? texture = FindMainTexture(source);
+            Vector2 textureScale = Vector2.one;
+            Vector2 textureOffset = Vector2.zero;
+            string? sourceTextureProperty = null;
+            if (source != null && texture != null)
+            {
+                sourceTextureProperty = FindTextureProperty(source, texture);
+                if (sourceTextureProperty != null)
+                {
+                    textureScale = source.GetTextureScale(sourceTextureProperty);
+                    textureOffset = source.GetTextureOffset(sourceTextureProperty);
+                }
+            }
+
             if (texture != null)
             {
                 _texturedMaterialCount++;
@@ -808,7 +821,10 @@ namespace LethalMenu.Menu.Popup
 
             SetMaterialColor(material, color);
             if (texture != null)
-                SetMaterialTexture(material, texture);
+                SetMaterialTexture(material, texture, textureScale, textureOffset);
+
+            bool sourceAlphaClips = MaterialUsesAlphaClipping(source);
+            float sourceCutoff = sourceAlphaClips ? GetMaterialCutoff(source) : 0f;
 
             if (material.HasProperty("_Mode"))
                 material.SetFloat("_Mode", 0f);
@@ -818,12 +834,29 @@ namespace LethalMenu.Menu.Popup
                 material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.Zero);
             if (material.HasProperty("_ZWrite"))
                 material.SetFloat("_ZWrite", 1f);
-            material.DisableKeyword("_ALPHATEST_ON");
+
+            if (sourceAlphaClips)
+            {
+                material.EnableKeyword("_ALPHATEST_ON");
+                if (material.HasProperty("_AlphaCutoffEnable"))
+                    material.SetFloat("_AlphaCutoffEnable", 1f);
+                if (material.HasProperty("_AlphaCutoff"))
+                    material.SetFloat("_AlphaCutoff", sourceCutoff);
+                if (material.HasProperty("_Cutoff"))
+                    material.SetFloat("_Cutoff", sourceCutoff);
+                material.renderQueue = 2450;
+            }
+            else
+            {
+                material.DisableKeyword("_ALPHATEST_ON");
+                if (material.HasProperty("_AlphaCutoffEnable"))
+                    material.SetFloat("_AlphaCutoffEnable", 0f);
+                if (material.HasProperty("_Cutoff"))
+                    material.SetFloat("_Cutoff", 0f);
+                material.renderQueue = -1;
+            }
             material.DisableKeyword("_ALPHABLEND_ON");
             material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            if (material.HasProperty("_Cutoff"))
-                material.SetFloat("_Cutoff", 0f);
-            material.renderQueue = -1;
 
             if (material.HasProperty("_Glossiness"))
                 material.SetFloat("_Glossiness", 0.15f);
@@ -832,6 +865,49 @@ namespace LethalMenu.Menu.Popup
 
             _runtimeMaterials.Add(material);
             return material;
+        }
+
+        private static readonly string[] TexturePropertyNames =
+        {
+            "_BaseColorMap",
+            "_MainTex",
+            "_BaseMap",
+            "_BaseColorTexture",
+            "_UnlitColorMap",
+            "_Albedo",
+            "_DiffuseMap"
+        };
+
+        private static string? FindTextureProperty(Material material, Texture texture)
+        {
+            foreach (string property in TexturePropertyNames)
+            {
+                if (material.HasProperty(property) && material.GetTexture(property) == texture)
+                    return property;
+            }
+            return null;
+        }
+
+        private static bool MaterialUsesAlphaClipping(Material? source)
+        {
+            if (source == null)
+                return false;
+            if (source.IsKeywordEnabled("_ALPHATEST_ON"))
+                return true;
+            if (source.HasProperty("_AlphaCutoffEnable") && source.GetFloat("_AlphaCutoffEnable") > 0.5f)
+                return true;
+            return false;
+        }
+
+        private static float GetMaterialCutoff(Material? source)
+        {
+            if (source == null)
+                return 0.5f;
+            if (source.HasProperty("_AlphaCutoff"))
+                return source.GetFloat("_AlphaCutoff");
+            if (source.HasProperty("_Cutoff"))
+                return source.GetFloat("_Cutoff");
+            return 0.5f;
         }
 
         private static Shader FindTexturePreviewShader()
@@ -1023,7 +1099,7 @@ namespace LethalMenu.Menu.Popup
             if (material == null)
                 return null;
 
-            foreach (string property in new[] { "_MainTex", "_BaseMap", "_BaseColorMap", "_BaseColorTexture", "_UnlitColorMap", "_Albedo", "_DiffuseMap" })
+            foreach (string property in TexturePropertyNames)
             {
                 if (!material.HasProperty(property))
                     continue;
@@ -1036,15 +1112,21 @@ namespace LethalMenu.Menu.Popup
             return material.mainTexture;
         }
 
-        private static void SetMaterialTexture(Material material, Texture texture)
+        private static void SetMaterialTexture(Material material, Texture texture, Vector2 scale, Vector2 offset)
         {
-            foreach (string property in new[] { "_MainTex", "_BaseMap", "_BaseColorMap", "_BaseColorTexture", "_UnlitColorMap", "_Albedo", "_DiffuseMap" })
+            foreach (string property in TexturePropertyNames)
             {
                 if (material.HasProperty(property))
+                {
                     material.SetTexture(property, texture);
+                    material.SetTextureScale(property, scale);
+                    material.SetTextureOffset(property, offset);
+                }
             }
 
             material.mainTexture = texture;
+            material.mainTextureScale = scale;
+            material.mainTextureOffset = offset;
         }
 
         private static void SetMaterialColor(Material material, Color color)
