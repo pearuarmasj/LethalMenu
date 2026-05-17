@@ -10,10 +10,24 @@ namespace LethalMenu.Cheats
     {
         #region Teleportation
 
-        /// Teleports a player to an entrance using the game's EntranceTeleport system.
-        /// This calls the ServerRpc which teleports them properly for all clients.
+        /// Teleports a player through an entrance using the game's EntranceTeleport system.
+        ///
+        /// For the LOCAL player: invokes entrance.TeleportPlayer() — the game's intended local-side
+        /// entry point. It moves the player to the matching exit-side entrancePoint, updates
+        /// isInsideFactory + item-slot flags, and broadcasts the move to other clients via
+        /// TeleportPlayerServerRpc. Calling the ServerRpc directly does NOT work for the local
+        /// player because the resulting ClientRpc early-returns on the caller's machine
+        /// (assuming the local already moved themselves via TeleportPlayer).
+        ///
+        /// For a REMOTE player: invokes TeleportPlayerServerRpc on the entrance. All non-target
+        /// clients see them teleported; the target player's own view does not update (no way to
+        /// force a remote client to teleport themselves without their cooperation).
+        ///
+        /// EntranceTeleport.FindExitPoint is Harmony-patched to use includeInactive so it can
+        /// resolve the matching exit door when one side of the door pair is in an inactive
+        /// scene chunk.
         /// <param name="target">Player to teleport</param>
-        /// <param name="toMainEntrance">If true, teleport to main entrance. If false, teleport to fire exit.</param>
+        /// <param name="toMainEntrance">If true, teleport via main entrance (id 0). If false, via any fire exit (id != 0).</param>
         public static void TeleportPlayerToEntrance(PlayerControllerB target, bool toMainEntrance = true)
         {
             if (target == null || target.isPlayerDead)
@@ -29,40 +43,50 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            // isEntranceToBuilding = true means it's the door that leads INTO the building
-            // We want to find the entrance, then use its ServerRpc to teleport to exit point
-            // For main entrance: find entrance with entranceId == 0
-            // For fire exit: find entrance with entranceId != 0
-            EntranceTeleport? entrance = null;
-            if (toMainEntrance)
-            {
-                entrance = entrances.FirstOrDefault(e => e.entranceId == 0);
-            }
-            else
-            {
-                entrance = entrances.FirstOrDefault(e => e.entranceId != 0);
-            }
+            // Pick the entrance with the requested id (0 = main, != 0 = fire exit).
+            var candidates = toMainEntrance
+                ? entrances.Where(e => e != null && e.entranceId == 0).ToArray()
+                : entrances.Where(e => e != null && e.entranceId != 0).ToArray();
 
-            if (entrance == null)
+            if (candidates.Length == 0)
             {
-                // Fallback: try any entrance
-                entrance = entrances.FirstOrDefault();
-            }
-
-            if (entrance == null)
-            {
-                Debug.Log("[NetworkCheats] TeleportPlayerToEntrance: No suitable entrance found.");
+                Debug.Log("[NetworkCheats] TeleportPlayerToEntrance: No matching entrance found.");
                 return;
             }
 
+            // TeleportPlayer() teleports you to the OTHER side of the door. Pick the entrance
+            // on the player's CURRENT side so they end up on the opposite side.
+            //   - Player outside  (isInsideFactory=false) → pick isEntranceToBuilding=true  (outside-side door) → lands inside
+            //   - Player inside   (isInsideFactory=true)  → pick isEntranceToBuilding=false (inside-side door)  → lands outside
+            EntranceTeleport? entrance = candidates.FirstOrDefault(e => e.isEntranceToBuilding != target.isInsideFactory)
+                ?? candidates.FirstOrDefault();
+
+            if (entrance == null)
+            {
+                Debug.Log("[NetworkCheats] TeleportPlayerToEntrance: No suitable entrance side found.");
+                return;
+            }
+
+            bool isLocal = target == LethalMenuMod.LocalPlayer;
             try
             {
-                entrance.TeleportPlayerServerRpc((int)target.playerClientId);
-                Debug.Log($"[NetworkCheats] Teleported {target.playerUsername} to {(toMainEntrance ? "main entrance" : "fire exit")}.");
+                if (isLocal)
+                {
+                    // Game's intended local-player flow: handles local position, isInsideFactory,
+                    // item-slot flags, audio, and broadcasts the move to other clients.
+                    entrance.TeleportPlayer();
+                }
+                else
+                {
+                    // Remote target: server broadcasts to all clients, but the target's own view
+                    // will not update because the ClientRpc skips the caller's local player.
+                    entrance.TeleportPlayerServerRpc((int)target.playerClientId);
+                }
+                Debug.Log($"[NetworkCheats] Teleported {target.playerUsername} via {(toMainEntrance ? "main entrance" : "fire exit")}.");
             }
             catch (Exception e)
             {
-                Debug.Log($"[NetworkCheats] TeleportPlayerToEntrance failed: {e.Message}");
+                Debug.LogError($"[NetworkCheats] TeleportPlayerToEntrance failed: {e}");
             }
         }
 
