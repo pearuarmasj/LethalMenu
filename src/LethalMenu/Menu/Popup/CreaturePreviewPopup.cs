@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Reflection;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -13,9 +11,6 @@ namespace LethalMenu.Menu.Popup
     {
         private const int PreviewLayer = 30;
         private static readonly Vector3 PreviewPosition = new(10000f, -10000f, 10000f);
-        private static readonly System.Collections.Generic.List<AssetBundle> PreviewBundles = new();
-        private static bool _previewBundlesLoaded;
-        private static string? _loadedBundleInfo;
 
         private EnemyType? _enemyType;
         private string? _creatureName;
@@ -284,7 +279,6 @@ namespace LethalMenu.Menu.Popup
         private void RebuildPreview()
         {
             DisposePreview();
-            ReloadPreviewBundles();
             _error = null;
             _debugInfo = null;
             _debugTexture = null;
@@ -338,16 +332,18 @@ namespace LethalMenu.Menu.Popup
             if (liveInstance != null)
                 return liveInstance;
 
-            var bundledPrefab = FindBundledPreviewPrefab();
-            if (bundledPrefab != null)
-            {
-                _previewSource = "Bundled model";
-                var instance = UnityEngine.Object.Instantiate(bundledPrefab, parent);
-                instance.name = $"LethalMenu Bundled Preview {_creatureName ?? _enemyType?.enemyName}";
-                return instance;
-            }
-
+            _missingModelHint = BuildMissingLivePrefabHint();
             return null;
+        }
+
+        private string BuildMissingLivePrefabHint()
+        {
+            string name = _creatureName ?? _enemyType?.enemyName ?? "(unknown)";
+            if (_enemyType == null)
+                return $"No EnemyType resolved for '{name}'. Bestiary entry has no matching scriptable object loaded.";
+            if (_enemyType.enemyPrefab == null)
+                return $"EnemyType '{_enemyType.enemyName ?? name}' has no enemyPrefab (malformed or modded entry).";
+            return $"Live prefab instantiation failed for '{name}'. See BepInEx log for exception details.";
         }
 
         private GameObject? TryCreateLivePreviewInstance(Transform parent)
@@ -386,119 +382,6 @@ namespace LethalMenu.Menu.Popup
                     UnityEngine.Object.Destroy(staging);
                 return null;
             }
-        }
-
-        private GameObject? FindBundledPreviewPrefab()
-        {
-            LoadPreviewBundles();
-            var candidates = GetPreviewAssetCandidates();
-            if (PreviewBundles.Count == 0)
-            {
-                _missingModelHint = $"Put preview AssetBundles here:\n{GetPreviewDirectory()}\n\nExpected .bundle, .assetbundle, .unity3d, or extensionless AssetBundle files containing creature preview prefabs.";
-                return null;
-            }
-
-            foreach (var bundle in PreviewBundles)
-            {
-                if (bundle == null) continue;
-
-                foreach (string assetName in bundle.GetAllAssetNames())
-                {
-                    string normalizedAssetName = NormalizeEnemyName(Path.GetFileNameWithoutExtension(assetName));
-                    foreach (string candidate in candidates)
-                    {
-                        if (normalizedAssetName.Equals(candidate, StringComparison.OrdinalIgnoreCase))
-                            return bundle.LoadAsset<GameObject>(assetName);
-                    }
-                }
-            }
-
-            _missingModelHint = $"Put preview AssetBundles here:\n{GetPreviewDirectory()}\n\nMissing bundled prefab. Tried: {string.Join(", ", candidates)}";
-            return null;
-        }
-
-        private string[] GetPreviewAssetCandidates()
-        {
-            var candidates = new System.Collections.Generic.List<string>();
-            AddCandidate(candidates, _creatureName);
-
-            if (_enemyType != null)
-            {
-                foreach (string candidate in GetEnemyTypeCandidates(_enemyType))
-                    AddCandidate(candidates, candidate);
-            }
-
-            foreach (string alias in GetAliasCandidates(NormalizeEnemyName(_creatureName ?? _enemyType?.enemyName ?? string.Empty)))
-                AddCandidate(candidates, alias);
-
-            return candidates.ToArray();
-        }
-
-        private static void LoadPreviewBundles()
-        {
-            if (_previewBundlesLoaded)
-                return;
-
-            _previewBundlesLoaded = true;
-            _loadedBundleInfo = null;
-            string previewDirectory = GetPreviewDirectory();
-            if (!Directory.Exists(previewDirectory))
-            {
-                Directory.CreateDirectory(previewDirectory);
-                return;
-            }
-
-            foreach (string file in Directory.GetFiles(previewDirectory, "*", SearchOption.AllDirectories))
-            {
-                if (!LooksLikePreviewBundleFile(file))
-                    continue;
-
-                try
-                {
-                    var bundle = AssetBundle.LoadFromFile(file);
-                    if (bundle != null)
-                    {
-                        PreviewBundles.Add(bundle);
-                        var timestamp = File.GetLastWriteTime(file).ToString("yyyy-MM-dd HH:mm:ss");
-                        string info = $"{Path.GetFileName(file)} ({timestamp})";
-                        _loadedBundleInfo = string.IsNullOrWhiteSpace(_loadedBundleInfo)
-                            ? info
-                            : $"{_loadedBundleInfo}, {info}";
-                    }
-                }
-                catch
-                {
-                    // Ignore non-bundle files; this folder can also hold notes/source exports.
-                }
-            }
-        }
-
-        private static void ReloadPreviewBundles()
-        {
-            foreach (var bundle in PreviewBundles)
-            {
-                if (bundle != null)
-                    bundle.Unload(true);
-            }
-
-            PreviewBundles.Clear();
-            _previewBundlesLoaded = false;
-            LoadPreviewBundles();
-        }
-
-        private static bool LooksLikePreviewBundleFile(string file)
-        {
-            string extension = Path.GetExtension(file);
-            return string.IsNullOrWhiteSpace(extension) ||
-                extension.Equals(".bundle", StringComparison.OrdinalIgnoreCase) ||
-                extension.Equals(".assetbundle", StringComparison.OrdinalIgnoreCase) ||
-                extension.Equals(".unity3d", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string GetPreviewDirectory()
-        {
-            string menuDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-            return Path.Combine(menuDirectory, "CreaturePreviews");
         }
 
         private void SetupPreviewModel(GameObject model)
@@ -998,11 +881,10 @@ namespace LethalMenu.Menu.Popup
             string materialInfo = _materialMode == MaterialMode.Textured
                 ? $"  Textures: {_texturedMaterialCount}/{_texturedMaterialCount + _missingTextureMaterialCount}"
                 : string.Empty;
-            string bundleInfo = string.IsNullOrWhiteSpace(_loadedBundleInfo) ? string.Empty : $"  Bundle: {_loadedBundleInfo}";
             string shaderInfo = string.IsNullOrWhiteSpace(_resolvedShaderName) ? string.Empty : $"  Shader: {_resolvedShaderName}";
             string srcShaderInfo = string.IsNullOrWhiteSpace(_firstSourceShaderName) ? string.Empty : $"  SrcShader: {_firstSourceShaderName}";
             string texInfo = string.IsNullOrWhiteSpace(_firstTextureInfo) ? string.Empty : $"  Tex: {_firstTextureInfo}";
-            _debugInfo = $"Source: {_previewSource}  Renderers: {_rendererCount}  Material: {GetMaterialModeLabel()}{materialInfo}{shaderInfo}{srcShaderInfo}{texInfo}  Bounds: {bounds.size.x:F2}, {bounds.size.y:F2}, {bounds.size.z:F2}{bundleInfo}";
+            _debugInfo = $"Source: {_previewSource}  Renderers: {_rendererCount}  Material: {GetMaterialModeLabel()}{materialInfo}{shaderInfo}{srcShaderInfo}{texInfo}  Bounds: {bounds.size.x:F2}, {bounds.size.y:F2}, {bounds.size.z:F2}";
 
             return true;
         }
