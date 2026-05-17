@@ -90,6 +90,47 @@ namespace LethalMenu.Cheats
             }
         }
 
+        /// Teleports a player to one specific side of one specific entrance.
+        /// Used by EntranceTeleportPopup which has already resolved which entrance to call
+        /// (the side whose exitScript is the desired destination).
+        ///
+        /// - Local player: invokes sourceEntrance.TeleportPlayer() — game's intended local
+        ///   entry point. Handles position, isInsideFactory, item-slot flags, and broadcasts
+        ///   to other clients via the entrance's own ServerRpc.
+        /// - Remote player: invokes sourceEntrance.TeleportPlayerServerRpc(playerObj). All
+        ///   non-target clients see them teleported; the target's own view does not update
+        ///   (game's ClientRpc early-returns for the caller's local player).
+        public static void TeleportPlayerToSpecificEntrance(
+            PlayerControllerB target,
+            EntranceTeleport sourceEntrance)
+        {
+            if (target == null || target.isPlayerDead)
+            {
+                Debug.Log("[NetworkCheats] TeleportPlayerToSpecificEntrance: Target null or dead.");
+                return;
+            }
+            if (sourceEntrance == null)
+            {
+                Debug.Log("[NetworkCheats] TeleportPlayerToSpecificEntrance: sourceEntrance is null.");
+                return;
+            }
+
+            bool isLocal = target == LethalMenuMod.LocalPlayer;
+            try
+            {
+                if (isLocal)
+                    sourceEntrance.TeleportPlayer();
+                else
+                    sourceEntrance.TeleportPlayerServerRpc((int)target.playerClientId);
+
+                Debug.Log($"[NetworkCheats] Teleported {target.playerUsername} via entrance id {sourceEntrance.entranceId} (isEntranceToBuilding={sourceEntrance.isEntranceToBuilding}).");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[NetworkCheats] TeleportPlayerToSpecificEntrance failed: {e}");
+            }
+        }
+
         /// Teleports a player to the ship using direct position teleport.
         /// Only works reliably for local player.
         public static void TeleportToShip(PlayerControllerB? target = null)
