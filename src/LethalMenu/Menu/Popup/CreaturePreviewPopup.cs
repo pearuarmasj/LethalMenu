@@ -1023,14 +1023,31 @@ namespace LethalMenu.Menu.Popup
         private static bool IsCreatureRenderer(Renderer renderer)
         {
             string path = GetTransformPath(renderer.transform).ToLowerInvariant();
-            return !path.Contains("scannode") &&
-                !path.Contains("scan node") &&
-                !path.Contains("scan") &&
-                !path.Contains("mapdot") &&
-                !path.Contains("map dot") &&
-                !path.Contains("map") &&
-                !path.Contains("radar") &&
-                !path.Contains("terminal");
+            if (path.Contains("scannode") ||
+                path.Contains("scan node") ||
+                path.Contains("scan") ||
+                path.Contains("mapdot") ||
+                path.Contains("map dot") ||
+                path.Contains("map") ||
+                path.Contains("radar") ||
+                path.Contains("terminal"))
+                return false;
+
+            foreach (var material in renderer.sharedMaterials)
+            {
+                if (material != null && IsRuntimePlaceholderMaterial(material))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsRuntimePlaceholderMaterial(Material material)
+        {
+            string name = material.name.ToLowerInvariant();
+            return name.Contains("testtrigger") ||
+                name.Contains("ghostsheet") ||
+                name.Contains("mapdot");
         }
 
         private static string GetTransformPath(Transform transform)
