@@ -351,7 +351,7 @@ namespace LethalMenu.Cheats
             // Check for entrance doors (teleport between inside/outside)
             if (_controller.CanUseEntranceDoors(_controlledEnemy) && _teleportCooldownRemaining <= 0)
             {
-                foreach (var entrance in UnityEngine.Object.FindObjectsOfType<EntranceTeleport>())
+                foreach (var entrance in UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: true))
                 {
                     if (Vector3.Distance(position, entrance.transform.position) < interactRange)
                     {
@@ -369,7 +369,7 @@ namespace LethalMenu.Cheats
             }
 
             // Check for regular doors
-            foreach (var door in UnityEngine.Object.FindObjectsOfType<DoorLock>())
+            foreach (var door in UnityEngine.Object.FindObjectsOfType<DoorLock>(includeInactive: true))
             {
                 if (Vector3.Distance(position, door.transform.position) < interactRange)
                 {
@@ -385,7 +385,7 @@ namespace LethalMenu.Cheats
         /// 
         private static Transform? GetExitPointFromDoor(EntranceTeleport entrance)
         {
-            var allEntrances = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>();
+            var allEntrances = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: true);
             var exitEntrance = allEntrances.FirstOrDefault(e => 
                 e.entranceId == entrance.entranceId && 
                 e.isEntranceToBuilding != entrance.isEntranceToBuilding);

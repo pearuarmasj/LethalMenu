@@ -22,7 +22,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            var entrances = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>();
+            var entrances = UnityEngine.Object.FindObjectsOfType<EntranceTeleport>(includeInactive: true);
             if (entrances == null || entrances.Length == 0)
             {
                 Debug.Log("[NetworkCheats] TeleportPlayerToEntrance: No entrances found.");

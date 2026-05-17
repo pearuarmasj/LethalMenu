@@ -81,7 +81,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Items.Clear();
 
-            var items = Object.FindObjectsOfType<GrabbableObject>();
+            var items = Object.FindObjectsOfType<GrabbableObject>(includeInactive: true);
             foreach (var item in items)
             {
                 if (item != null)
@@ -95,7 +95,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.DoorLocks.Clear();
 
-            var doors = Object.FindObjectsOfType<DoorLock>();
+            var doors = Object.FindObjectsOfType<DoorLock>(includeInactive: true);
             foreach (var door in doors)
             {
                 if (door != null)
@@ -109,7 +109,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Landmines.Clear();
 
-            var mines = Object.FindObjectsOfType<Landmine>();
+            var mines = Object.FindObjectsOfType<Landmine>(includeInactive: true);
             foreach (var mine in mines)
             {
                 if (mine != null)
@@ -123,7 +123,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Turrets.Clear();
 
-            var turrets = Object.FindObjectsOfType<Turret>();
+            var turrets = Object.FindObjectsOfType<Turret>(includeInactive: true);
             foreach (var turret in turrets)
             {
                 if (turret != null)
@@ -137,7 +137,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Entrances.Clear();
 
-            var entrances = Object.FindObjectsOfType<EntranceTeleport>();
+            var entrances = Object.FindObjectsOfType<EntranceTeleport>(includeInactive: true);
             foreach (var entrance in entrances)
             {
                 if (entrance != null)
@@ -151,7 +151,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Teleporters.Clear();
 
-            var teleporters = Object.FindObjectsOfType<ShipTeleporter>();
+            var teleporters = Object.FindObjectsOfType<ShipTeleporter>(includeInactive: true);
             foreach (var teleporter in teleporters)
             {
                 if (teleporter != null)
@@ -165,7 +165,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.BreakerBoxes.Clear();
 
-            var boxes = Object.FindObjectsOfType<BreakerBox>();
+            var boxes = Object.FindObjectsOfType<BreakerBox>(includeInactive: true);
             foreach (var box in boxes)
             {
                 if (box != null)
@@ -178,42 +178,42 @@ namespace LethalMenu.Util
         private static void CollectSteamValves()
         {
             LethalMenuMod.SteamValves.Clear();
-            foreach (var v in Object.FindObjectsOfType<SteamValveHazard>())
+            foreach (var v in Object.FindObjectsOfType<SteamValveHazard>(includeInactive: true))
                 if (v != null) LethalMenuMod.SteamValves.Add(v);
         }
 
         private static void CollectBigDoors()
         {
             LethalMenuMod.BigDoors.Clear();
-            foreach (var d in Object.FindObjectsOfType<TerminalAccessibleObject>())
+            foreach (var d in Object.FindObjectsOfType<TerminalAccessibleObject>(includeInactive: true))
                 if (d != null && d.isBigDoor) LethalMenuMod.BigDoors.Add(d);
         }
 
         private static void CollectHangarShipDoors()
         {
             LethalMenuMod.HangarShipDoors.Clear();
-            foreach (var d in Object.FindObjectsOfType<HangarShipDoor>())
+            foreach (var d in Object.FindObjectsOfType<HangarShipDoor>(includeInactive: true))
                 if (d != null) LethalMenuMod.HangarShipDoors.Add(d);
         }
 
         private static void CollectEnemyVents()
         {
             LethalMenuMod.EnemyVents.Clear();
-            foreach (var v in Object.FindObjectsOfType<EnemyVent>())
+            foreach (var v in Object.FindObjectsOfType<EnemyVent>(includeInactive: true))
                 if (v != null) LethalMenuMod.EnemyVents.Add(v);
         }
 
         private static void CollectItemDropships()
         {
             LethalMenuMod.ItemDropships.Clear();
-            foreach (var d in Object.FindObjectsOfType<ItemDropship>())
+            foreach (var d in Object.FindObjectsOfType<ItemDropship>(includeInactive: true))
                 if (d != null) LethalMenuMod.ItemDropships.Add(d);
         }
 
         private static void CollectVehicles()
         {
             LethalMenuMod.Vehicles.Clear();
-            foreach (var v in Object.FindObjectsOfType<VehicleController>())
+            foreach (var v in Object.FindObjectsOfType<VehicleController>(includeInactive: true))
                 if (v != null) LethalMenuMod.Vehicles.Add(v);
         }
 
@@ -228,7 +228,7 @@ namespace LethalMenu.Util
         private static void CollectMineshaftElevators()
         {
             LethalMenuMod.MineshaftElevators.Clear();
-            foreach (var e in Object.FindObjectsOfType<MineshaftElevatorController>())
+            foreach (var e in Object.FindObjectsOfType<MineshaftElevatorController>(includeInactive: true))
                 if (e != null) LethalMenuMod.MineshaftElevators.Add(e);
         }
 
