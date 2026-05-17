@@ -67,7 +67,7 @@ namespace LethalMenu.Util
         {
             LethalMenuMod.Enemies.Clear();
 
-            var enemies = Object.FindObjectsOfType<EnemyAI>();
+            var enemies = Object.FindObjectsOfType<EnemyAI>(includeInactive: true);
             foreach (var enemy in enemies)
             {
                 if (enemy != null && !enemy.isEnemyDead)
