@@ -6,29 +6,37 @@ namespace LethalMenu.Cheats
 {
     /// Makes the local player's character model visible in first person. Vanilla sets
     /// thisPlayerModel.shadowCastingMode to ShadowsOnly while alive — the body still casts
-    /// a shadow but the renderer is suppressed for the first-person camera, so looking
-    /// down shows the shadow of legs with no actual legs.
+    /// a shadow but the renderer is suppressed for the first-person camera.
     ///
-    /// Two fixes:
-    ///   1. Flip shadowCastingMode back to On so the SkinnedMeshRenderer participates in
-    ///      the color pass.
-    ///   2. Collapse the head bone (spine.004 in the Rigify rig) plus its end-bone to
-    ///      ~0 scale so the head/helmet mesh doesn't surround the camera — the camera
-    ///      sits inside the head and would otherwise see the inside of the helmet.
+    /// Three things happen while enabled:
+    ///   1. shadowCastingMode flipped back to On so the SkinnedMeshRenderer renders.
+    ///   2. Head bones (Rigify "spine.004" + "spine.004_end") scaled to ~0 so the
+    ///      helmet/head mesh doesn't surround the camera.
+    ///   3. gameplayCamera position snapped to the head bone (with the original camera-
+    ///      to-head offset preserved in head-local space). Animator drives the head bone
+    ///      to follow camera pitch, so as you look down the head physically tilts forward
+    ///      at the neck — and the camera now translates with it instead of pivoting in
+    ///      place, revealing the torso/legs underneath. Rotation is untouched so mouse
+    ///      look feels identical.
     ///
-    /// Critically, bone scaling MUST run in LateUpdate. The Animator updates bones each
-    /// frame after Update, so a scale set in Update gets overwritten before rendering.
+    /// All bone/camera work runs in LateUpdate, after the Animator has finished updating
+    /// the skeleton — otherwise the Animator overwrites our edits before the renderer
+    /// reads them.
     public class VisibleBodyCheat : CheatBase
     {
         public override string Name => "Visible Body";
         public override Hack HackType => Hack.VisibleBody;
 
+        private const string HeadBoneName = "spine.004";
         private static readonly string[] HeadBoneNames = { "spine.004", "spine.004_end" };
 
         private bool _wasEnabled;
         private readonly List<Transform> _headBones = new();
         private readonly List<Vector3> _cachedScales = new();
         private bool _scalesCached;
+
+        private Transform? _headPivot; // spine.004 specifically — used for camera follow
+        private Vector3? _cameraLocalOffset; // gameplayCamera position in spine.004 local space, captured once
 
         public override void OnUpdate()
         {
@@ -66,6 +74,18 @@ namespace LethalMenu.Cheats
                 if (_headBones[i] != null)
                     _headBones[i].localScale = Vector3.zero;
             }
+
+            ApplyCameraFollow(player);
+        }
+
+        private void ApplyCameraFollow(GameNetcodeStuff.PlayerControllerB player)
+        {
+            if (_headPivot == null || player.gameplayCamera == null) return;
+
+            if (_cameraLocalOffset == null)
+                _cameraLocalOffset = _headPivot.InverseTransformPoint(player.gameplayCamera.transform.position);
+
+            player.gameplayCamera.transform.position = _headPivot.TransformPoint(_cameraLocalOffset.Value);
         }
 
         public override void OnDisable() => Restore(LethalMenuMod.LocalPlayer);
@@ -83,6 +103,7 @@ namespace LethalMenu.Cheats
                     if (bones[i].name == name)
                     {
                         _headBones.Add(bones[i]);
+                        if (name == HeadBoneName) _headPivot = bones[i];
                         break;
                     }
                 }
@@ -117,6 +138,9 @@ namespace LethalMenu.Cheats
             _headBones.Clear();
             _cachedScales.Clear();
             _scalesCached = false;
+            _headPivot = null;
+            _cameraLocalOffset = null;
+            // No camera position restore needed — game re-parents/repositions every frame.
         }
     }
 }
