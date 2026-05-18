@@ -25,7 +25,7 @@ namespace LethalMenu
         HPDisplay, InfoDisplay, InfoDisplayCredits, InfoDisplayQuota, InfoDisplayDeadline,
         InfoDisplayEnemies, InfoDisplayBodies, InfoDisplayMapLoot, InfoDisplayShipLoot,
         InfoDisplayMoon, InfoDisplayTime, NoVisor, NoCameraShake, NoDepthOfField,
-        FullRenderResolution, CustomFOV, Breadcrumbs, NoFog,
+        FullRenderResolution, CustomFOV, Breadcrumbs, NoFog, VisibleBody,
         MinimalGUIMod, ClearVisionMod, RadarPatch, EnemyDeathNotification,
         SteamValveESP, BigDoorESP, ShipDoorESP, EnemyVentESP, ItemDropshipESP,
         CruiserESP, MoldSporeESP, MineshaftElevatorESP, EntranceESP, SpikeRoofTrapESP,
