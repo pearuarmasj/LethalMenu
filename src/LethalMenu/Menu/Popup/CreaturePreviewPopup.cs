@@ -907,6 +907,12 @@ namespace LethalMenu.Menu.Popup
                     previewRenderers.Add(renderer);
             }
 
+            foreach (var renderer in previewRenderers)
+            {
+                if (renderer is SkinnedMeshRenderer skinned)
+                    skinned.updateWhenOffscreen = true;
+            }
+
             return previewRenderers.ToArray();
         }
 
@@ -921,7 +927,13 @@ namespace LethalMenu.Menu.Popup
                 path.Contains("map") ||
                 path.Contains("radar") ||
                 path.Contains("terminal") ||
-                path.Contains("trigger"))
+                path.Contains("trigger") ||
+                path.Contains("playerhead") ||
+                path.Contains("player head") ||
+                path.Contains("tongue"))
+                return false;
+
+            if (IsHigherLODRenderer(path))
                 return false;
 
             foreach (var material in renderer.sharedMaterials)
@@ -931,6 +943,18 @@ namespace LethalMenu.Menu.Popup
             }
 
             return true;
+        }
+
+        private static bool IsHigherLODRenderer(string lowerPath)
+        {
+            // Filter LOD1/LOD2/LOD3/etc., keep LOD0 (highest detail) or any GameObject with no LOD suffix.
+            // Matches against transform path like "BodyLOD2" — checks for "lod1".."lod9" but not "lod0".
+            for (int digit = 1; digit <= 9; digit++)
+            {
+                if (lowerPath.Contains("lod" + digit))
+                    return true;
+            }
+            return false;
         }
 
         private static bool IsRuntimePlaceholderMaterial(Material material)
