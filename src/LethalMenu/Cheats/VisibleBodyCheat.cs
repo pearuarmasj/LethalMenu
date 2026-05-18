@@ -8,24 +8,31 @@ namespace LethalMenu.Cheats
     /// a shadow but the renderer is suppressed for the first-person camera, so looking
     /// down shows the shadow of legs with no actual legs.
     ///
-    /// Two fixes needed:
+    /// Two fixes:
     ///   1. Flip shadowCastingMode back to On so the SkinnedMeshRenderer participates in
     ///      the color pass.
-    ///   2. Collapse playerGlobalHead.localScale to ~0 so the head/helmet mesh doesn't
-    ///      surround the camera (which sits at the head position and would otherwise see
-    ///      the inside of the helmet).
+    ///   2. Collapse the head bone (spine.004 in the Rigify rig) to ~0 scale so the
+    ///      head/helmet mesh doesn't surround the camera — the camera sits inside the
+    ///      head and would otherwise see the inside of the helmet.
+    ///
+    /// playerGlobalHead can NOT be used here — it's a positional helper transform
+    /// (used for mask attachment etc.), not the actual bone driving the SkinnedMesh.
+    /// We have to walk thisPlayerModel.bones[] and find "spine.004".
     ///
     /// Cooperates with ThirdPersonCheat: that cheat also forces ShadowCastingMode.On on
     /// enable then back to ShadowsOnly on disable. If both are active and ThirdPerson is
     /// toggled off, this cheat's per-frame OnUpdate flips the mode back to On the next
-    /// frame. We don't shrink the head while ThirdPerson is active — full body is fine
+    /// frame. We restore the head while ThirdPerson is active so the body looks normal
     /// from behind.
     public class VisibleBodyCheat : CheatBase
     {
         public override string Name => "Visible Body";
         public override Hack HackType => Hack.VisibleBody;
 
+        private const string HeadBoneName = "spine.004";
+
         private bool _wasEnabled;
+        private Transform? _headBone;
         private Vector3? _cachedHeadScale;
 
         public override void OnUpdate()
@@ -37,18 +44,21 @@ namespace LethalMenu.Cheats
                 if (player != null && player.thisPlayerModel != null)
                 {
                     player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
+                    EnsureHeadBone(player);
 
-                    if (!Hack.ThirdPerson.IsEnabled() && player.playerGlobalHead != null)
+                    if (_headBone != null)
                     {
-                        if (_cachedHeadScale == null)
-                            _cachedHeadScale = player.playerGlobalHead.localScale;
-                        player.playerGlobalHead.localScale = Vector3.zero;
-                    }
-                    else if (_cachedHeadScale != null && player.playerGlobalHead != null)
-                    {
-                        // ThirdPerson is active — restore head so the body looks normal from behind.
-                        player.playerGlobalHead.localScale = _cachedHeadScale.Value;
-                        _cachedHeadScale = null;
+                        if (!Hack.ThirdPerson.IsEnabled())
+                        {
+                            if (_cachedHeadScale == null)
+                                _cachedHeadScale = _headBone.localScale;
+                            _headBone.localScale = Vector3.zero;
+                        }
+                        else if (_cachedHeadScale != null)
+                        {
+                            _headBone.localScale = _cachedHeadScale.Value;
+                            _cachedHeadScale = null;
+                        }
                     }
                 }
                 _wasEnabled = true;
@@ -62,16 +72,29 @@ namespace LethalMenu.Cheats
 
         public override void OnDisable() => Restore(LethalMenuMod.LocalPlayer);
 
+        private void EnsureHeadBone(GameNetcodeStuff.PlayerControllerB player)
+        {
+            if (_headBone != null) return;
+            var bones = player.thisPlayerModel.bones;
+            if (bones == null) return;
+            for (int i = 0; i < bones.Length; i++)
+            {
+                if (bones[i] != null && bones[i].name == HeadBoneName)
+                {
+                    _headBone = bones[i];
+                    return;
+                }
+            }
+        }
+
         private void Restore(GameNetcodeStuff.PlayerControllerB? player)
         {
-            if (player == null) return;
-
-            if (player.thisPlayerModel != null && !Hack.ThirdPerson.IsEnabled())
+            if (player != null && player.thisPlayerModel != null && !Hack.ThirdPerson.IsEnabled())
                 player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
 
-            if (_cachedHeadScale != null && player.playerGlobalHead != null)
+            if (_cachedHeadScale != null && _headBone != null)
             {
-                player.playerGlobalHead.localScale = _cachedHeadScale.Value;
+                _headBone.localScale = _cachedHeadScale.Value;
                 _cachedHeadScale = null;
             }
         }
