@@ -159,6 +159,13 @@ namespace LethalMenu.Menu
                 }
 
                 DrawHackToggle(Hack.VisibleBody, "Visible Body", "Show your own character model in first person (vanilla hides it but renders the shadow)");
+                if (Hack.VisibleBody.IsEnabled())
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"  Eye Offset: {Settings.VisibleBodyCameraOffset:F2}", _labelStyle, GUILayout.Width(120));
+                    Settings.VisibleBodyCameraOffset = GUILayout.HorizontalSlider(Settings.VisibleBodyCameraOffset, -0.3f, 0.5f);
+                    GUILayout.EndHorizontal();
+                }
                 DrawHackToggle(Hack.NoVisor, "No Visor", "Hide helmet visor");
                 DrawHackToggle(Hack.NoCameraShake, "No Camera Shake", "Disable screen shake");
                 DrawHackToggle(Hack.NoDepthOfField, "No Depth of Field", "Disable blur effects");

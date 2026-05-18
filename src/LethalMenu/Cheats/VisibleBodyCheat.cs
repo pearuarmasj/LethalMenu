@@ -12,12 +12,11 @@ namespace LethalMenu.Cheats
     ///   1. shadowCastingMode flipped back to On so the SkinnedMeshRenderer renders.
     ///   2. Head bones (Rigify "spine.004" + "spine.004_end") scaled to ~0 so the
     ///      helmet/head mesh doesn't surround the camera.
-    ///   3. gameplayCamera position snapped to the head bone (with the original camera-
-    ///      to-head offset preserved in head-local space). Animator drives the head bone
-    ///      to follow camera pitch, so as you look down the head physically tilts forward
-    ///      at the neck — and the camera now translates with it instead of pivoting in
-    ///      place, revealing the torso/legs underneath. Rotation is untouched so mouse
-    ///      look feels identical.
+    ///   3. gameplayCamera pushed forward along its look direction by
+    ///      Settings.VisibleBodyCameraOffset metres. Vanilla rotates the camera in place
+    ///      at the neck pivot, so looking down doesn't reveal the torso — the eye stays
+    ///      at the neck. Shifting forward along look direction makes pitch arc the eye
+    ///      down through the torso plane, which is the natural human geometry.
     ///
     /// All bone/camera work runs in LateUpdate, after the Animator has finished updating
     /// the skeleton — otherwise the Animator overwrites our edits before the renderer
@@ -27,16 +26,12 @@ namespace LethalMenu.Cheats
         public override string Name => "Visible Body";
         public override Hack HackType => Hack.VisibleBody;
 
-        private const string HeadBoneName = "spine.004";
         private static readonly string[] HeadBoneNames = { "spine.004", "spine.004_end" };
 
         private bool _wasEnabled;
         private readonly List<Transform> _headBones = new();
         private readonly List<Vector3> _cachedScales = new();
         private bool _scalesCached;
-
-        private Transform? _headPivot; // spine.004 specifically — used for camera follow
-        private Vector3? _cameraLocalOffset; // gameplayCamera position in spine.004 local space, captured once
 
         public override void OnUpdate()
         {
@@ -75,17 +70,14 @@ namespace LethalMenu.Cheats
                     _headBones[i].localScale = Vector3.zero;
             }
 
-            ApplyCameraFollow(player);
-        }
+            if (Hack.FreeCam.IsEnabled() || Hack.SpectatePlayer.IsEnabled()) return;
+            if (player.gameplayCamera == null) return;
 
-        private void ApplyCameraFollow(GameNetcodeStuff.PlayerControllerB player)
-        {
-            if (_headPivot == null || player.gameplayCamera == null) return;
-
-            if (_cameraLocalOffset == null)
-                _cameraLocalOffset = _headPivot.InverseTransformPoint(player.gameplayCamera.transform.position);
-
-            player.gameplayCamera.transform.position = _headPivot.TransformPoint(_cameraLocalOffset.Value);
+            // Push the camera forward along its look direction so pitching down arcs the
+            // eye down through the torso plane instead of pivoting in place at the neck.
+            float forward = Settings.VisibleBodyCameraOffset;
+            if (forward != 0f)
+                player.gameplayCamera.transform.position += player.gameplayCamera.transform.forward * forward;
         }
 
         public override void OnDisable() => Restore(LethalMenuMod.LocalPlayer);
@@ -103,7 +95,6 @@ namespace LethalMenu.Cheats
                     if (bones[i].name == name)
                     {
                         _headBones.Add(bones[i]);
-                        if (name == HeadBoneName) _headPivot = bones[i];
                         break;
                     }
                 }
@@ -138,9 +129,6 @@ namespace LethalMenu.Cheats
             _headBones.Clear();
             _cachedScales.Clear();
             _scalesCached = false;
-            _headPivot = null;
-            _cameraLocalOffset = null;
-            // No camera position restore needed — game re-parents/repositions every frame.
         }
     }
 }
