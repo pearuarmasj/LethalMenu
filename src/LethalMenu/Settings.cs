@@ -68,7 +68,6 @@ namespace LethalMenu
         public static float NightVisionRange { get; set; } = 10000f;
         public static float FreeCamSpeed { get; set; } = 10f;
         public static float ThirdPersonDistance { get; set; } = 3f;
-        public static float VisibleBodyCameraOffset { get; set; } = 0.15f;
         public static int SpectatePlayerIndex { get; set; } = -1;
         public static float BreadcrumbInterval { get; set; } = 3f;
         public static string SpamMessage { get; set; } = "SPAM";
@@ -191,7 +190,6 @@ namespace LethalMenu
                     ["SuperJumpForce"] = SuperJumpForce,
                     ["FreeCamSpeed"] = FreeCamSpeed,
                     ["ThirdPersonDistance"] = ThirdPersonDistance,
-                    ["VisibleBodyCameraOffset"] = VisibleBodyCameraOffset,
                     ["CrosshairScale"] = CrosshairScale,
                     ["CrosshairThickness"] = CrosshairThickness,
                     ["FOVValue"] = FOVValue,
@@ -291,7 +289,6 @@ namespace LethalMenu
                 SuperJumpForce = config["SuperJumpForce"]?.Value<float>() ?? SuperJumpForce;
                 FreeCamSpeed = config["FreeCamSpeed"]?.Value<float>() ?? FreeCamSpeed;
                 ThirdPersonDistance = config["ThirdPersonDistance"]?.Value<float>() ?? ThirdPersonDistance;
-                VisibleBodyCameraOffset = config["VisibleBodyCameraOffset"]?.Value<float>() ?? VisibleBodyCameraOffset;
                 CrosshairScale = config["CrosshairScale"]?.Value<float>() ?? CrosshairScale;
                 CrosshairThickness = config["CrosshairThickness"]?.Value<float>() ?? CrosshairThickness;
                 FOVValue = config["FOVValue"]?.Value<float>() ?? FOVValue;

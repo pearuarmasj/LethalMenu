@@ -12,11 +12,10 @@ namespace LethalMenu.Cheats
     ///   1. shadowCastingMode flipped back to On so the SkinnedMeshRenderer renders.
     ///   2. Head bones (Rigify "spine.004" + "spine.004_end") scaled to ~0 so the
     ///      helmet/head mesh doesn't surround the camera.
-    ///   3. gameplayCamera pushed forward along its look direction by
-    ///      Settings.VisibleBodyCameraOffset metres. Vanilla rotates the camera in place
-    ///      at the neck pivot, so looking down doesn't reveal the torso — the eye stays
-    ///      at the neck. Shifting forward along look direction makes pitch arc the eye
-    ///      down through the torso plane, which is the natural human geometry.
+    ///   3. gameplayCamera is anchored to the neck bone (spine.003) — the eye sits at a
+    ///      fixed offset in the *camera's* local frame, so pitch rotates the eye around
+    ///      the neck pivot the way real human anatomy does. Looking down arcs the eye
+    ///      down-and-forward over the torso; looking up arcs it back-and-up.
     ///
     /// All bone/camera work runs in LateUpdate, after the Animator has finished updating
     /// the skeleton — otherwise the Animator overwrites our edits before the renderer
@@ -26,12 +25,20 @@ namespace LethalMenu.Cheats
         public override string Name => "Visible Body";
         public override Hack HackType => Hack.VisibleBody;
 
+        private const string NeckBoneName = "spine.003";
         private static readonly string[] HeadBoneNames = { "spine.004", "spine.004_end" };
+
+        // Eye position relative to the neck bone, expressed in the camera's local frame
+        // when looking forward. Forward = how far in front of the neck pivot the eye sits;
+        // Up = how far above. These approximate human anatomy in metres.
+        private const float EyeForward = 0.05f;
+        private const float EyeUp = 0.10f;
 
         private bool _wasEnabled;
         private readonly List<Transform> _headBones = new();
         private readonly List<Vector3> _cachedScales = new();
         private bool _scalesCached;
+        private Transform? _neckBone;
 
         public override void OnUpdate()
         {
@@ -55,7 +62,7 @@ namespace LethalMenu.Cheats
             var player = LethalMenuMod.LocalPlayer;
             if (player == null || player.thisPlayerModel == null) return;
 
-            EnsureHeadBones(player);
+            EnsureBones(player);
             CacheScalesOnce();
 
             if (Hack.ThirdPerson.IsEnabled())
@@ -71,30 +78,29 @@ namespace LethalMenu.Cheats
             }
 
             if (Hack.FreeCam.IsEnabled() || Hack.SpectatePlayer.IsEnabled()) return;
-            if (player.gameplayCamera == null) return;
+            if (_neckBone == null || player.gameplayCamera == null) return;
 
-            // Push the camera forward along its look direction so pitching down arcs the
-            // eye down through the torso plane instead of pivoting in place at the neck.
-            float forward = Settings.VisibleBodyCameraOffset;
-            if (forward != 0f)
-                player.gameplayCamera.transform.position += player.gameplayCamera.transform.forward * forward;
+            var camTf = player.gameplayCamera.transform;
+            camTf.position = _neckBone.position + camTf.up * EyeUp + camTf.forward * EyeForward;
         }
 
         public override void OnDisable() => Restore(LethalMenuMod.LocalPlayer);
 
-        private void EnsureHeadBones(GameNetcodeStuff.PlayerControllerB player)
+        private void EnsureBones(GameNetcodeStuff.PlayerControllerB player)
         {
-            if (_headBones.Count > 0) return;
+            if (_headBones.Count > 0 && _neckBone != null) return;
             var bones = player.thisPlayerModel.bones;
             if (bones == null) return;
             for (int i = 0; i < bones.Length; i++)
             {
                 if (bones[i] == null) continue;
+                if (_neckBone == null && bones[i].name == NeckBoneName)
+                    _neckBone = bones[i];
                 foreach (var name in HeadBoneNames)
                 {
                     if (bones[i].name == name)
                     {
-                        _headBones.Add(bones[i]);
+                        if (!_headBones.Contains(bones[i])) _headBones.Add(bones[i]);
                         break;
                     }
                 }
@@ -129,6 +135,7 @@ namespace LethalMenu.Cheats
             _headBones.Clear();
             _cachedScales.Clear();
             _scalesCached = false;
+            _neckBone = null;
         }
     }
 }
