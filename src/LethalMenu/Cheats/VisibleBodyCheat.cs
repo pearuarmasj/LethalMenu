@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,56 +12,31 @@ namespace LethalMenu.Cheats
     /// Two fixes:
     ///   1. Flip shadowCastingMode back to On so the SkinnedMeshRenderer participates in
     ///      the color pass.
-    ///   2. Collapse the head bone (spine.004 in the Rigify rig) to ~0 scale so the
-    ///      head/helmet mesh doesn't surround the camera — the camera sits inside the
-    ///      head and would otherwise see the inside of the helmet.
+    ///   2. Collapse the head bone (spine.004 in the Rigify rig) plus its end-bone to
+    ///      ~0 scale so the head/helmet mesh doesn't surround the camera — the camera
+    ///      sits inside the head and would otherwise see the inside of the helmet.
     ///
-    /// playerGlobalHead can NOT be used here — it's a positional helper transform
-    /// (used for mask attachment etc.), not the actual bone driving the SkinnedMesh.
-    /// We have to walk thisPlayerModel.bones[] and find "spine.004".
-    ///
-    /// Cooperates with ThirdPersonCheat: that cheat also forces ShadowCastingMode.On on
-    /// enable then back to ShadowsOnly on disable. If both are active and ThirdPerson is
-    /// toggled off, this cheat's per-frame OnUpdate flips the mode back to On the next
-    /// frame. We restore the head while ThirdPerson is active so the body looks normal
-    /// from behind.
+    /// Critically, bone scaling MUST run in LateUpdate. The Animator updates bones each
+    /// frame after Update, so a scale set in Update gets overwritten before rendering.
     public class VisibleBodyCheat : CheatBase
     {
         public override string Name => "Visible Body";
         public override Hack HackType => Hack.VisibleBody;
 
-        private const string HeadBoneName = "spine.004";
+        private static readonly string[] HeadBoneNames = { "spine.004", "spine.004_end" };
 
         private bool _wasEnabled;
-        private Transform? _headBone;
-        private Vector3? _cachedHeadScale;
+        private readonly List<Transform> _headBones = new();
+        private readonly List<Vector3> _cachedScales = new();
+        private bool _scalesCached;
 
         public override void OnUpdate()
         {
             var player = LethalMenuMod.LocalPlayer;
-
             if (IsEnabled)
             {
                 if (player != null && player.thisPlayerModel != null)
-                {
                     player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-                    EnsureHeadBone(player);
-
-                    if (_headBone != null)
-                    {
-                        if (!Hack.ThirdPerson.IsEnabled())
-                        {
-                            if (_cachedHeadScale == null)
-                                _cachedHeadScale = _headBone.localScale;
-                            _headBone.localScale = Vector3.zero;
-                        }
-                        else if (_cachedHeadScale != null)
-                        {
-                            _headBone.localScale = _cachedHeadScale.Value;
-                            _cachedHeadScale = null;
-                        }
-                    }
-                }
                 _wasEnabled = true;
             }
             else if (_wasEnabled)
@@ -70,20 +46,65 @@ namespace LethalMenu.Cheats
             }
         }
 
+        public override void OnLateUpdate()
+        {
+            if (!IsEnabled) return;
+            var player = LethalMenuMod.LocalPlayer;
+            if (player == null || player.thisPlayerModel == null) return;
+
+            EnsureHeadBones(player);
+            CacheScalesOnce();
+
+            if (Hack.ThirdPerson.IsEnabled())
+            {
+                RestoreHeadScales();
+                return;
+            }
+
+            for (int i = 0; i < _headBones.Count; i++)
+            {
+                if (_headBones[i] != null)
+                    _headBones[i].localScale = Vector3.zero;
+            }
+        }
+
         public override void OnDisable() => Restore(LethalMenuMod.LocalPlayer);
 
-        private void EnsureHeadBone(GameNetcodeStuff.PlayerControllerB player)
+        private void EnsureHeadBones(GameNetcodeStuff.PlayerControllerB player)
         {
-            if (_headBone != null) return;
+            if (_headBones.Count > 0) return;
             var bones = player.thisPlayerModel.bones;
             if (bones == null) return;
             for (int i = 0; i < bones.Length; i++)
             {
-                if (bones[i] != null && bones[i].name == HeadBoneName)
+                if (bones[i] == null) continue;
+                foreach (var name in HeadBoneNames)
                 {
-                    _headBone = bones[i];
-                    return;
+                    if (bones[i].name == name)
+                    {
+                        _headBones.Add(bones[i]);
+                        break;
+                    }
                 }
+            }
+        }
+
+        private void CacheScalesOnce()
+        {
+            if (_scalesCached) return;
+            _cachedScales.Clear();
+            for (int i = 0; i < _headBones.Count; i++)
+                _cachedScales.Add(_headBones[i] != null ? _headBones[i].localScale : Vector3.one);
+            _scalesCached = _headBones.Count > 0;
+        }
+
+        private void RestoreHeadScales()
+        {
+            if (!_scalesCached) return;
+            for (int i = 0; i < _headBones.Count && i < _cachedScales.Count; i++)
+            {
+                if (_headBones[i] != null)
+                    _headBones[i].localScale = _cachedScales[i];
             }
         }
 
@@ -92,11 +113,10 @@ namespace LethalMenu.Cheats
             if (player != null && player.thisPlayerModel != null && !Hack.ThirdPerson.IsEnabled())
                 player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
 
-            if (_cachedHeadScale != null && _headBone != null)
-            {
-                _headBone.localScale = _cachedHeadScale.Value;
-                _cachedHeadScale = null;
-            }
+            RestoreHeadScales();
+            _headBones.Clear();
+            _cachedScales.Clear();
+            _scalesCached = false;
         }
     }
 }

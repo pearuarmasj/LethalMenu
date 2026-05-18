@@ -327,6 +327,21 @@ namespace LethalMenu
             }
         }
 
+        private void LateUpdate()
+        {
+            foreach (var cheat in _cheats)
+            {
+                try
+                {
+                    cheat.OnLateUpdate();
+                }
+                catch (Exception ex)
+                {
+                    Loader.LogError($"[LethalMenu] Cheat {cheat.Name} late-update error: {ex.Message}");
+                }
+            }
+        }
+
         private void OnGUI()
         {
             // Draw menu
