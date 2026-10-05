@@ -64,15 +64,6 @@ namespace LethalMenu.Cheats
             Debug.Log($"[NetworkCheats] Ship doors {(closed ? "closed" : "opened")}.");
         }
 
-        /// Spams ship doors open/close (annoying visual effect).
-        public static void SpamShipDoors(int iterations = 10)
-        {
-            if (LethalMenuMod.Instance != null)
-            {
-                LethalMenuMod.Instance.StartCoroutine(SpamShipDoorsCoroutine(iterations));
-            }
-        }
-
         private static IEnumerator SpamShipDoorsCoroutine(int iterations)
         {
             var startOfRound = StartOfRound.Instance;

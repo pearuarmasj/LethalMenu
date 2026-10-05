@@ -5,7 +5,7 @@ namespace LethalMenu.Cheats
     public class MinimalGUICheat : CheatBase
     {
         public override string Name => "Minimal GUI";
-        public override Hack HackType => Hack.MinimalGUIMod;
+        public override Hack HackType => Hack.MinimalGUI;
 
         public override void OnUpdate()
         {

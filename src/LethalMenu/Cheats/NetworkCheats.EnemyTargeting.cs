@@ -74,20 +74,6 @@ namespace LethalMenu.Cheats
             HUDManager.Instance?.DisplayTip("Mob", $"{count} enemies targeting {targetPlayer.playerUsername}.");
         }
 
-        /// Stun all enemies near a position.
-        public static void StunEnemiesAtPosition(Vector3 position, float radius = 10f, float stunDuration = 5f)
-        {
-            int count = 0;
-            foreach (var enemy in LethalMenuMod.Enemies)
-            {
-                if (enemy == null || enemy.isEnemyDead) continue;
-                if (Vector3.Distance(enemy.transform.position, position) > radius) continue;
-                StunEnemy(enemy, stunDuration);
-                count++;
-            }
-            HUDManager.Instance?.DisplayTip("Stun", $"Stunned {count} enemies.");
-        }
-
         /// Stun the enemy under the crosshair, or trip the terminal function (temporary disable) of
         /// the turret/landmine under it.
         public static void StunAtCrosshair()

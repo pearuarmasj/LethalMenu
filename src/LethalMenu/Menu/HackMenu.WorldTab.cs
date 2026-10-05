@@ -8,12 +8,8 @@ namespace LethalMenu.Menu
 
         private void DrawWorldTab()
         {
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Weather Manager", _buttonStyle, GUILayout.Height(28)))
                 _weatherManager.IsOpen = !_weatherManager.IsOpen;
-            if (GUILayout.Button("Loot Manager", _buttonStyle, GUILayout.Height(28)))
-                _lootManager.IsOpen = !_lootManager.IsOpen;
-            GUILayout.EndHorizontal();
             GUILayout.Space(5);
 
             DrawSection("Ship", () =>
@@ -21,15 +17,14 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.ShipDoorInSpace, "Ship Door In Space", "Open ship door in space");
                 DrawHackToggle(Hack.NoShipDoorClose, "No Ship Door Close", "Block host from closing the ship door");
                 DrawHackToggle(Hack.VehicleGodMode, "Vehicle God Mode", "Cruiser ignores damage");
-                DrawHackToggle(Hack.TriggerGun, "Trigger Gun", "Middle-click activates whatever the camera points at (mine/turret/door/etc.). Hold E to possess enemies.");
             });
 
-            DrawSection("Fusebox Control", () =>
+            DrawSection("Breaker Box", () =>
             {
                 var breakerBoxes = LethalMenuMod.BreakerBoxes;
                 if (breakerBoxes == null || breakerBoxes.Count == 0)
                 {
-                    GUILayout.Label("No fuseboxes found", _labelStyle);
+                    GUILayout.Label("No breaker box on this moon", _labelStyle);
                     return;
                 }
 
@@ -76,7 +71,6 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.BuildAnywhere, "Build Anywhere", "Place furniture outside ship");
                 DrawHackToggle(Hack.InstantInteract, "Instant Interact", "No hold-to-interact delay");
             });
-            // Hazard controls moved to Network tab -> Hazard Control section
         }
 
         #region Fusebox Control Helpers

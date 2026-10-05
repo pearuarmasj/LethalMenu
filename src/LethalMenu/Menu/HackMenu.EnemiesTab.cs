@@ -8,17 +8,17 @@ namespace LethalMenu.Menu
 
         private void DrawEnemiesTab()
         {
-            if (GUILayout.Button("Open Enemy Manager", _buttonStyle, GUILayout.Height(28)))
+            if (GUILayout.Button("Enemy Manager", _buttonStyle, GUILayout.Height(28)))
                 _enemyManager.IsOpen = !_enemyManager.IsOpen;
             GUILayout.Space(5);
 
-            DrawSection("Enemy Protection", () =>
+            DrawSection("Protection", () =>
             {
                 DrawHackToggle(Hack.Untargetable, "Untargetable", "Enemies ignore you");
                 DrawHackToggle(Hack.AntiGhostGirl, "Anti-Ghost Girl", "Ghost Girl won't haunt you");
             });
 
-            DrawSection("Enemy Control", () =>
+            DrawSection("Possession", () =>
             {
                 bool isPossessing = Cheats.EnemyControlCheat.IsControlling;
                 var controlledEnemy = Cheats.EnemyControlCheat.GetControlledEnemy();
@@ -48,16 +48,8 @@ namespace LethalMenu.Menu
                 }
                 else
                 {
-                    DrawHackToggle(Hack.EnemyControl, "Enemy Control", "RMB to possess enemy you're looking at");
-                    if (Hack.EnemyControl.IsEnabled())
-                    {
-                        GUILayout.Label("  Close menu, look at enemy, RMB to possess", _labelStyle);
-                    }
+                    DrawHackToggle(Hack.EnemyControl, "Enemy Control", "RMB possesses the enemy you look at");
                 }
-
-                GUILayout.Space(5);
-                DrawHackToggle(Hack.KillClick, "Kill Click", "LMB kills enemies (close menu first)");
-                DrawHackToggle(Hack.StunClick, "Stun Click", "MMB stuns enemies/turrets/mines");
 
                 if (Hack.EnemyControl.IsEnabled() && !isPossessing)
                 {
@@ -67,6 +59,14 @@ namespace LethalMenu.Menu
                     GUILayout.Label("  LMB=Primary | RMB=Secondary | E=Door", _labelStyle);
                     GUILayout.Label("  N=NoClip | F9=AI Toggle | Z=Release | Del=Kill", _labelStyle);
                 }
+            });
+
+            DrawSection("Crosshair Actions", () =>
+            {
+                DrawHackToggle(Hack.KillClick, "Kill Click", "LMB kills the enemy you look at");
+                DrawHackToggle(Hack.StunClick, "Stun Click", "MMB stuns the enemy, turret or mine you look at");
+                DrawHackToggle(Hack.TriggerGun, "Trigger Gun", "MMB sets off mines, turrets, jetpacks, doors and the company desk; on a player, lures every enemy to them");
+                GUILayout.Label("  Stun Click and Trigger Gun share MMB: enabling one turns the other off.", _tooltipStyle);
             });
         }
 

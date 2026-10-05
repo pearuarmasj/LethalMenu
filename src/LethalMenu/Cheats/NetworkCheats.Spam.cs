@@ -24,15 +24,6 @@ namespace LethalMenu.Cheats
             Debug.Log($"[NetworkCheats] Signal: {truncated}");
         }
 
-        /// Spams signal translator with messages (very annoying, shows on everyone's ship monitor).
-        public static void SpamSignalTranslator(int iterations = 20)
-        {
-            if (LethalMenuMod.Instance != null)
-            {
-                LethalMenuMod.Instance.StartCoroutine(SpamSignalTranslatorCoroutine(iterations));
-            }
-        }
-
         private static IEnumerator SpamSignalTranslatorCoroutine(int iterations)
         {
             var hud = HUDManager.Instance;
@@ -53,46 +44,6 @@ namespace LethalMenu.Cheats
         #endregion
 
         #region Ship Horn Spam (RequireOwnership = false)
-
-        /// Pulls the ship alarm cord (honks the horn).
-        /// Uses ShipAlarmCord.PullCordServerRpc - RequireOwnership = false.
-        public static void PullShipHorn()
-        {
-            var alarmCord = Object.FindObjectOfType<ShipAlarmCord>();
-            if (alarmCord == null)
-            {
-                Debug.Log("[NetworkCheats] Ship alarm cord not found.");
-                return;
-            }
-
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            int playerId = localPlayer != null ? (int)localPlayer.playerClientId : 0;
-
-            alarmCord.PullCordServerRpc(playerId);
-            Debug.Log("[NetworkCheats] Pulled ship horn.");
-        }
-
-        /// Stops the ship horn.
-        public static void StopShipHorn()
-        {
-            var alarmCord = Object.FindObjectOfType<ShipAlarmCord>();
-            if (alarmCord == null) return;
-
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            int playerId = localPlayer != null ? (int)localPlayer.playerClientId : 0;
-
-            alarmCord.StopPullingCordServerRpc(playerId);
-            Debug.Log("[NetworkCheats] Stopped ship horn.");
-        }
-
-        /// Spams the ship horn on/off rapidly (extremely annoying).
-        public static void SpamShipHorn(int iterations = 15)
-        {
-            if (LethalMenuMod.Instance != null)
-            {
-                LethalMenuMod.Instance.StartCoroutine(SpamShipHornCoroutine(iterations));
-            }
-        }
 
         private static IEnumerator SpamShipHornCoroutine(int iterations)
         {
@@ -164,55 +115,6 @@ namespace LethalMenu.Cheats
 
         #region Terminal Sound Spam
 
-        /// Spam terminal sounds (includes earrape invalid indices).
-        public static void SpamTerminalSound(int iterations = 20)
-        {
-            if (LethalMenuMod.Instance != null)
-            {
-                LethalMenuMod.Instance.StartCoroutine(SpamTerminalSoundCoroutine(iterations));
-            }
-        }
-
-        private static IEnumerator SpamTerminalSoundCoroutine(int iterations)
-        {
-            var terminal = LethalMenuMod.GameTerminal;
-            if (terminal == null) yield break;
-
-            for (int i = 0; i < iterations; i++)
-            {
-                // Normal sound
-                terminal.PlayTerminalAudioServerRpc(1);
-                // Earrape invalid index (cash register sound)
-                terminal.PlayTerminalAudioServerRpc(-1);
-                yield return new WaitForSeconds(0.1f);
-            }
-            Debug.Log($"[NetworkCheats] Spammed terminal sound + earrape {iterations} times.");
-        }
-
-        /// Pure earrape spam - only invalid indices.
-        public static void SpamTerminalEarrape(int iterations = 30)
-        {
-            if (LethalMenuMod.Instance != null)
-            {
-                LethalMenuMod.Instance.StartCoroutine(SpamTerminalEarrapeCoroutine(iterations));
-            }
-        }
-
-        private static IEnumerator SpamTerminalEarrapeCoroutine(int iterations)
-        {
-            var terminal = LethalMenuMod.GameTerminal;
-            if (terminal == null) yield break;
-
-            for (int i = 0; i < iterations; i++)
-            {
-                terminal.PlayTerminalAudioServerRpc(-1);
-                terminal.PlayTerminalAudioServerRpc(-99999);
-                terminal.PlayTerminalAudioServerRpc(int.MaxValue);
-                yield return new WaitForSeconds(0.05f);
-            }
-            Debug.Log($"[NetworkCheats] Earrape spam {iterations} times.");
-        }
-
         #endregion
 
         #region Continuous Spam Toggles
@@ -222,7 +124,6 @@ namespace LethalMenu.Cheats
         private static float _lastDoorSpam = 0f;
         private static float _lastSignalSpam = 0f;
         private static float _lastRPCSpam = 0f;
-        private static float _lastTerminalSpam = 0f;
         private static float _lastEarrapeSpam = 0f;
         private static float _lastChatSpam = 0f;
         private static float _lastCarHornSpam = 0f;
@@ -232,7 +133,7 @@ namespace LethalMenu.Cheats
         /// Call this every frame from Update() to process continuous spam toggles.
         private static readonly Hack[] SpamToggles =
         {
-            Hack.HornSpam, Hack.DoorSpam, Hack.SignalSpam, Hack.RPCLagSpam, Hack.TerminalSoundSpam,
+            Hack.HornSpam, Hack.DoorSpam, Hack.SignalSpam, Hack.RPCLagSpam,
             Hack.EarrapeSpam, Hack.ChatSpam, Hack.CarHornSpam, Hack.DeskDoorSpam,
         };
 
@@ -309,23 +210,6 @@ namespace LethalMenu.Cheats
                 if (localPlayer != null && !localPlayer.isPlayerDead && _spamCounter % 5 == 0)
                 {
                     localPlayer.DamagePlayerFromOtherClientServerRpc(0, Vector3.zero, -1);
-                }
-            }
-
-            // Terminal Sound Spam (every 0.08s) - FULL combo: index 0 (cash register) + index 1 (beep) + invalid indices
-            if (Hack.TerminalSoundSpam.IsEnabled() && time - _lastTerminalSpam > 0.08f)
-            {
-                _lastTerminalSpam = time;
-                _spamCounter++;
-                if (terminal != null)
-                {
-                    // Index 0 = cash register sound (the one Terminal Crash button uses)
-                    terminal.PlayTerminalAudioServerRpc(0);
-                    // Index 1 = beep
-                    terminal.PlayTerminalAudioServerRpc(1);
-                    // Invalid indices = earrape
-                    terminal.PlayTerminalAudioServerRpc(-1);
-                    terminal.PlayTerminalAudioServerRpc(-99999);
                 }
             }
 

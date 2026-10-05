@@ -21,36 +21,6 @@ namespace LethalMenu.Cheats
             Debug.Log($"[NetworkCheats] Set credits to ${amount}");
         }
 
-        /// Unlocks a ship upgrade for free by calling BuyShipUnlockableServerRpc with current credits.
-        public static void UnlockShipUpgrade(int unlockableId)
-        {
-            var startOfRound = StartOfRound.Instance;
-            var terminal = LethalMenuMod.GameTerminal;
-            if (startOfRound == null || terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Not in game.");
-                return;
-            }
-
-            // Buy the unlockable but keep current credits
-            startOfRound.BuyShipUnlockableServerRpc(unlockableId, terminal.groupCredits);
-            Debug.Log($"[NetworkCheats] Unlocked ship upgrade ID: {unlockableId}");
-        }
-
-        /// Buys items without spending credits.
-        public static void FreeItems(int[] itemIds)
-        {
-            var terminal = LethalMenuMod.GameTerminal;
-            if (terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Terminal not found.");
-                return;
-            }
-
-            terminal.BuyItemsServerRpc(itemIds, terminal.groupCredits, 0);
-            Debug.Log($"[NetworkCheats] Purchased {itemIds.Length} items for free.");
-        }
-
         #endregion
     }
 }

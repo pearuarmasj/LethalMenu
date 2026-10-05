@@ -121,12 +121,6 @@ namespace LethalMenu.Cheats
             Debug.Log($"[NetworkCheats] Spammed chat {count} times.");
         }
 
-        /// Max spam - sends 50 messages very fast.
-        public static void SpamChatMax(string message)
-        {
-            SpamChat(message, 50);
-        }
-
         #endregion
     }
 }

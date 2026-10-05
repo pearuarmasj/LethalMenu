@@ -1,10 +1,10 @@
 namespace LethalMenu.Cheats
 {
-    /// SaneMod — zero out the local player's insanity meter every frame.
+    /// SaneMode — zero out the local player's insanity meter every frame.
     public class SaneCheat : CheatBase
     {
         public override string Name => "Sane Mode";
-        public override Hack HackType => Hack.SaneMod;
+        public override Hack HackType => Hack.SaneMode;
 
         public override void OnUpdate()
         {

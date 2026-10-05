@@ -69,7 +69,7 @@ namespace LethalMenu.Cheats
             }
 
             // Any feature that owns the gameplay camera's position wins over the neck anchor.
-            if (Hack.FreeCam.IsEnabled() || Hack.SpectatePlayer.IsEnabled() || Hack.Phantom.IsEnabled() ||
+            if (Hack.FreeCam.IsEnabled() || Hack.SpectatePlayer.IsEnabled() ||
                 EnemyControlCheat.IsControlling) return;
             if (_neckBone == null || player.gameplayCamera == null) return;
 

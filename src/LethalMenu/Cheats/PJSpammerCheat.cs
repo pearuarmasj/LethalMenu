@@ -2,11 +2,11 @@ using UnityEngine;
 
 namespace LethalMenu.Cheats
 {
-    /// PJSpammer — sends fake "X joined the game" chat messages at a configurable rate.
+    /// JoinSpam — sends fake "X joined the game" chat messages at a configurable rate.
     public class PJSpammerCheat : CheatBase
     {
         public override string Name => "PJ Spammer";
-        public override Hack HackType => Hack.PJSpammer;
+        public override Hack HackType => Hack.JoinSpam;
 
         private static readonly string[] FakeNames =
         {

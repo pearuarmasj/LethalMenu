@@ -163,7 +163,7 @@ namespace LethalMenu
 
         private void RegisterActionExecutors()
         {
-            Hack.DisconnectMod.RegisterExecutor(Cheats.NetworkCheats.DisconnectFromLobby);
+            Hack.Disconnect.RegisterExecutor(Cheats.NetworkCheats.DisconnectFromLobby);
             Hack.ReconnectFromClipboard.RegisterExecutor(Cheats.NetworkCheats.ReconnectFromClipboard);
             Hack.RecruitEscort.RegisterExecutor(RecruitEscortUnderCrosshair);
             Hack.ReleaseAllDirected.RegisterExecutor(Cheats.Directives.EnemyDirector.ReleaseAll);

@@ -34,21 +34,6 @@ namespace LethalMenu.Cheats
             Debug.Log($"[NetworkCheats] Ship lights set to {(on ? "ON" : "OFF")}.");
         }
 
-        /// Changes destination to a different moon (requires host or appropriate permissions).
-        public static void ChangeLevel(int levelId)
-        {
-            var startOfRound = StartOfRound.Instance;
-            var terminal = LethalMenuMod.GameTerminal;
-            if (startOfRound == null || terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Not in game.");
-                return;
-            }
-
-            startOfRound.ChangeLevelServerRpc(levelId, terminal.groupCredits);
-            Debug.Log($"[NetworkCheats] Changing to level ID: {levelId}");
-        }
-
         /// Forces all players to eject/leave (usually used when in orbit).
         public static void EjectAllPlayers()
         {

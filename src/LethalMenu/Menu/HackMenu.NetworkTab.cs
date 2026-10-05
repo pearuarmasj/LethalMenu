@@ -7,46 +7,17 @@ namespace LethalMenu.Menu
     {
         #region Network Tab
 
-        // Network tab state
         private string _creditSetInput = "10000";
         private string _chatMessageInput = "";
         private string _signalMessageInput = "";
 
-        private int _selectedMimicPlayerIndex = 0;
-
         // Remote-player teleports go out as UpdatePlayerPositionRpc; the target's own client is authoritative
         // for its position, so only other players see the move.
-        private const string RemoteTeleportNote = "Teleporting someone else moves them for everyone but themselves; they keep their own position and snap back when they move.";
+        private const string RemoteTeleportNote = "Teleporting another player only changes where others see them; on their own screen they stay put.";
 
         private void DrawNetworkTab()
         {
-            DrawSection("Network Status", () =>
-            {
-                var gameInstance = StartOfRound.Instance;
-                if (gameInstance != null)
-                {
-                    GUILayout.Label($"Current Planet: {gameInstance.currentLevel?.PlanetName ?? "Unknown"}", _labelStyle);
-                    GUILayout.Label($"Is Host: {Cheats.NetworkCheats.IsHost()}", _labelStyle);
-
-                    var terminal = LethalMenuMod.GameTerminal;
-                    if (terminal != null)
-                    {
-                        GUILayout.Label($"Credits: ${terminal.groupCredits}", _labelStyle);
-                    }
-
-                    var timeOfDay = TimeOfDay.Instance;
-                    if (timeOfDay != null)
-                    {
-                        GUILayout.Label($"Quota: ${timeOfDay.quotaFulfilled} / ${timeOfDay.profitQuota}", _labelStyle);
-                    }
-                }
-                else
-                {
-                    GUILayout.Label("Not in game", _labelStyle);
-                }
-            });
-
-            DrawSection("Networking Options", () =>
+            DrawSection("Lobby", () =>
             {
                 DrawHackToggle(Hack.AntiKick, "Anti-Kick", "Rejoin lobbies after being kicked");
                 DrawHackToggle(Hack.ShowKickedLobbies, "Show Kicked Hosts", "Mark lobbies from hosts who kicked you");
@@ -62,13 +33,24 @@ namespace LethalMenu.Menu
                 }
 
                 DrawHackToggle(Hack.HearEveryone, "Hear Everyone", "Hear all voice chat");
-                DrawHackToggle(Hack.Invisibility, "Invisibility", "Other players can't see you");
-                DrawHackToggle(Hack.DeathNotifications, "Death Notifications", "See when players die");
                 DrawHackToggle(Hack.HearDeadPeople, "Hear Dead People", "Hear dead players' voice chat");
+                DrawHackToggle(Hack.Invisibility, "Invisibility", "Other players can't see you");
+                DrawHackToggle(Hack.DeathNotifications, "Player Death Notifications", "HUD tip when a player dies");
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Disconnect", _buttonStyle))
+                {
+                    Hack.Disconnect.Execute();
+                }
+                if (GUILayout.Button("Reconnect (lobby ID from clipboard)", _buttonStyle))
+                {
+                    Hack.ReconnectFromClipboard.Execute();
+                }
+                GUILayout.EndHorizontal();
             });
 
             // Terminal.SyncGroupCreditsServerRpc requires ownership of the (server-owned) Terminal, so only the host can set credits.
-            DrawSection("Credits (Host)", () =>
+            DrawSection("Credits", () =>
             {
                 if (!DrawHostGate()) return;
 
@@ -91,8 +73,7 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            // Quota (Host)
-            DrawSection("Quota (Host)", () =>
+            DrawSection("Quota", () =>
             {
                 if (!DrawHostGate()) return;
 
@@ -124,10 +105,6 @@ namespace LethalMenu.Menu
                     var quota = TimeOfDay.Instance?.profitQuota ?? 100;
                     Cheats.NetworkCheats.SetQuota(quota, quota);
                 }
-                if (GUILayout.Button("Sell Quota", _buttonStyle, GUILayout.Width(80)))
-                {
-                    Hack.SellQuota.Execute();
-                }
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
@@ -145,63 +122,70 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Chat Exploits", () =>
+            DrawSection("Chat", () =>
             {
+                bool hasMessage = !string.IsNullOrEmpty(_chatMessageInput);
+                if (hasMessage) Settings.SpamMessage = _chatMessageInput;
+
                 GUILayout.BeginHorizontal();
                 _chatMessageInput = GUILayout.TextField(_chatMessageInput, GUILayout.Width(200));
-                if (GUILayout.Button("Send", _buttonStyle, GUILayout.Width(50)))
-                {
-                    if (!string.IsNullOrEmpty(_chatMessageInput))
-                    {
-                        Cheats.NetworkCheats.SendChatMessage(_chatMessageInput);
-                        // Note: Same message can be sent again by clicking again
-                    }
-                }
                 if (GUILayout.Button("Clear", _buttonStyle, GUILayout.Width(50)))
                 {
                     _chatMessageInput = "";
                 }
                 GUILayout.EndHorizontal();
 
+                GUI.enabled = hasMessage;
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("System Msg", _buttonStyle))
+                if (GUILayout.Button("Send", _buttonStyle))
                 {
-                    if (!string.IsNullOrEmpty(_chatMessageInput))
-                    {
-                        Cheats.NetworkCheats.SendSystemMessage(_chatMessageInput);
-                    }
+                    Cheats.NetworkCheats.SendChatMessage(_chatMessageInput);
                 }
-                if (GUILayout.Button("Chat Spam x10", _buttonStyle))
+                if (GUILayout.Button("Send as System", _buttonStyle))
                 {
-                    if (!string.IsNullOrEmpty(_chatMessageInput))
-                    {
-                        Cheats.NetworkCheats.SpamChat(_chatMessageInput, 10);
-                    }
+                    Cheats.NetworkCheats.SendSystemMessage(_chatMessageInput);
                 }
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Sys Spam x10", _buttonStyle))
+                if (GUILayout.Button("Spam x10", _buttonStyle))
                 {
-                    if (!string.IsNullOrEmpty(_chatMessageInput))
-                    {
-                        Cheats.NetworkCheats.SpamSystemMessage(_chatMessageInput, 10);
-                    }
+                    Cheats.NetworkCheats.SpamChat(_chatMessageInput, 10);
                 }
-                if (GUILayout.Button("Chat + system x50", _buttonStyle))
+                if (GUILayout.Button("System Spam x10", _buttonStyle))
                 {
-                    if (!string.IsNullOrEmpty(_chatMessageInput))
-                    {
-                        Cheats.NetworkCheats.SpamChat(_chatMessageInput, 50);
-                        Cheats.NetworkCheats.SpamSystemMessage(_chatMessageInput, 50);
-                    }
+                    Cheats.NetworkCheats.SpamSystemMessage(_chatMessageInput, 10);
+                }
+                if (GUILayout.Button("Both x50", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.SpamChat(_chatMessageInput, 50);
+                    Cheats.NetworkCheats.SpamSystemMessage(_chatMessageInput, 50);
                 }
                 GUILayout.EndHorizontal();
+
+                var players = Cheats.NetworkCheats.GetAllPlayers();
+                if (players.Length > 0)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Send as:", _labelStyle, GUILayout.Width(60));
+                    foreach (var player in players)
+                    {
+                        if (GUILayout.Button(player.playerUsername ?? $"P{player.playerClientId}", _buttonStyle))
+                        {
+                            Cheats.NetworkCheats.ImpersonateInChat(_chatMessageInput, (int)player.playerClientId);
+                        }
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                GUI.enabled = true;
+
+                DrawHackToggle(Hack.ChatSpam, "Chat Spam", "Keeps sending the message above");
+                DrawHackToggle(Hack.JoinSpam, "Join Spam", "Fake 'X joined the game' messages");
             });
 
             // The ship RPCs below are RequireOwnership = false and work from any client, except
             // ManuallyEjectPlayersServerRpc and SetShipDoorsOverheatServerRpc (owner-only, i.e. host).
-            DrawSection("Ship Control", () =>
+            DrawSection("Ship", () =>
             {
                 bool isHost = IsLocalHost;
 
@@ -210,23 +194,16 @@ namespace LethalMenu.Menu
                 {
                     Hack.ForceShipLeave.Execute();
                 }
+                if (GUILayout.Button("End Round", _buttonStyle))
+                {
+                    Hack.ForceEnd.Execute();
+                }
                 GUI.enabled = isHost;
                 if (GUILayout.Button(isHost ? "Eject All Players" : "Eject All (host)", _buttonStyle))
                 {
                     Hack.EjectAllPlayers.Execute();
                 }
                 GUI.enabled = true;
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Force Start", _buttonStyle))
-                {
-                    Hack.ForceStart.Execute();
-                }
-                if (GUILayout.Button("Force End", _buttonStyle))
-                {
-                    Hack.ForceEnd.Execute();
-                }
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
@@ -238,9 +215,6 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.ToggleShipLights(false);
                 }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Magnet ON", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ToggleMagnet(true);
@@ -261,96 +235,111 @@ namespace LethalMenu.Menu
                     Cheats.NetworkCheats.SetShipDoors(true);
                 }
                 GUI.enabled = isHost;
-                if (GUILayout.Button(isHost ? "Overheat" : "Overheat (host)", _buttonStyle))
+                if (GUILayout.Button(isHost ? "Overheat Doors" : "Overheat Doors (host)", _buttonStyle))
                 {
                     Cheats.NetworkCheats.OverheatShipDoors();
                 }
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Spin Furniture", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.SpinShipObjects(5f);
+                }
+                if (GUILayout.Button("Reset Furniture", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ResetAllShipObjects();
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Signal translator:", _labelStyle, GUILayout.Width(110));
+                _signalMessageInput = GUILayout.TextField(_signalMessageInput ?? "", 10, GUILayout.Width(100));
+                if (GUILayout.Button("Send", _buttonStyle, GUILayout.Width(60)))
+                {
+                    if (!string.IsNullOrEmpty(_signalMessageInput))
+                    {
+                        Cheats.NetworkCheats.SendSignalTranslatorMessage(_signalMessageInput);
+                    }
+                }
+                GUILayout.EndHorizontal();
             });
 
             // Every VehicleController ServerRpc used here is RequireOwnership = false.
-            DrawSection("Vehicle Control (Cruiser)", () =>
+            DrawSection("Cruiser", () =>
             {
                 int vehicleCount = LethalMenuMod.Vehicles.Count;
-                GUILayout.Label($"Vehicles on map: {vehicleCount}", _labelStyle);
-
-                if (vehicleCount > 0)
+                if (vehicleCount == 0)
                 {
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Hijack Vehicle", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.HijackVehicle();
-                    }
-                    if (GUILayout.Button("Eject Driver", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.EjectVehicleDriver();
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("+5 Turbo", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.AddVehicleTurbo(5);
-                    }
-                    if (GUILayout.Button("Use Turbo", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.UseVehicleTurbo();
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Kill Engine", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.KillVehicleEngine();
-                    }
-                    if (GUILayout.Button("Repair Engine", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.RepairVehicleEngine();
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.Label("Gear Control:", _labelStyle);
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Park", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ShiftVehicleGear(0);
-                    }
-                    if (GUILayout.Button("Drive", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ShiftVehicleGear(1);
-                    }
-                    if (GUILayout.Button("Reverse", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ShiftVehicleGear(2);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Horn ON", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ToggleCarHorns(true);
-                    }
-                    if (GUILayout.Button("Horn OFF", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ToggleCarHorns(false);
-                    }
-                    if (GUILayout.Button("Explode All", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ExplodeAllVehicles();
-                    }
-                    GUILayout.EndHorizontal();
+                    GUILayout.Label("No Cruiser on the map. Buy one in Terminal > Store.", _labelStyle);
+                    return;
                 }
-                else
+
+                GUILayout.Label($"On map: {vehicleCount}", _labelStyle);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Hijack", _buttonStyle))
                 {
-                    GUILayout.Label("  No vehicles on the map.", _labelStyle);
+                    Cheats.NetworkCheats.HijackVehicle();
                 }
+                if (GUILayout.Button("Eject Driver", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.EjectVehicleDriver();
+                }
+                if (GUILayout.Button("Explode All", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ExplodeAllVehicles();
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("+5 Turbo", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.AddVehicleTurbo(5);
+                }
+                if (GUILayout.Button("Use Turbo", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.UseVehicleTurbo();
+                }
+                if (GUILayout.Button("Kill Engine", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.KillVehicleEngine();
+                }
+                if (GUILayout.Button("Repair Engine", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.RepairVehicleEngine();
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Gear:", _labelStyle, GUILayout.Width(40));
+                if (GUILayout.Button("Park", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ShiftVehicleGear(0);
+                }
+                if (GUILayout.Button("Drive", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ShiftVehicleGear(1);
+                }
+                if (GUILayout.Button("Reverse", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ShiftVehicleGear(2);
+                }
+                GUILayout.Label("Horn:", _labelStyle, GUILayout.Width(40));
+                if (GUILayout.Button("ON", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ToggleCarHorns(true);
+                }
+                if (GUILayout.Button("OFF", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ToggleCarHorns(false);
+                }
+                GUILayout.EndHorizontal();
             });
 
-            DrawSection("Player Level (Cosmetic)", () =>
+            DrawSection("Level Badge", () =>
             {
-                GUILayout.Label("Changes your level badge (cosmetic)", _labelStyle);
-
                 var levelNames = Cheats.NetworkCheats.GetLevelNames();
                 int currentLevel = Cheats.NetworkCheats.GetCurrentLevelIndex();
                 int currentXP = Cheats.NetworkCheats.GetCurrentXP();
@@ -358,17 +347,14 @@ namespace LethalMenu.Menu
                 GUILayout.Label($"Current: {(levelNames.Length > currentLevel ? levelNames[currentLevel] : "?")} ({currentXP} XP)", _labelStyle);
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Max level", _buttonStyle, GUILayout.Height(28)))
+                if (GUILayout.Button("Max", _buttonStyle))
                 {
                     Cheats.NetworkCheats.MaxOutXP();
                 }
-                if (GUILayout.Button("Reset (0 XP)", _buttonStyle))
+                if (GUILayout.Button("Reset", _buttonStyle))
                 {
                     Cheats.NetworkCheats.SetPlayerXP(0);
                 }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
                 if (GUILayout.Button("+100 XP", _buttonStyle))
                 {
                     Cheats.NetworkCheats.SetPlayerXP(currentXP + 100);
@@ -384,35 +370,18 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Player Management", () =>
-            {
-                // Debug_ReviveAllPlayersServerRpc is owner-only (host).
-                GUILayout.BeginHorizontal();
-                GUI.enabled = IsLocalHost;
-                if (GUILayout.Button(GUI.enabled ? "Revive All Players" : "Revive All (host)", _buttonStyle))
-                {
-                    Hack.ReviveAllPlayers.Execute();
-                }
-                GUI.enabled = true;
-                if (GUILayout.Button("Teleport All To Me (others' view)", _buttonStyle))
-                {
-                    Hack.TeleportAllToMe.Execute();
-                }
-                GUILayout.EndHorizontal();
-                GUILayout.Label(RemoteTeleportNote, new GUIStyle(_tooltipStyle) { wordWrap = true });
-            });
+            DrawSection("Players", DrawPlayersSection);
 
             // DoorLock.UnlockDoorServerRpc and TerminalAccessibleObject.SetDoorOpenServerRpc are RequireOwnership = false.
-            DrawSection("Facility Control", () =>
+            DrawSection("Facility", () =>
             {
-                GUILayout.Label("Facility Doors:", _labelStyle);
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Unlock All", _buttonStyle))
+                if (GUILayout.Button("Unlock All Doors", _buttonStyle))
                 {
                     Hack.UnlockAllDoors.Execute();
                 }
                 // DoorLock.LockDoor has no network sync: it only locks doors on this client.
-                if (GUILayout.Button("Lock All (local)", _buttonStyle))
+                if (GUILayout.Button("Lock All Doors (local)", _buttonStyle))
                 {
                     Cheats.NetworkCheats.LockAllDoors();
                 }
@@ -422,424 +391,32 @@ namespace LethalMenu.Menu
                 }
                 GUILayout.EndHorizontal();
 
-                GUILayout.Label("Noise Maker:", _labelStyle);
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Noise At Me", _buttonStyle))
+                if (GUILayout.Button("Collapse Bridge", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ForceBridgeFall();
+                }
+                if (GUILayout.Button("Collapse Small Bridge", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ForceSmallBridgeFall();
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Noise (attracts enemies):", _labelStyle, GUILayout.Width(150));
+                if (GUILayout.Button("At Me", _buttonStyle))
                 {
                     Cheats.NetworkCheats.MakeNoiseAtMe();
                 }
-                if (GUILayout.Button("Noise At Camera", _buttonStyle))
+                if (GUILayout.Button("At Camera", _buttonStyle))
                 {
                     Cheats.NetworkCheats.MakeNoiseAtCamera();
                 }
                 GUILayout.EndHorizontal();
             });
 
-            // Time.timeScale is purely local (no host check or RPC involved).
-            DrawSection("Timescale (local)", () =>
+            DrawSection("Hazards", () =>
             {
-                GUILayout.Label($"Game Speed: {Time.timeScale:F1}x", _labelStyle);
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("0.5x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(0.5f);
-                if (GUILayout.Button("1x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(1f);
-                if (GUILayout.Button("2x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(2f);
-                if (GUILayout.Button("5x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(5f);
-                GUILayout.EndHorizontal();
-            });
-
-            // MOB uses EnemyAI.ChangeEnemyOwnerServerRpc and ship-object moves use PlaceShipObjectServerRpc
-            // (both RequireOwnership = false). LAG spawns Brackens and BOMB may spawn a jetpack, which only the server can do.
-            DrawSection("Player Trolling", () =>
-            {
-                var mobPlayers = Cheats.NetworkCheats.GetAllPlayers();
-                if (mobPlayers.Length > 0)
-                {
-                    var mobPlayerNames = mobPlayers.Select(p => p.playerUsername ?? "Unknown").ToArray();
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
-                        _selectedMimicPlayerIndex = (_selectedMimicPlayerIndex - 1 + mobPlayerNames.Length) % mobPlayerNames.Length;
-                    _selectedMimicPlayerIndex = Mathf.Clamp(_selectedMimicPlayerIndex, 0, mobPlayerNames.Length - 1);
-                    GUILayout.Label(mobPlayerNames[_selectedMimicPlayerIndex], _labelStyle, GUILayout.Width(100));
-                    if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
-                        _selectedMimicPlayerIndex = (_selectedMimicPlayerIndex + 1) % mobPlayerNames.Length;
-                    if (GUILayout.Button("Mob", _buttonStyle, GUILayout.Width(60)))
-                    {
-                        Cheats.NetworkCheats.MobPlayer(mobPlayers[_selectedMimicPlayerIndex], false);
-                    }
-                    if (GUILayout.Button("Mob + TP", _buttonStyle, GUILayout.Width(70)))
-                    {
-                        Cheats.NetworkCheats.MobPlayer(mobPlayers[_selectedMimicPlayerIndex], true);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Void", _buttonStyle, GUILayout.Width(60)))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerToVoid(mobPlayers[_selectedMimicPlayerIndex]);
-                    }
-                    bool isHost = IsLocalHost;
-                    GUI.enabled = isHost;
-                    if (GUILayout.Button(isHost ? "Bomb" : "BOMB (host)", _buttonStyle, GUILayout.Width(isHost ? 60 : 100)))
-                    {
-                        Cheats.NetworkCheats.BombPlayer(mobPlayers[_selectedMimicPlayerIndex]);
-                    }
-                    if (GUILayout.Button(isHost ? "Lag" : "LAG (host)", _buttonStyle, GUILayout.Width(isHost ? 50 : 90)))
-                    {
-                        Cheats.NetworkCheats.LagPlayer(mobPlayers[_selectedMimicPlayerIndex]);
-                    }
-                    GUI.enabled = true;
-                    GUILayout.EndHorizontal();
-                    GUILayout.Label("  Void: others' view only | Bomb: jetpack | Lag: brackens", _labelStyle);
-
-                    GUILayout.Space(5);
-                    GUILayout.Label("Spin Player:", _labelStyle);
-                    GUILayout.BeginHorizontal();
-                    Settings.SpinCamera = GUILayout.Toggle(Settings.SpinCamera, "Camera", _toggleStyle, GUILayout.Width(70));
-                    Settings.SpinModel = GUILayout.Toggle(Settings.SpinModel, "Model", _toggleStyle, GUILayout.Width(60));
-                    GUILayout.Label($"Time: {Settings.SpinDuration:F0}s", _labelStyle, GUILayout.Width(60));
-                    if (GUILayout.Button("-", _buttonStyle, GUILayout.Width(25)))
-                        Settings.SpinDuration = Mathf.Max(1f, Settings.SpinDuration - 5f);
-                    if (GUILayout.Button("+", _buttonStyle, GUILayout.Width(25)))
-                        Settings.SpinDuration = Mathf.Min(60f, Settings.SpinDuration + 5f);
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Spin (your view)", _buttonStyle, GUILayout.Width(120)))
-                    {
-                        Cheats.NetworkCheats.SpinPlayer(
-                            mobPlayers[_selectedMimicPlayerIndex],
-                            Settings.SpinDuration,
-                            Settings.SpinCamera,
-                            Settings.SpinModel);
-                    }
-                    if (GUILayout.Button("Stop", _buttonStyle, GUILayout.Width(50)))
-                    {
-                        Cheats.NetworkCheats.StopSpinPlayer(mobPlayers[_selectedMimicPlayerIndex]);
-                    }
-                    bool isSpinning = Cheats.NetworkCheats.IsSpinning(mobPlayers[_selectedMimicPlayerIndex]);
-                    GUILayout.Label(isSpinning ? " [SPINNING]" : "", _labelStyle);
-                    GUILayout.EndHorizontal();
-                }
-
-                if (GUILayout.Button("Spin Ship Objects", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpinShipObjects(5f);
-                }
-
-                if (GUILayout.Button("Reset Ship Objects", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.ResetAllShipObjects();
-                }
-            });
-
-            DrawSection("Follow Player", () =>
-            {
-                var followPlayers = Cheats.NetworkCheats.GetAllPlayers();
-                if (followPlayers.Length == 0)
-                {
-                    GUILayout.Label("No players to follow.", _labelStyle);
-                    return;
-                }
-
-                var names = followPlayers.Select(p => p.playerUsername ?? "?").ToArray();
-                int idx = Cheats.FollowCheat.TargetPlayer != null
-                    ? System.Array.IndexOf(followPlayers, Cheats.FollowCheat.TargetPlayer)
-                    : 0;
-                if (idx < 0) idx = 0;
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Target:", _labelStyle, GUILayout.Width(60));
-                if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
-                    idx = (idx - 1 + names.Length) % names.Length;
-                GUILayout.Label(names[idx], _labelStyle, GUILayout.Width(120));
-                if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
-                    idx = (idx + 1) % names.Length;
-                GUILayout.EndHorizontal();
-                Cheats.FollowCheat.TargetPlayer = followPlayers[idx];
-
-                DrawHackToggle(Hack.FollowPlayer, "Follow Player",
-                    $"Auto-walk behind {names[idx]} at {Settings.FollowDelaySeconds:F1}s delay");
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"Delay: {Settings.FollowDelaySeconds:F1}s", _labelStyle, GUILayout.Width(80));
-                Settings.FollowDelaySeconds = GUILayout.HorizontalSlider(Settings.FollowDelaySeconds, 0.2f, 3.0f);
-                GUILayout.EndHorizontal();
-            });
-
-            DrawSection("Player Actions", () =>
-            {
-                var players = Cheats.NetworkCheats.GetAllPlayers();
-                var playerNames = players.Select(p => p.playerUsername ?? "Unknown").ToArray();
-
-                if (playerNames.Length > 0)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Target:", _labelStyle, GUILayout.Width(50));
-                    _selectedPlayerIndex = Mathf.Clamp(_selectedPlayerIndex, 0, playerNames.Length - 1);
-
-                    if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
-                        _selectedPlayerIndex = (_selectedPlayerIndex - 1 + playerNames.Length) % playerNames.Length;
-                    GUILayout.Label(playerNames[_selectedPlayerIndex], _labelStyle, GUILayout.Width(120));
-                    if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
-                        _selectedPlayerIndex = (_selectedPlayerIndex + 1) % playerNames.Length;
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Damage (10)", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.DamagePlayer(players[_selectedPlayerIndex], 10);
-                    }
-                    if (GUILayout.Button("Damage (50)", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.DamagePlayer(players[_selectedPlayerIndex], 50);
-                    }
-                    if (GUILayout.Button("Kill (100)", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.DamagePlayer(players[_selectedPlayerIndex], 100);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    var target = players[_selectedPlayerIndex];
-                    bool targetIsSelf = target == LethalMenuMod.LocalPlayer;
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Heal Player", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.HealPlayer(target);
-                    }
-                    bool targetDemiGod = Settings.IsDemiGod(target);
-                    bool newTargetDemiGod = GUILayout.Toggle(targetDemiGod, "Demi-God (keep healed)", _buttonStyle);
-                    if (newTargetDemiGod != targetDemiGod)
-                        Settings.SetDemiGod(target, newTargetDemiGod);
-                    if (GUILayout.Button("Force Drop Items", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.ForceDropItems(target);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    if (!targetIsSelf)
-                    {
-                        bool isFriend = Settings.IsFriend(target);
-                        bool newFriend = DrawToggle("Friend", isFriend, "Escorts ignore friends; friends can't be hunted");
-                        if (newFriend != isFriend)
-                            Settings.SetFriend(target, newFriend);
-
-                        GUI.enabled = Cheats.Directives.DirectiveTargeting.IsValidTarget(target);
-                        if (GUILayout.Button("Send all enemies", _buttonStyle))
-                        {
-                            int sent = Cheats.Directives.EnemyDirector.HuntAll(target);
-                            HUDManager.Instance?.DisplayTip("Hunt", $"{sent} enemies hunting {target.playerUsername}.");
-                        }
-                        GUI.enabled = true;
-                    }
-
-                    // Teleport options
-                    string othersView = targetIsSelf ? "" : " (others' view)";
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("TP Me To Player", _buttonStyle))
-                    {
-                        if (LethalMenuMod.LocalPlayer != null)
-                            Cheats.NetworkCheats.TeleportPlayerToPlayer(LethalMenuMod.LocalPlayer, target);
-                    }
-                    if (GUILayout.Button($"TP Player To Me{othersView}", _buttonStyle))
-                    {
-                        if (LethalMenuMod.LocalPlayer != null)
-                            Cheats.NetworkCheats.TeleportPlayerToPosition(target, LethalMenuMod.LocalPlayer.transform.position);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button($"TP Random Inside{othersView}", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerRandom(target, true);
-                    }
-                    if (GUILayout.Button($"TP Random Outside{othersView}", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerRandom(target, false);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button($"TP To Void (Death){othersView}", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerToVoid(target);
-                    }
-                    if (players.Length >= 2)
-                    {
-                        int otherIdx = (_selectedPlayerIndex + 1) % players.Length;
-                        if (GUILayout.Button($"Swap w/ {players[otherIdx].playerUsername} (others' view)", _buttonStyle))
-                        {
-                            Cheats.NetworkCheats.SwapPlayerPositions(target, players[otherIdx]);
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                    if (!targetIsSelf)
-                        GUILayout.Label(RemoteTeleportNote, new GUIStyle(_tooltipStyle) { wordWrap = true });
-
-                    // Teleport to ship via teleporter (works on any player)
-                    if (GUILayout.Button("Teleport to ship (ship teleporter)", _buttonStyle, GUILayout.Height(28)))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerViaShipTeleporter(players[_selectedPlayerIndex]);
-                    }
-
-                    if (GUILayout.Button("Entrance Teleporter…", _buttonStyle, GUILayout.Height(28)))
-                    {
-                        EntranceTeleporter.Show(players[_selectedPlayerIndex]);
-                    }
-                }
-                else
-                {
-                    GUILayout.Label("No players found.", _labelStyle);
-                }
-            });
-
-            // Malicious section - only show if enabled
-            DrawSection("Trolling", () =>
-            {
-
-                // SPAM TOGGLES - Continuous spam while enabled
-                GUILayout.Label("Spam toggles", _labelStyle);
-
-                GUILayout.BeginHorizontal();
-                DrawHackToggle(Hack.HornSpam, "Horn Spam", null);
-                DrawHackToggle(Hack.DoorSpam, "Door Spam", null);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                DrawHackToggle(Hack.SignalSpam, "Signal Spam", null);
-                DrawHackToggle(Hack.RPCLagSpam, "RPC Lag", null);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                DrawHackToggle(Hack.TerminalSoundSpam, "Terminal Spam", null);
-                DrawHackToggle(Hack.EarrapeSpam, "Earrape", null);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                DrawHackToggle(Hack.ChatSpam, "Chat Spam", null);
-                DrawHackToggle(Hack.CarHornSpam, "Car Horns", null);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                DrawHackToggle(Hack.DeskDoorSpam, "Desk Door", null);
-                DrawHackToggle(Hack.PJSpammer, "PJ Spammer", "Fake 'X joined the game' chat messages");
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Flicker Lights", _buttonStyle))
-                {
-                    Hack.FlickerLights.Execute();
-                }
-                if (GUILayout.Button("Disconnect", _buttonStyle))
-                {
-                    Hack.DisconnectMod.Execute();
-                }
-                if (GUILayout.Button("Reconnect (clipboard)", _buttonStyle))
-                {
-                    Hack.ReconnectFromClipboard.Execute();
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.Space(5);
-                GUILayout.Label("One-shot", _labelStyle);
-
-                // One-shot chaos buttons
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Horn + lights + doors + signal", _buttonStyle))
-                {
-                    Hack.MaxChaos.Execute();
-                }
-                if (GUILayout.Button("Terminal Crash", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.AttemptTerminalCrash();
-                }
-                GUILayout.EndHorizontal();
-
-                // Bracken ownership lag
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Bracken lag (all)", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.BrackenLagAllPlayers();
-                }
-                if (GUILayout.Button("Kill All Players", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.MassKillPlayers();
-                }
-                GUILayout.EndHorizontal();
-
-                // Chat spam one-shot
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Chat Spam x50", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamChatMax(Settings.SpamMessage);
-                }
-                if (GUILayout.Button("Earrape x30", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.SpamTerminalEarrape(30);
-                }
-                GUILayout.EndHorizontal();
-
-                // Impersonation
-                var players = Cheats.NetworkCheats.GetAllPlayers();
-                if (players.Length > 0 && !string.IsNullOrEmpty(_chatMessageInput))
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label("Impersonate:", _labelStyle, GUILayout.Width(80));
-                    for (int i = 0; i < Mathf.Min(players.Length, 4); i++)
-                    {
-                        int idx = i;
-                        if (GUILayout.Button(players[idx].playerUsername ?? $"P{idx}", _buttonStyle, GUILayout.Width(70)))
-                        {
-                            Cheats.NetworkCheats.ImpersonateInChat(_chatMessageInput, (int)players[idx].playerClientId);
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                }
-            });
-
-            // Signal Translator direct message
-            DrawSection("Signal Translator", () =>
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Message (max 10):", _labelStyle, GUILayout.Width(110));
-                _signalMessageInput = GUILayout.TextField(_signalMessageInput ?? "", 10, GUILayout.Width(100));
-                if (GUILayout.Button("Send", _buttonStyle, GUILayout.Width(60)))
-                {
-                    if (!string.IsNullOrEmpty(_signalMessageInput))
-                    {
-                        Cheats.NetworkCheats.SendSignalTranslatorMessage(_signalMessageInput);
-                    }
-                }
-                GUILayout.EndHorizontal();
-            });
-
-            // Free vehicles section
-            DrawSection("Free Vehicles", () =>
-            {
-                var vehicles = Cheats.NetworkCheats.GetAvailableVehicles();
-                if (vehicles.Length > 0)
-                {
-                    GUILayout.BeginHorizontal();
-                    for (int i = 0; i < vehicles.Length; i++)
-                    {
-                        var (id, name) = vehicles[i];
-                        if (GUILayout.Button($"Buy {name}", _buttonStyle))
-                        {
-                            Cheats.NetworkCheats.BuyFreeVehicle(id);
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                }
-                else
-                {
-                    GUILayout.Label("No vehicles available.", _labelStyle);
-                }
-            });
-
-            // More trolling features
-            DrawSection("Hazard Control", () =>
-            {
-                // Count active hazards
                 int mineCount = 0;
                 int turretCount = 0;
                 foreach (var mine in LethalMenuMod.Landmines)
@@ -853,10 +430,7 @@ namespace LethalMenu.Menu
                 GUILayout.Label($"Landmines: {mineCount}  |  Turrets: {turretCount}", _labelStyle);
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Blow Up All Mines", _buttonStyle))
-                {
-                    Hack.BlowUpAllMines.Execute();
-                }
+                GUILayout.Label("Everyone:", _labelStyle, GUILayout.Width(70));
                 if (GUILayout.Button("Mines OFF", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ToggleAllLandmines(false);
@@ -865,9 +439,6 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.ToggleAllLandmines(true);
                 }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Turrets OFF", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ToggleAllTurrets(false);
@@ -876,6 +447,34 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.ToggleAllTurrets(true);
                 }
+                GUILayout.EndHorizontal();
+
+                // Local toggles send nothing: hazards stay live for everyone else.
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Only me:", _labelStyle, GUILayout.Width(70));
+                if (GUILayout.Button("Mines OFF", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ToggleAllLandminesLocal(false);
+                }
+                if (GUILayout.Button("Mines ON", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ToggleAllLandminesLocal(true);
+                }
+                if (GUILayout.Button("Turrets OFF", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ToggleAllTurretsLocal(false);
+                }
+                if (GUILayout.Button("Turrets ON", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ToggleAllTurretsLocal(true);
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Blow Up All Mines", _buttonStyle))
+                {
+                    Hack.BlowUpAllMines.Execute();
+                }
                 if (GUILayout.Button("Berserk Turrets", _buttonStyle))
                 {
                     Hack.BerserkTurrets.Execute();
@@ -883,49 +482,287 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Structure Control", () =>
+            // Time.timeScale is purely local (no host check or RPC involved).
+            DrawSection("Game Speed (local)", () =>
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Collapse Bridge", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.ForceBridgeFall();
-                }
-                if (GUILayout.Button("Collapse Small Bridge", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.ForceSmallBridgeFall();
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Toggle Factory Lights", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.ToggleFactoryLights();
-                }
-                if (GUILayout.Button("Tentacle Attack", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.ForceTentacleAttack();
-                }
+                GUILayout.Label($"{Time.timeScale:F1}x", _labelStyle, GUILayout.Width(40));
+                if (GUILayout.Button("0.5x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(0.5f);
+                if (GUILayout.Button("1x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(1f);
+                if (GUILayout.Button("2x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(2f);
+                if (GUILayout.Button("5x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(5f);
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Weapon/Item Chaos", () =>
+            DrawSection("Trolling", () =>
             {
+                GUILayout.Label("Continuous", _labelStyle);
+
+                GUILayout.BeginHorizontal();
+                DrawHackToggle(Hack.HornSpam, "Ship Horn", null);
+                DrawHackToggle(Hack.CarHornSpam, "Cruiser Horns", null);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                DrawHackToggle(Hack.DoorSpam, "Ship Doors", null);
+                DrawHackToggle(Hack.DeskDoorSpam, "Company Desk Door", null);
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                DrawHackToggle(Hack.SignalSpam, "Signal Translator", null);
+                DrawHackToggle(Hack.EarrapeSpam, "Terminal Earrape", null);
+                GUILayout.EndHorizontal();
+
+                DrawHackToggle(Hack.RPCLagSpam, "RPC Lag", "Floods the host with RPCs");
+
+                GUILayout.Space(5);
+                GUILayout.Label("One-shot", _labelStyle);
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Flicker Ship Lights", _buttonStyle))
+                {
+                    Hack.FlickerLights.Execute();
+                }
+                if (GUILayout.Button("Horn + Lights + Doors + Signal", _buttonStyle))
+                {
+                    Hack.MaxChaos.Execute();
+                }
+                GUILayout.EndHorizontal();
+
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Fire All Shotguns", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ShootAllShotguns();
                 }
-                if (GUILayout.Button("Spam Shotguns", _buttonStyle))
+                if (GUILayout.Button("Fire All Shotguns x10", _buttonStyle))
                 {
                     Cheats.NetworkCheats.SpamShootAllShotguns(10);
                 }
-                GUILayout.EndHorizontal();
-
                 if (GUILayout.Button("Explode Jetpacks", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ExplodeAllJetpacks();
                 }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Company Desk Attack", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.ForceTentacleAttack();
+                }
+                if (GUILayout.Button("Bracken Lag (everyone)", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.BrackenLagAllPlayers();
+                }
+                GUILayout.EndHorizontal();
             });
+        }
+
+        /// One target selector for every per-player action, then the actions that hit everybody.
+        private void DrawPlayersSection()
+        {
+            var players = Cheats.NetworkCheats.GetAllPlayers();
+            if (players.Length == 0)
+            {
+                GUILayout.Label("No players found.", _labelStyle);
+                return;
+            }
+
+            _selectedPlayerIndex = Mathf.Clamp(_selectedPlayerIndex, 0, players.Length - 1);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Target:", _labelStyle, GUILayout.Width(50));
+            if (GUILayout.Button("<", _buttonStyle, GUILayout.Width(30)))
+                _selectedPlayerIndex = (_selectedPlayerIndex - 1 + players.Length) % players.Length;
+            GUILayout.Label(players[_selectedPlayerIndex].playerUsername ?? "Unknown", _labelStyle, GUILayout.Width(120));
+            if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
+                _selectedPlayerIndex = (_selectedPlayerIndex + 1) % players.Length;
+            GUILayout.EndHorizontal();
+
+            var target = players[_selectedPlayerIndex];
+            var local = LethalMenuMod.LocalPlayer;
+            bool targetIsSelf = target == local;
+            bool isHost = IsLocalHost;
+
+            // Health
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Damage 10", _buttonStyle))
+            {
+                Cheats.NetworkCheats.DamagePlayer(target, 10);
+            }
+            if (GUILayout.Button("Damage 50", _buttonStyle))
+            {
+                Cheats.NetworkCheats.DamagePlayer(target, 50);
+            }
+            if (GUILayout.Button("Kill", _buttonStyle))
+            {
+                Cheats.NetworkCheats.DamagePlayer(target, 100);
+            }
+            if (GUILayout.Button("Heal", _buttonStyle))
+            {
+                Cheats.NetworkCheats.HealPlayer(target);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            bool targetDemiGod = Settings.IsDemiGod(target);
+            bool newTargetDemiGod = GUILayout.Toggle(targetDemiGod, "Demi-God (keep healed)", _buttonStyle);
+            if (newTargetDemiGod != targetDemiGod)
+                Settings.SetDemiGod(target, newTargetDemiGod);
+            if (GUILayout.Button("Force Drop Items", _buttonStyle))
+            {
+                Cheats.NetworkCheats.ForceDropItems(target);
+            }
+            GUILayout.EndHorizontal();
+
+            if (!targetIsSelf)
+            {
+                // Enemies. MOB uses EnemyAI.ChangeEnemyOwnerServerRpc (RequireOwnership = false); Bomb and Lag
+                // spawn objects, which only the server can do.
+                bool isFriend = Settings.IsFriend(target);
+                bool newFriend = DrawToggle("Friend", isFriend, "Escorts ignore friends; friends can't be hunted");
+                if (newFriend != isFriend)
+                    Settings.SetFriend(target, newFriend);
+
+                GUILayout.BeginHorizontal();
+                GUI.enabled = Cheats.Directives.DirectiveTargeting.IsValidTarget(target);
+                if (GUILayout.Button("Hunt (all enemies)", _buttonStyle))
+                {
+                    int sent = Cheats.Directives.EnemyDirector.HuntAll(target);
+                    HUDManager.Instance?.DisplayTip("Hunt", $"{sent} enemies hunting {target.playerUsername}.");
+                }
+                GUI.enabled = true;
+                if (GUILayout.Button("Mob", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.MobPlayer(target, false);
+                }
+                if (GUILayout.Button("Mob + Teleport", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.MobPlayer(target, true);
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUI.enabled = isHost;
+                if (GUILayout.Button(isHost ? "Jetpack Bomb" : "Jetpack Bomb (host)", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.BombPlayer(target);
+                }
+                if (GUILayout.Button(isHost ? "Bracken Lag" : "Bracken Lag (host)", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.LagPlayer(target);
+                }
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+
+                bool following = Hack.FollowPlayer.IsEnabled() && Cheats.FollowCheat.TargetPlayer == target;
+                bool newFollowing = DrawToggle("Follow", following, $"Walk behind them, {Settings.FollowDelaySeconds:F1}s behind");
+                if (newFollowing != following)
+                {
+                    Cheats.FollowCheat.TargetPlayer = target;
+                    Hack.FollowPlayer.SetEnabled(newFollowing);
+                }
+                if (following)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label($"  Delay: {Settings.FollowDelaySeconds:F1}s", _labelStyle, GUILayout.Width(90));
+                    Settings.FollowDelaySeconds = GUILayout.HorizontalSlider(Settings.FollowDelaySeconds, 0.2f, 3.0f);
+                    GUILayout.EndHorizontal();
+                }
+
+                // Spin is drawn on this client only.
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Spin (local):", _labelStyle, GUILayout.Width(80));
+                Settings.SpinCamera = GUILayout.Toggle(Settings.SpinCamera, "Camera", _toggleStyle, GUILayout.Width(70));
+                Settings.SpinModel = GUILayout.Toggle(Settings.SpinModel, "Model", _toggleStyle, GUILayout.Width(60));
+                GUILayout.Label($"{Settings.SpinDuration:F0}s", _labelStyle, GUILayout.Width(30));
+                if (GUILayout.Button("-", _buttonStyle, GUILayout.Width(25)))
+                    Settings.SpinDuration = Mathf.Max(1f, Settings.SpinDuration - 5f);
+                if (GUILayout.Button("+", _buttonStyle, GUILayout.Width(25)))
+                    Settings.SpinDuration = Mathf.Min(60f, Settings.SpinDuration + 5f);
+                bool isSpinning = Cheats.NetworkCheats.IsSpinning(target);
+                if (GUILayout.Button(isSpinning ? "Stop" : "Start", _buttonStyle, GUILayout.Width(50)))
+                {
+                    if (isSpinning)
+                        Cheats.NetworkCheats.StopSpinPlayer(target);
+                    else
+                        Cheats.NetworkCheats.SpinPlayer(target, Settings.SpinDuration, Settings.SpinCamera, Settings.SpinModel);
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            // Teleports
+            GUILayout.Space(5);
+            if (!targetIsSelf && local != null)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Teleport Me To Them", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.TeleportPlayerToPlayer(local, target);
+                }
+                if (GUILayout.Button("Teleport Them To Me", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.TeleportPlayerToPosition(target, local.transform.position);
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Random Inside", _buttonStyle))
+            {
+                Cheats.NetworkCheats.TeleportPlayerRandom(target, true);
+            }
+            if (GUILayout.Button("Random Outside", _buttonStyle))
+            {
+                Cheats.NetworkCheats.TeleportPlayerRandom(target, false);
+            }
+            if (GUILayout.Button("Void", _buttonStyle))
+            {
+                Cheats.NetworkCheats.TeleportPlayerToVoid(target);
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (players.Length >= 2)
+            {
+                var other = players[(_selectedPlayerIndex + 1) % players.Length];
+                if (GUILayout.Button($"Swap With {other.playerUsername}", _buttonStyle))
+                {
+                    Cheats.NetworkCheats.SwapPlayerPositions(target, other);
+                }
+            }
+            // The ship teleporter and entrances move the target on their own client too.
+            if (GUILayout.Button("Beam To Ship", _buttonStyle))
+            {
+                Cheats.NetworkCheats.TeleportPlayerViaShipTeleporter(target);
+            }
+            if (GUILayout.Button("Entrance Teleporter…", _buttonStyle))
+            {
+                EntranceTeleporter.Show(target);
+            }
+            GUILayout.EndHorizontal();
+
+            if (!targetIsSelf)
+                GUILayout.Label(RemoteTeleportNote, new GUIStyle(_tooltipStyle) { wordWrap = true });
+
+            // Everybody
+            GUILayout.Space(5);
+            GUILayout.Label("All players", _labelStyle);
+            GUILayout.BeginHorizontal();
+            // Debug_ReviveAllPlayersServerRpc is owner-only (host).
+            GUI.enabled = isHost;
+            if (GUILayout.Button(isHost ? "Revive All" : "Revive All (host)", _buttonStyle))
+            {
+                Hack.ReviveAllPlayers.Execute();
+            }
+            GUI.enabled = true;
+            if (GUILayout.Button("Teleport All To Me", _buttonStyle))
+            {
+                Hack.TeleportAllToMe.Execute();
+            }
+            if (GUILayout.Button("Kill All", _buttonStyle))
+            {
+                Cheats.NetworkCheats.MassKillPlayers();
+            }
+            GUILayout.EndHorizontal();
         }
 
         #endregion

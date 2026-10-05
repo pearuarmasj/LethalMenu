@@ -55,21 +55,6 @@ namespace LethalMenu.Cheats
             HUDManager.Instance?.DisplayTip("XP Set", $"{xp} XP - {hud.playerLevels[levelIndex].levelName}");
         }
 
-        /// Sets local player to a specific level index.
-        public static void SetPlayerLevel(int levelIndex)
-        {
-            var hud = HUDManager.Instance;
-            if (hud == null || LethalMenuMod.LocalPlayer == null)
-            {
-                Debug.LogWarning("[NetworkCheats] Not in game.");
-                return;
-            }
-
-            levelIndex = Mathf.Clamp(levelIndex, 0, hud.playerLevels.Length - 1);
-            int xp = hud.playerLevels[levelIndex].XPMin;
-            SetPlayerXP(xp);
-        }
-
         /// Gets all available level names for UI.
         public static string[] GetLevelNames()
         {

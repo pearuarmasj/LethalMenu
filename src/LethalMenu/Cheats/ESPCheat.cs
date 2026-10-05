@@ -121,7 +121,7 @@ namespace LethalMenu.Cheats
                 foreach (var box in LethalMenuMod.BreakerBoxes)
                 {
                     if (box == null) continue;
-                    string status = box.isPowerOn ? "Fusebox\non" : "Fusebox\noff";
+                    string status = box.isPowerOn ? "Breaker Box\non" : "Breaker Box\noff";
                     DrawESP(camera, box, status, box.isPowerOn ? new Color(0.4f, 1f, 0.4f) : Settings.FuseboxColor);
                 }
             }

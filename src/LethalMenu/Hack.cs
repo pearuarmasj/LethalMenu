@@ -6,7 +6,7 @@ namespace LethalMenu
         GodMode, InfiniteStamina, SpeedHack, JumpHack, NoClip, NightVision,
         NoFallDamage, NoWeight, UnlimitedOxygen, AntiFlash, NoQuicksand,
         UnlimitedJump, FastClimb, TauntSlide, ExtraItemSlots, TeleportWithItems,
-        BHop, SaneMod, LookDown, NoCooldown, Phantom,
+        BHop, SaneMode, LookDown, NoCooldown,
 
         // === Enemy ===
         Untargetable, AntiGhostGirl, EnemyControl, KillClick, StunClick,
@@ -26,7 +26,7 @@ namespace LethalMenu
         InfoDisplayEnemies, InfoDisplayBodies, InfoDisplayMapLoot, InfoDisplayShipLoot,
         InfoDisplayMoon, InfoDisplayTime, NoVisor, NoCameraShake, NoDepthOfField,
         FullRenderResolution, CustomFOV, Breadcrumbs, NoFog, VisibleBody,
-        MinimalGUIMod, ClearVisionMod, RadarPatch, EnemyDeathNotification,
+        MinimalGUI, RadarPatch, EnemyDeathNotification,
         SteamValveESP, BigDoorESP, ShipDoorESP, EnemyVentESP, ItemDropshipESP,
         CruiserESP, MoldSporeESP, MineshaftElevatorESP, SpikeRoofTrapESP,
 
@@ -44,10 +44,10 @@ namespace LethalMenu
 
         // === Network ===
         AntiKick, ShowKickedLobbies, HearEveryone, Invisibility, DeathNotifications, HearDeadPeople,
-        FollowPlayer, PJSpammer, ShowOffensiveLobbyNames,
+        FollowPlayer, JoinSpam, ShowOffensiveLobbyNames,
 
         // === Spam/Troll ===
-        HornSpam, DoorSpam, SignalSpam, RPCLagSpam, TerminalSoundSpam, EarrapeSpam,
+        HornSpam, DoorSpam, SignalSpam, RPCLagSpam, EarrapeSpam,
         ChatSpam, CarHornSpam, DeskDoorSpam,
 
         // === Actions (one-shot, not toggles) ===
@@ -57,7 +57,7 @@ namespace LethalMenu
         ToggleTurrets, BerserkTurrets, FlickerLights, MaxChaos, ForceShipLeave,
         EjectAllPlayers, ForceStart, ForceEnd, ReviveAllPlayers, TeleportAllToMe,
         SetCredits, SellQuota,
-        DisconnectMod, ReconnectFromClipboard,
+        Disconnect, ReconnectFromClipboard,
         RecruitEscort, ReleaseAllDirected,
     }
 }

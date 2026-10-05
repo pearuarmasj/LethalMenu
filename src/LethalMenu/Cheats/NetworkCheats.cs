@@ -32,7 +32,6 @@ namespace LethalMenu.Cheats
     /// - NetworkCheats.TerminalAudio.cs - Terminal audio
     /// - NetworkCheats.FactoryControl.cs - Factory control
     /// - NetworkCheats.Spam.cs - Spam features
-    /// - NetworkCheats.Experimentation.cs - Experimental reflection calls
     public static partial class NetworkCheats
     {
         #region Big Doors

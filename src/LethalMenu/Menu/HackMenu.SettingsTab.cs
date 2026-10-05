@@ -55,16 +55,6 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Menu Settings", () =>
-            {
-                GUILayout.Label("Press INSERT to toggle menu", _labelStyle);
-                GUILayout.Space(10);
-                var timeOfDay = TimeOfDay.Instance;
-                GUILayout.Label($"Game Time: {(timeOfDay?.normalizedTimeOfDay ?? 0):P0}", _labelStyle);
-                GUILayout.Label($"Players: {LethalMenuMod.Players.Count}", _labelStyle);
-                GUILayout.Label($"Local Player: {LethalMenuMod.LocalPlayer?.playerUsername ?? "None"}", _labelStyle);
-            });
-
             DrawSection("Keybinds", DrawKeybindSettings);
 
             DrawSection("Colors", () =>
@@ -74,9 +64,9 @@ namespace LethalMenu.Menu
                 DrawColorSetting("Enemies", Settings.EnemyColor, color => Settings.EnemyColor = color);
                 DrawColorSetting("Items", Settings.ItemColor, color => Settings.ItemColor = color);
                 DrawColorSetting("Doors", Settings.DoorColor, color => Settings.DoorColor = color);
-                DrawColorSetting("Mines", Settings.MineColor, color => Settings.MineColor = color);
+                DrawColorSetting("Landmines", Settings.MineColor, color => Settings.MineColor = color);
                 DrawColorSetting("Turrets", Settings.TurretColor, color => Settings.TurretColor = color);
-                DrawColorSetting("Fusebox", Settings.FuseboxColor, color => Settings.FuseboxColor = color);
+                DrawColorSetting("Breaker Box", Settings.FuseboxColor, color => Settings.FuseboxColor = color);
 
                 GUILayout.Space(4);
                 _showChamColors = GUILayout.Toggle(_showChamColors, "Cham colors", _buttonStyle);
@@ -108,18 +98,6 @@ namespace LethalMenu.Menu
                     "Config saves to: %APPDATA%\\LethalMenu\\config.json",
                     new GUIStyle(_labelStyle) { fontSize = 10, normal = { textColor = Color.gray } }
                 );
-            });
-
-            DrawSection("Debug", () =>
-            {
-                if (GUILayout.Button("Log Game State", _buttonStyle, GUILayout.Height(28)))
-                {
-                    Loader.Log($"GameInstance: {LethalMenuMod.GameInstance != null}");
-                    Loader.Log($"LocalPlayer: {LethalMenuMod.LocalPlayer?.playerUsername}");
-                    Loader.Log($"Players: {LethalMenuMod.Players.Count}");
-                    Loader.Log($"Enemies: {LethalMenuMod.Enemies.Count}");
-                    Loader.Log($"Items: {LethalMenuMod.Items.Count}");
-                }
             });
         }
 
@@ -207,7 +185,7 @@ namespace LethalMenu.Menu
 
         private void DrawChamColors()
         {
-            GUILayout.Label("Single color is used when \"Use single color for all\" is on (Visuals > Chams).", _tooltipStyle);
+            GUILayout.Label("Single applies when \"One colour for everything\" is on (Visuals > Chams).", _tooltipStyle);
             DrawCompactColor("Single", Settings.ChamColor, c => Settings.ChamColor = c);
             DrawCompactColor("Players", Settings.PlayerChamColor, c => Settings.PlayerChamColor = c);
             DrawCompactColor("Enemies", Settings.EnemyChamColor, c => Settings.EnemyChamColor = c);
@@ -217,7 +195,7 @@ namespace LethalMenu.Menu
             DrawCompactColor("Doors", Settings.DoorChamColor, c => Settings.DoorChamColor = c);
             DrawCompactColor("Big Doors", Settings.BigDoorChamColor, c => Settings.BigDoorChamColor = c);
             DrawCompactColor("Ship Door", Settings.ShipDoorChamColor, c => Settings.ShipDoorChamColor = c);
-            DrawCompactColor("Breakers", Settings.BreakerChamColor, c => Settings.BreakerChamColor = c);
+            DrawCompactColor("Breaker Box", Settings.BreakerChamColor, c => Settings.BreakerChamColor = c);
             DrawCompactColor("Enemy Vents", Settings.EnemyVentChamColor, c => Settings.EnemyVentChamColor = c);
             DrawCompactColor("Item Dropship", Settings.ItemDropshipChamColor, c => Settings.ItemDropshipChamColor = c);
             DrawCompactColor("Cruiser", Settings.CruiserChamColor, c => Settings.CruiserChamColor = c);

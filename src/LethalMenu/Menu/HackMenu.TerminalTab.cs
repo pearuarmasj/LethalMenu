@@ -150,15 +150,6 @@ namespace LethalMenu.Menu
             var moonCatalogue = GetMoonCatalogue(terminal, startOfRound);
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Moon Manager", _buttonStyle, GUILayout.Height(28)))
-                _moonManager.IsOpen = !_moonManager.IsOpen;
-            if (GUILayout.Button("Suit Manager", _buttonStyle, GUILayout.Height(28)))
-                _suitManager.IsOpen = !_suitManager.IsOpen;
-            if (GUILayout.Button("Unlockables", _buttonStyle, GUILayout.Height(28)))
-                _unlockablesManager.IsOpen = !_unlockablesManager.IsOpen;
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Bestiary", _buttonStyle, GUILayout.Height(28)))
                 _bestiaryManager.IsOpen = !_bestiaryManager.IsOpen;
             if (GUILayout.Button("Storage", _buttonStyle, GUILayout.Height(28)))
@@ -175,7 +166,7 @@ namespace LethalMenu.Menu
             if (dropship == null)
             {
                 // Dropship only exists when landed on a moon
-                dropshipStatus = "N/A (land first)";
+                dropshipStatus = "not landed";
             }
             else if (dropship.deliveringOrder)
             {
@@ -273,17 +264,8 @@ namespace LethalMenu.Menu
                 // State info display
                 bool isTravelling = startOfRound.travellingToNewLevel;
                 bool inShipPhase = startOfRound.inShipPhase;
-                bool shipHasLanded = startOfRound.shipHasLanded;
                 bool canLand = inShipPhase && !isTravelling;
                 bool isHost = startOfRound.IsServer || startOfRound.IsHost;
-                int loadedPlayers = startOfRound.fullyLoadedPlayers?.Count ?? 0;
-                int neededPlayers = startOfRound.connectedPlayersAmount + 1;
-
-                // Detailed status line
-                string stateInfo = $"Travel:{isTravelling} Ship:{inShipPhase} Landed:{shipHasLanded} Players:{loadedPlayers}/{neededPlayers}";
-                string levelInfo = startOfRound.currentLevel != null ? $"Current:{startOfRound.currentLevel.PlanetName} Selected:{selectedLevel?.PlanetName}(id:{selectedLevelID})" : "Level:NULL";
-                GUILayout.Label($"Host: {(isHost ? "Y" : "N")} | {stateInfo}", _labelStyle);
-                GUILayout.Label(levelInfo, _labelStyle);
 
                 // Route buttons
                 GUILayout.BeginHorizontal();
@@ -322,7 +304,7 @@ namespace LethalMenu.Menu
                 GUILayout.Space(5);
                 GUILayout.BeginHorizontal();
                 _showAllMoons = GUILayout.Toggle(_showAllMoons, "", GUILayout.Width(20));
-                GUILayout.Label("Hidden Moons (Not in Rotation)", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.yellow } });
+                GUILayout.Label("Moons Outside The Rotation", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.yellow } });
                 GUILayout.EndHorizontal();
 
                 if (_showAllMoons)
@@ -409,11 +391,11 @@ namespace LethalMenu.Menu
                         bool selectedSceneExists = SceneExists(selectedAllLevel.sceneName);
                         if (selectedSceneExists)
                         {
-                            GUILayout.Label($"* Green = Scene exists, will inject into rotation", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Italic, normal = { textColor = Color.green } });
+                            GUILayout.Label("Scene is in this build: routing works.", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Italic, normal = { textColor = Color.green } });
                         }
                         else
                         {
-                            GUILayout.Label($"* Red = NO SCENE - Will get stuck (DLC/unreleased)", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Italic, normal = { textColor = Color.red } });
+                            GUILayout.Label("No scene in this build: routing there hangs the ship.", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Italic, normal = { textColor = Color.red } });
                         }
                     }
                 }
@@ -483,7 +465,7 @@ namespace LethalMenu.Menu
                     }
 
                     // Skip Landing Animation button - forces shipHasLanded immediately
-                    if (GUILayout.Button("Skip Anim", _buttonStyle))
+                    if (GUILayout.Button("Skip Landing", _buttonStyle))
                     {
                         startOfRound.shipHasLanded = true;
                         startOfRound.shipDoorsEnabled = true;
@@ -500,7 +482,7 @@ namespace LethalMenu.Menu
                     }
 
                     // Force all players marked as loaded - use when stuck on "Waiting for crew..."
-                    if (GUILayout.Button("Force Loaded", _buttonStyle))
+                    if (GUILayout.Button("Mark All Loaded", _buttonStyle))
                     {
                         // Add all connected players to fullyLoadedPlayers
                         if (startOfRound.fullyLoadedPlayers != null)
@@ -527,7 +509,7 @@ namespace LethalMenu.Menu
                 if (isHost)
                 {
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("Reset to Orbit (Stuck Fix)", _buttonStyle))
+                    if (GUILayout.Button("Reset To Orbit", _buttonStyle))
                     {
                         Loader.Log("[Terminal] Resetting to orbit...");
 
@@ -628,7 +610,7 @@ namespace LethalMenu.Menu
                     {
                         BuyItems(terminal, _selectedBuyItemIndex, false);
                     }
-                    if (GUILayout.Button("Buy FREE", _buttonStyle))
+                    if (GUILayout.Button("Buy Free", _buttonStyle))
                     {
                         BuyItems(terminal, _selectedBuyItemIndex, true);
                     }
@@ -688,7 +670,7 @@ namespace LethalMenu.Menu
                         {
                             BuyUnlockable(startOfRound, terminal, unlockId, price, false);
                         }
-                        if (GUILayout.Button("Buy FREE", _buttonStyle))
+                        if (GUILayout.Button("Buy Free", _buttonStyle))
                         {
                             BuyUnlockable(startOfRound, terminal, unlockId, price, true);
                         }
@@ -729,7 +711,7 @@ namespace LethalMenu.Menu
                         {
                             BuyVehicle(terminal, i, price, false);
                         }
-                        if (GUILayout.Button("FREE", _buttonStyle, GUILayout.Width(50)))
+                        if (GUILayout.Button("Buy Free", _buttonStyle, GUILayout.Width(70)))
                         {
                             BuyVehicle(terminal, i, price, true);
                         }
@@ -748,8 +730,7 @@ namespace LethalMenu.Menu
                     for (int i = 0; i < unlockables.Count; i++)
                     {
                         var unlock = unlockables[i];
-                        // Suits are Type=0 and have shopSelectionNode
-                        if (unlock.unlockableType == 0 && unlock.shopSelectionNode != null)
+                        if (unlock.suitMaterial != null)
                         {
                             suits.Add((i, unlock));
                         }
@@ -767,7 +748,7 @@ namespace LethalMenu.Menu
                     {
                         var (unlockId, item) = suits[i];
                         int price = item.shopSelectionNode?.itemCost ?? 0;
-                        string status = item.hasBeenUnlockedByPlayer ? " [OWNED]" : "";
+                        string status = item.hasBeenUnlockedByPlayer || item.alreadyUnlocked ? " [OWNED]" : "";
                         string label = $"{item.unlockableName} - ${price}{status}";
 
                         bool isSelected = (i == _selectedSuitIndex);
@@ -787,9 +768,13 @@ namespace LethalMenu.Menu
                         {
                             BuyUnlockable(startOfRound, terminal, unlockId, price, false);
                         }
-                        if (GUILayout.Button("Buy FREE", _buttonStyle))
+                        if (GUILayout.Button("Buy Free", _buttonStyle))
                         {
                             BuyUnlockable(startOfRound, terminal, unlockId, price, true);
+                        }
+                        if (GUILayout.Button("Wear", _buttonStyle))
+                        {
+                            WearSuit(startOfRound, unlockId);
                         }
                         GUILayout.EndHorizontal();
                     }
@@ -797,33 +782,41 @@ namespace LethalMenu.Menu
 
                 GUILayout.Space(8);
 
-                // ====== SHIP DECOR (Weekly rotating) ======
-                GUILayout.Label("Ship Decor (Weekly)", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                // ====== SHIP DECOR (everything purchasable; the terminal only offers this week's rotation) ======
+                GUILayout.Label("Ship Decor", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
-                var decorSelection = terminal.ShipDecorSelection;
-                if (decorSelection == null || decorSelection.Count == 0)
+                var thisWeek = new System.Collections.Generic.HashSet<int>();
+                if (terminal.ShipDecorSelection != null)
                 {
-                    GUILayout.Label("No decor this week", _labelStyle);
+                    foreach (var node in terminal.ShipDecorSelection)
+                        if (node != null) thisWeek.Add(node.shipUnlockableID);
+                }
+
+                var decor = new System.Collections.Generic.List<(int index, UnlockableItem item)>();
+                if (unlockables != null)
+                {
+                    for (int i = 0; i < unlockables.Count; i++)
+                    {
+                        var unlock = unlockables[i];
+                        if (unlock.suitMaterial != null || unlock.shopSelectionNode == null) continue;
+                        if (unlock.alwaysInStock && unlock.unlockableType == 1) continue;
+                        decor.Add((i, unlock));
+                    }
+                }
+
+                if (decor.Count == 0)
+                {
+                    GUILayout.Label("No decor available", _labelStyle);
                 }
                 else
                 {
                     _decorScrollPos = GUILayout.BeginScrollView(_decorScrollPos, GUILayout.Height(80));
-                    for (int i = 0; i < decorSelection.Count; i++)
+                    for (int i = 0; i < decor.Count; i++)
                     {
-                        var node = decorSelection[i];
-                        if (node == null) continue;
-
-                        int unlockId = node.shipUnlockableID;
-                        bool owned = false;
-                        string itemName = node.creatureName ?? "Unknown";
-
-                        if (unlockId >= 0 && startOfRound.unlockablesList?.unlockables != null && unlockId < startOfRound.unlockablesList.unlockables.Count)
-                        {
-                            owned = startOfRound.unlockablesList.unlockables[unlockId].hasBeenUnlockedByPlayer;
-                        }
-
-                        string status = owned ? " [OWNED]" : "";
-                        string label = $"{itemName} - ${node.itemCost}{status}";
+                        var (unlockId, item) = decor[i];
+                        string week = thisWeek.Contains(unlockId) ? " [THIS WEEK]" : "";
+                        string status = item.hasBeenUnlockedByPlayer || item.alreadyUnlocked ? " [OWNED]" : "";
+                        string label = $"{item.unlockableName} - ${item.shopSelectionNode.itemCost}{week}{status}";
 
                         bool isSelected = (i == _selectedDecorIndex);
                         if (GUILayout.Toggle(isSelected, label, _buttonStyle) && !isSelected)
@@ -833,22 +826,20 @@ namespace LethalMenu.Menu
                     }
                     GUILayout.EndScrollView();
 
-                    if (_selectedDecorIndex >= 0 && _selectedDecorIndex < decorSelection.Count)
+                    if (_selectedDecorIndex >= 0 && _selectedDecorIndex < decor.Count)
                     {
-                        var node = decorSelection[_selectedDecorIndex];
-                        if (node != null)
+                        var (unlockId, item) = decor[_selectedDecorIndex];
+                        int price = item.shopSelectionNode.itemCost;
+                        GUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Buy", _buttonStyle))
                         {
-                            GUILayout.BeginHorizontal();
-                            if (GUILayout.Button("Buy", _buttonStyle))
-                            {
-                                BuyUnlockable(startOfRound, terminal, node.shipUnlockableID, node.itemCost, false);
-                            }
-                            if (GUILayout.Button("Buy FREE", _buttonStyle))
-                            {
-                                BuyUnlockable(startOfRound, terminal, node.shipUnlockableID, node.itemCost, true);
-                            }
-                            GUILayout.EndHorizontal();
+                            BuyUnlockable(startOfRound, terminal, unlockId, price, false);
                         }
+                        if (GUILayout.Button("Buy Free", _buttonStyle))
+                        {
+                            BuyUnlockable(startOfRound, terminal, unlockId, price, true);
+                        }
+                        GUILayout.EndHorizontal();
                     }
                 }
 
@@ -858,7 +849,7 @@ namespace LethalMenu.Menu
                 GUILayout.Label("Delivery", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Instant Spawn (Host)", _buttonStyle))
+                if (GUILayout.Button("Spawn Order In Ship (host)", _buttonStyle))
                 {
                     InstantSpawnOrderedItems();
                 }
@@ -874,7 +865,7 @@ namespace LethalMenu.Menu
                 }
                 GUILayout.EndHorizontal();
 
-                if (GUILayout.Button("Force Dropship (Landed)", _buttonStyle))
+                if (GUILayout.Button("Send Dropship Now (host)", _buttonStyle))
                 {
                     ForceDropshipDeliver();
                 }
@@ -1149,6 +1140,21 @@ namespace LethalMenu.Menu
             terminal.SyncGroupCreditsServerRpc(terminal.groupCredits, 0);
 
             Loader.Log($"[Terminal] Instantly spawned {spawned} items in ship");
+        }
+
+        /// Puts the suit on through its rack when one exists in the ship, otherwise directly.
+        private static void WearSuit(StartOfRound startOfRound, int suitId)
+        {
+            var player = startOfRound.localPlayerController ?? GameNetworkManager.Instance?.localPlayerController;
+            if (player == null) return;
+
+            foreach (var rack in Object.FindObjectsOfType<UnlockableSuit>())
+            {
+                if (rack == null || rack.suitID != suitId) continue;
+                rack.SwitchSuitToThis(player);
+                return;
+            }
+            UnlockableSuit.SwitchSuitForPlayer(player, suitId, true);
         }
 
         private int GetCurrentCredits()

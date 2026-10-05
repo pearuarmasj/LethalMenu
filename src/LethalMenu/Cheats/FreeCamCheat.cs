@@ -7,7 +7,7 @@ namespace LethalMenu.Cheats
     /// FreeCam - detach camera and fly around freely.
     /// Uses New Input System.
     /// 
-    /// Enhanced Phantom Mode:
+    /// The body stays put while the camera flies:
     /// - Arrow Left/Right: Snap camera to other players
     /// - Shift + Disable: Teleport player to camera position
     public class FreeCamCheat : CheatBase
@@ -22,7 +22,7 @@ namespace LethalMenu.Cheats
         private Vector2 _rotation;
         private Camera? _originalCamera;
         
-        // Phantom mode - player cycling
+        // Player cycling
         private int _targetPlayerIndex = -1;
         private static FreeCamCheat? _instance;
 
@@ -59,10 +59,6 @@ namespace LethalMenu.Cheats
         private void EnableFreeCam()
         {
             if (LethalMenuMod.LocalPlayer == null) return;
-
-            // Mutex with Phantom — both fight over the gameplay camera transform.
-            if (Hack.Phantom.IsEnabled())
-                Hack.Phantom.SetEnabled(false);
 
             // Get original camera
             _originalCamera = LethalMenuMod.LocalPlayer.gameplayCamera;

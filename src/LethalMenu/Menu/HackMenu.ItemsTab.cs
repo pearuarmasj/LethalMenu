@@ -8,8 +8,12 @@ namespace LethalMenu.Menu
 
         private void DrawItemsTab()
         {
-            if (GUILayout.Button("Open Item Manager", _buttonStyle, GUILayout.Height(28)))
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Item Manager", _buttonStyle, GUILayout.Height(28)))
                 _itemManager.IsOpen = !_itemManager.IsOpen;
+            if (GUILayout.Button("Loot Manager", _buttonStyle, GUILayout.Height(28)))
+                _lootManager.IsOpen = !_lootManager.IsOpen;
+            GUILayout.EndHorizontal();
             GUILayout.Space(5);
 
             DrawSection("Item Cheats", () =>
@@ -17,10 +21,10 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.InfiniteBattery, "Infinite Battery", "Items never lose charge");
                 DrawHackToggle(Hack.OneHanded, "One-Handed", "Two-handed items become one-handed");
                 DrawHackToggle(Hack.Reach, "Extended Reach", "Grab range 30 m");
-                DrawHackToggle(Hack.LootThroughWalls, "Loot Through Walls", "10 km range, ray hits loot only");
-                DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "10 km range, ray hits interactables only");
-                DrawHackToggle(Hack.InfiniteGrab, "Infinite Grab", "10 km range");
-                GUILayout.Label("  These four share one grab-range setting. Any through-walls toggle forces 10 km and limits the grab ray to its own layer (enable both for loot + interactables).", new GUIStyle(_tooltipStyle) { wordWrap = true });
+                DrawHackToggle(Hack.LootThroughWalls, "Loot Through Walls", "10 km range, loot only");
+                DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "10 km range, interactables only");
+                DrawHackToggle(Hack.InfiniteGrab, "Infinite Grab", "Grab range 10 km");
+                GUILayout.Label("  Both through-walls toggles on: the grab ray hits loot and interactables.", _tooltipStyle);
                 DrawHackToggle(Hack.LootBeforeGameStarts, "Loot Before Start", "Grab items before game starts");
                 DrawHackToggle(Hack.GrabNutcrackerShotgun, "Grab Nutcracker Gun", "Steal shotgun from Nutcracker");
                 DrawHackToggle(Hack.InfiniteScanRange, "Infinite Scan Range", "Q-scanner sees everything on the map");
@@ -45,46 +49,6 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.NoTZPEffects, "No TZP Effects", "TZP doesn't affect vision");
                 DrawHackToggle(Hack.EggsAlwaysExplode, "Eggs Always Explode", "Easter eggs always explode");
                 DrawHackToggle(Hack.EggsNeverExplode, "Eggs Never Explode", "Easter eggs never explode");
-            });
-
-            DrawSection("Item Teleport", () =>
-            {
-                var gameInstance = StartOfRound.Instance;
-                var allItems = LethalMenuMod.Items;
-
-                int totalItems = 0;
-                int inShipCount = 0;
-                int outsideCount = 0;
-
-                if (gameInstance?.shipInnerRoomBounds != null)
-                {
-                    var shipBounds = gameInstance.shipInnerRoomBounds;
-                    foreach (var item in allItems)
-                    {
-                        if (item == null) continue;
-                        if (item.isHeld || item.isHeldByEnemy) continue;
-                        if (item.scrapValue <= 0 && !item.itemProperties.isScrap) continue;
-
-                        totalItems++;
-                        if (shipBounds.bounds.Contains(item.transform.position))
-                            inShipCount++;
-                        else
-                            outsideCount++;
-                    }
-                }
-
-                GUILayout.Label($"Loot: {inShipCount} in ship, {outsideCount} outside ({totalItems} total)", _labelStyle);
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("TP All to Ship", _buttonStyle, GUILayout.Height(28)))
-                {
-                    Cheats.NetworkCheats.TeleportAllItemsToShip();
-                }
-                if (GUILayout.Button("TP Nearby to Me", _buttonStyle, GUILayout.Height(28)))
-                {
-                    Cheats.NetworkCheats.TeleportNearbyItemsToPlayer(15f);
-                }
-                GUILayout.EndHorizontal();
             });
         }
         #endregion

@@ -117,13 +117,6 @@ namespace LethalMenu.Cheats
             HUDManager.Instance?.DisplayTip("Spawn Enemy", $"Spawned {enemyName}.");
         }
 
-        /// Spawns an enemy at a target player's position.
-        public static void SpawnEnemyAtPlayer(string enemyName, PlayerControllerB targetPlayer, bool outsideEnemy = false)
-        {
-            if (targetPlayer == null) return;
-            SpawnEnemy(enemyName, targetPlayer.transform.position, outsideEnemy);
-        }
-
         #endregion
     }
 }

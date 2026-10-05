@@ -60,6 +60,21 @@ namespace LethalMenu.Cheats
             Debug.Log($"[NetworkCheats] Toggled {turrets.Length} turrets to {(enable ? "ON" : "OFF")}.");
         }
 
+        /// Enable/disable every turret on this client only (Turret.ToggleTurretEnabledLocalClient, no RPC).
+        /// A turret only hurts the player whose own client sees it firing, so this protects just you.
+        public static void ToggleAllTurretsLocal(bool enable)
+        {
+            foreach (var turret in Object.FindObjectsOfType<Turret>(includeInactive: true))
+                if (turret != null) turret.ToggleTurretEnabledLocalClient(enable);
+        }
+
+        /// Enable/disable every landmine on this client only (Landmine.ToggleMineEnabledLocalClient, no RPC).
+        public static void ToggleAllLandminesLocal(bool enable)
+        {
+            foreach (var mine in Object.FindObjectsOfType<Landmine>(includeInactive: true))
+                if (mine != null) mine.ToggleMineEnabledLocalClient(enable);
+        }
+
         /// Makes all turrets go berserk mode (fires at everything).
         public static void BerserkAllTurrets()
         {

@@ -36,15 +36,17 @@ namespace LethalMenu.Cheats
         }
     }
 
-    /// Disables every LocalVolumetricFog component. Re-scans once a second so new fogs (moon travel,
-    /// weather) get caught; tracks what we touched so toggle-off restores them.
+    /// Disables fog: every LocalVolumetricFog component and the Fog override of every HDRP volume profile.
+    /// Re-scans once a second so new fog (moon travel, weather) gets caught; tracks what it touched so
+    /// toggle-off restores it.
     public class NoFogCheat : CheatBase
     {
         public override string Name => "No Fog";
         public override Hack HackType => Hack.NoFog;
 
         private const float ScanInterval = 1f;
-        private readonly System.Collections.Generic.HashSet<LocalVolumetricFog> _disabled = new();
+        private readonly System.Collections.Generic.HashSet<LocalVolumetricFog> _disabledVolumes = new();
+        private readonly System.Collections.Generic.HashSet<Fog> _disabledOverrides = new();
         private float _nextScan;
 
         public override void OnUpdate()
@@ -56,19 +58,28 @@ namespace LethalMenu.Cheats
             {
                 if (fog == null || !fog.enabled) continue;
                 fog.enabled = false;
-                _disabled.Add(fog);
+                _disabledVolumes.Add(fog);
+            }
+
+            foreach (var volume in Object.FindObjectsOfType<UnityEngine.Rendering.Volume>())
+            {
+                if (volume == null || volume.profile == null) continue;
+                if (!volume.profile.TryGet<Fog>(out var fog) || fog == null || !fog.active) continue;
+                fog.active = false;
+                _disabledOverrides.Add(fog);
             }
         }
 
         public override void OnEnable() => _nextScan = 0f;
 
-        public override void OnDisable() => RestoreAll();
-
-        private void RestoreAll()
+        public override void OnDisable()
         {
-            foreach (var fog in _disabled)
+            foreach (var fog in _disabledVolumes)
                 if (fog != null) fog.enabled = true;
-            _disabled.Clear();
+            foreach (var fog in _disabledOverrides)
+                if (fog != null) fog.active = true;
+            _disabledVolumes.Clear();
+            _disabledOverrides.Clear();
         }
     }
 
@@ -177,6 +188,9 @@ namespace LethalMenu.Cheats
 
             NetworkCheats.StunAtCrosshair();
         }
+
+        /// Trigger Gun uses the same button for the opposite effect.
+        public override void OnEnable() => Hack.TriggerGun.SetEnabled(false);
     }
 
     /// Raycast helper shared by the crosshair-click cheats.

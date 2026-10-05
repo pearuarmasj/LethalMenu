@@ -9,38 +9,6 @@ namespace LethalMenu.Cheats
     {
         #region Free Vehicles (RequireOwnership = false)
 
-        /// Buys a vehicle for free.
-        /// Uses Terminal.BuyVehicleServerRpc - RequireOwnership = false.
-        public static void BuyFreeVehicle(int vehicleId)
-        {
-            var terminal = LethalMenuMod.GameTerminal;
-            if (terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Terminal not found.");
-                return;
-            }
-
-            // Buy vehicle but keep current credits
-            terminal.BuyVehicleServerRpc(vehicleId, terminal.groupCredits, false);
-            Debug.Log($"[NetworkCheats] Bought vehicle ID {vehicleId} for free.");
-        }
-
-        /// Gets list of available vehicles.
-        public static (int id, string name)[] GetAvailableVehicles()
-        {
-            var terminal = LethalMenuMod.GameTerminal;
-            if (terminal == null || terminal.buyableVehicles == null)
-                return Array.Empty<(int, string)>();
-
-            var result = new (int, string)[terminal.buyableVehicles.Length];
-            for (int i = 0; i < terminal.buyableVehicles.Length; i++)
-            {
-                var v = terminal.buyableVehicles[i];
-                result[i] = (i, v?.vehicleDisplayName ?? $"Vehicle {i}");
-            }
-            return result;
-        }
-
         #endregion
 
         #region Vehicle Control
@@ -66,15 +34,6 @@ namespace LethalMenu.Cheats
                 }
             }
             Debug.Log($"[NetworkCheats] Vehicle horns {(on ? "ON" : "OFF")}.");
-        }
-
-        /// Spam car horns on/off rapidly.
-        public static void SpamCarHorns(int iterations = 15)
-        {
-            if (LethalMenuMod.Instance != null)
-            {
-                LethalMenuMod.Instance.StartCoroutine(SpamCarHornsCoroutine(iterations));
-            }
         }
 
         private static System.Collections.IEnumerator SpamCarHornsCoroutine(int iterations)

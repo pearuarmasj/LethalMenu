@@ -56,8 +56,6 @@ namespace LethalMenu
         public static string SpamMessage { get; set; } = default!;
 
         // D+E tunables
-        public static float PhantomMoveSpeed { get; set; }
-        public static bool PhantomTeleportOnExit { get; set; }
         public static float FollowDelaySeconds { get; set; }
         public static float FollowMaxDistance { get; set; }
         public static float PJSpammerRate { get; set; }
@@ -157,8 +155,6 @@ namespace LethalMenu
             ThirdPersonDistance = 3f;
             BreadcrumbInterval = 3f;
             SpamMessage = "SPAM";
-            PhantomMoveSpeed = 20f;
-            PhantomTeleportOnExit = true;
             FollowDelaySeconds = 1.0f;
             FollowMaxDistance = 1.0f;
             PJSpammerRate = 5f;
@@ -245,8 +241,6 @@ namespace LethalMenu
                     ["NightVisionIntensity"] = NightVisionIntensity,
                     ["NightVisionRange"] = NightVisionRange,
 
-                    ["PhantomMoveSpeed"] = PhantomMoveSpeed,
-                    ["PhantomTeleportOnExit"] = PhantomTeleportOnExit,
                     ["FollowDelaySeconds"] = FollowDelaySeconds,
                     ["FollowMaxDistance"] = FollowMaxDistance,
                     ["PJSpammerRate"] = PJSpammerRate,
@@ -335,8 +329,6 @@ namespace LethalMenu
                 NightVisionIntensity = config["NightVisionIntensity"]?.Value<float>() ?? NightVisionIntensity;
                 NightVisionRange = config["NightVisionRange"]?.Value<float>() ?? NightVisionRange;
 
-                PhantomMoveSpeed = config["PhantomMoveSpeed"]?.Value<float>() ?? PhantomMoveSpeed;
-                PhantomTeleportOnExit = config["PhantomTeleportOnExit"]?.Value<bool>() ?? PhantomTeleportOnExit;
                 FollowDelaySeconds = config["FollowDelaySeconds"]?.Value<float>() ?? FollowDelaySeconds;
                 FollowMaxDistance = config["FollowMaxDistance"]?.Value<float>() ?? FollowMaxDistance;
                 PJSpammerRate = config["PJSpammerRate"]?.Value<float>() ?? PJSpammerRate;

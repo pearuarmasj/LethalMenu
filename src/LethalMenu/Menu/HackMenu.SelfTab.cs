@@ -20,19 +20,18 @@ namespace LethalMenu.Menu
                     if (newDemiGod != demiGod)
                         Settings.SetDemiGod(localPlayer, newDemiGod);
                 }
-                DrawHackToggle(Hack.SaneMod, "Sane Mode", "Insanity stays at zero");
+                DrawHackToggle(Hack.SaneMode, "Sane Mode", "Insanity stays at zero");
                 DrawHackToggle(Hack.InfiniteStamina, "Infinite Stamina", "Never run out of sprint");
                 DrawHackToggle(Hack.NoFallDamage, "No Fall Damage", "Take no damage from falls");
                 DrawHackToggle(Hack.NoWeight, "No Weight", "Carry unlimited items without slowdown");
 
-                DrawHackToggle(Hack.ExtraItemSlots, "Extra Item Slots", "Expand inventory (requires restart)");
+                DrawHackToggle(Hack.ExtraItemSlots, "Extra Item Slots", "Applies after a game restart");
                 if (Hack.ExtraItemSlots.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"  Slots: {Settings.ItemSlotCount}", _labelStyle, GUILayout.Width(80));
                     Settings.ItemSlotCount = (int)GUILayout.HorizontalSlider(Settings.ItemSlotCount, 4, 20, GUILayout.Width(120));
                     GUILayout.EndHorizontal();
-                    GUILayout.Label("  Changes apply on game restart", _labelStyle);
                 }
 
                 DrawHackToggle(Hack.UnlimitedOxygen, "Unlimited Oxygen", "No drowning");
@@ -64,7 +63,7 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
                     if (Settings.FakeDeath)
                     {
-                        GUILayout.Label("  Others see you dead. Will die when ship leaves.", _labelStyle);
+                        GUILayout.Label("  Others see you dead. You die for real when the ship leaves.", _labelStyle);
                     }
                     else
                     {
@@ -105,14 +104,7 @@ namespace LethalMenu.Menu
             DrawSection("Vision", () =>
             {
                 DrawHackToggle(Hack.NightVision, "Night Vision", "See in the dark");
-                DrawHackToggle(Hack.LookDown, "Look Down", "Vertical look limit +/-89 deg (vanilla +/-80)");
-
-                DrawHackToggle(Hack.Phantom, "Phantom", "Free-fly camera, body stays put (excludes FreeCam)");
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"  Speed: {Settings.PhantomMoveSpeed:F0}", _labelStyle, GUILayout.Width(100));
-                Settings.PhantomMoveSpeed = GUILayout.HorizontalSlider(Settings.PhantomMoveSpeed, 5f, 50f);
-                GUILayout.EndHorizontal();
-                Settings.PhantomTeleportOnExit = GUILayout.Toggle(Settings.PhantomTeleportOnExit, "  Shift on exit: teleport body to camera", _toggleStyle);
+                DrawHackToggle(Hack.LookDown, "Look Down", "Look almost straight up and down");
             });
 
             DrawSection("Teleport", () =>

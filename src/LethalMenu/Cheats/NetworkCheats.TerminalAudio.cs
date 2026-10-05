@@ -6,20 +6,6 @@ namespace LethalMenu.Cheats
     {
         #region Terminal Audio
 
-        /// Plays terminal audio for everyone (trolling).
-        public static void PlayTerminalSound(int clipIndex)
-        {
-            var terminal = LethalMenuMod.GameTerminal;
-            if (terminal == null)
-            {
-                Debug.Log("[NetworkCheats] Terminal not found.");
-                return;
-            }
-
-            terminal.PlayTerminalAudioServerRpc(clipIndex);
-            Debug.Log($"[NetworkCheats] Playing terminal sound {clipIndex}.");
-        }
-
         #endregion
     }
 }

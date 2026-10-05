@@ -15,9 +15,9 @@ namespace LethalMenu.Menu
         private Rect _windowRect;
         private bool _windowRectInitialized = false;
         private int _selectedTab = 0;
-        private readonly string[] _tabs = { "Self", "Enemies", "Items", "Visuals", "World", "Network", "Terminal", "Browser", "Settings", "Exp." };
+        private readonly string[] _tabs = { "Self", "Enemies", "Items", "Visuals", "World", "Network", "Terminal", "Browser", "Settings" };
         private Vector2 _scrollPosition;
-        private readonly Vector2[] _tabScrollPositions = new Vector2[10];
+        private readonly Vector2[] _tabScrollPositions = new Vector2[9];
         private bool _stylesInitialized = false;
         
         // Resize state
@@ -63,10 +63,7 @@ namespace LethalMenu.Menu
         private readonly ItemManagerPopup _itemManager = new();
         private readonly EnemyManagerPopup _enemyManager = new();
         private readonly WeatherManagerPopup _weatherManager = new();
-        private readonly SuitManagerPopup _suitManager = new();
-        private readonly UnlockablesManagerPopup _unlockablesManager = new();
         private readonly LootManagerPopup _lootManager = new();
-        private readonly MoonManagerPopup _moonManager = new();
         private readonly CreaturePreviewPopup _creaturePreview = new();
         private readonly BestiaryManagerPopup _bestiaryManager;
         private readonly StorageManagerPopup _storageManager = new();
@@ -139,10 +136,7 @@ namespace LethalMenu.Menu
             _itemManager.Draw();
             _enemyManager.Draw();
             _weatherManager.Draw();
-            _suitManager.Draw();
-            _unlockablesManager.Draw();
             _lootManager.Draw();
-            _moonManager.Draw();
             _bestiaryManager.Draw();
             _creaturePreview.Draw();
             _storageManager.Draw();
@@ -318,7 +312,6 @@ namespace LethalMenu.Menu
                 case 6: DrawTerminalTab(); break;
                 case 7: DrawBrowserTab(); break;
                 case 8: DrawSettingsTab(); break;
-                case 9: DrawExperimentationTab(); break;
             }
 
             GUILayout.EndScrollView();

@@ -11,7 +11,48 @@ namespace LethalMenu
         public static readonly Dictionary<Hack, bool> ToggleFlags = new();
         public static readonly Dictionary<Hack, Delegate> Executors = new();
         public static readonly Dictionary<Hack, ButtonControl> KeyBinds = new();
-        private static readonly Dictionary<Hack, string> DisplayNames = new();
+        /// Names shown in the keybind list. Seeded where the menu label differs from the spaced enum name.
+        private static readonly Dictionary<Hack, string> DisplayNames = new()
+        {
+            [Hack.BHop] = "BHop",
+            [Hack.AntiFlash] = "Anti-Flash",
+            [Hack.AntiGhostGirl] = "Anti-Ghost Girl",
+            [Hack.AntiJeb] = "Anti-Jeb",
+            [Hack.AntiKick] = "Anti-Kick",
+            [Hack.OneHanded] = "One-Handed",
+            [Hack.Reach] = "Extended Reach",
+            [Hack.LootBeforeGameStarts] = "Loot Before Start",
+            [Hack.GrabNutcrackerShotgun] = "Grab Nutcracker Gun",
+            [Hack.LootAnyItemBeltBag] = "Loot Any Item (Belt Bag)",
+            [Hack.LootThroughWallsBeltBag] = "Loot Through Walls (Belt Bag)",
+            [Hack.EnableESP] = "ESP",
+            [Hack.EnableChams] = "Chams",
+            [Hack.DoorESP] = "Entrance ESP",
+            [Hack.MineESP] = "Landmine ESP",
+            [Hack.FuseboxESP] = "Breaker Box ESP",
+            [Hack.BreakerChams] = "Breaker Box Chams",
+            [Hack.RadarPatch] = "Radar+",
+            [Hack.EnemyDeathNotification] = "Enemy Death Notifications",
+            [Hack.DeathNotifications] = "Player Death Notifications",
+            [Hack.AutoOpenDropship] = "Auto-Open Dropship",
+            [Hack.ShowKickedLobbies] = "Show Kicked Hosts",
+            [Hack.HornSpam] = "Ship Horn Spam",
+            [Hack.DoorSpam] = "Ship Door Spam",
+            [Hack.SignalSpam] = "Signal Translator Spam",
+            [Hack.RPCLagSpam] = "RPC Lag",
+            [Hack.EarrapeSpam] = "Terminal Earrape",
+            [Hack.CarHornSpam] = "Cruiser Horn Spam",
+            [Hack.DeskDoorSpam] = "Company Desk Door Spam",
+            [Hack.TPAllItemsToShip] = "Teleport Loot To Ship",
+            [Hack.TPNearbyItems] = "Teleport Nearby Loot To Me",
+            [Hack.FlickerLights] = "Flicker Ship Lights",
+            [Hack.MaxChaos] = "Horn + Lights + Doors + Signal",
+            [Hack.ForceStart] = "Land Ship",
+            [Hack.ForceEnd] = "End Round",
+            [Hack.SetCredits] = "Max Credits",
+            [Hack.ReconnectFromClipboard] = "Reconnect (lobby ID from clipboard)",
+            [Hack.ReleaseAllDirected] = "Release All Escorts And Hunts",
+        };
 
         public static void InitializeDefaults()
         {
@@ -59,7 +100,7 @@ namespace LethalMenu
         public static string GetDisplayName(this Hack hack)
         {
             if (DisplayNames.TryGetValue(hack, out string cached)) return cached;
-            string name = Regex.Replace(hack.ToString(), "([a-z])([A-Z])", "$1 $2");
+            string name = Regex.Replace(hack.ToString(), "(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ");
             DisplayNames[hack] = name;
             return name;
         }

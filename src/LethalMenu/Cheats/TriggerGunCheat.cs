@@ -5,7 +5,9 @@ using UnityEngine.InputSystem;
 
 namespace LethalMenu.Cheats
 {
-    /// TriggerGun — middle-mouse fires a sphere-cast from the camera and activates whatever it hits.
+    /// TriggerGun — middle-mouse fires a sphere-cast from the camera and sets off the object it hits
+    /// (mine, turret, jetpack, door, big door, company desk); on a player it lures every enemy to them.
+    /// Enemies are left to Kill Click, Stun Click and Enemy Control. Shares its button with Stun Click.
     public class TriggerGunCheat : CheatBase
     {
         public override string Name => "Trigger Gun";
@@ -24,17 +26,16 @@ namespace LethalMenu.Cheats
             var cam = LethalMenuMod.LocalPlayer?.gameplayCamera;
             if (cam == null) return;
 
-            var kb = Keyboard.current;
-            bool ePressed = kb != null && kb.eKey.isPressed;
-
             var hits = Physics.SphereCastAll(cam.transform.position, CastRadius, cam.transform.forward, CastDistance);
             foreach (var hit in hits.OrderBy(h => h.distance))
             {
-                if (Dispatch(hit, ePressed)) return;
+                if (Dispatch(hit)) return;
             }
         }
 
-        private bool Dispatch(RaycastHit hit, bool ePressed)
+        public override void OnEnable() => Hack.StunClick.SetEnabled(false);
+
+        private bool Dispatch(RaycastHit hit)
         {
             var col = hit.collider;
             if (col == null) return false;
@@ -67,19 +68,6 @@ namespace LethalMenu.Cheats
             if (col.TryGetComponent(out DepositItemsDesk desk))
             {
                 desk.AttackPlayersServerRpc();
-                return true;
-            }
-            var enemy = col.GetComponentInParent<EnemyAI>();
-            if (enemy != null && !enemy.isEnemyDead)
-            {
-                if (ePressed)
-                {
-                    EnemyControlCheat.TakeControl(enemy);
-                }
-                else
-                {
-                    NetworkCheats.KillEnemy(enemy);
-                }
                 return true;
             }
             if (col.TryGetComponent(out PlayerControllerB target))

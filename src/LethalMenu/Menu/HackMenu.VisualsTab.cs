@@ -10,22 +10,22 @@ namespace LethalMenu.Menu
         {
             DrawSection("ESP", () =>
             {
-                DrawHackToggle(Hack.EnableESP, "Enable ESP", "Show objects through walls");
+                DrawHackToggle(Hack.EnableESP, "Enable ESP", "Boxes and labels through walls");
 
                 if (Hack.EnableESP.IsEnabled())
                 {
                     GUILayout.Space(5);
-                    DrawHackToggle(Hack.PlayerESP, "  Player ESP", null);
+                    DrawHackToggle(Hack.PlayerESP, "  Players", null);
                     if (Hack.PlayerESP.IsEnabled())
                     {
                         DrawHackToggle(Hack.PlayerHealthBars, "    Health Bars", "Show HP bars above players");
                     }
-                    DrawHackToggle(Hack.EnemyESP, "  Enemy ESP", null);
-                    DrawHackToggle(Hack.ItemESP, "  Item ESP", null);
-                    DrawHackToggle(Hack.DoorESP, "  Door ESP", null);
-                    DrawHackToggle(Hack.MineESP, "  Mine ESP", null);
-                    DrawHackToggle(Hack.TurretESP, "  Turret ESP", null);
-                    DrawHackToggle(Hack.FuseboxESP, "  Fusebox ESP", null);
+                    DrawHackToggle(Hack.EnemyESP, "  Enemies", null);
+                    DrawHackToggle(Hack.ItemESP, "  Items", null);
+                    DrawHackToggle(Hack.DoorESP, "  Entrances", null);
+                    DrawHackToggle(Hack.MineESP, "  Landmines", null);
+                    DrawHackToggle(Hack.TurretESP, "  Turrets", null);
+                    DrawHackToggle(Hack.FuseboxESP, "  Breaker Box", null);
                     DrawHackToggle(Hack.SteamValveESP,        "  Steam Valves", null);
                     DrawHackToggle(Hack.BigDoorESP,           "  Big Doors", null);
                     DrawHackToggle(Hack.ShipDoorESP,          "  Ship Door", null);
@@ -40,7 +40,7 @@ namespace LethalMenu.Menu
 
             DrawSection("Chams", () =>
             {
-                DrawHackToggle(Hack.EnableChams, "Enable Chams", "Mesh-recolor objects visible through walls");
+                DrawHackToggle(Hack.EnableChams, "Enable Chams", "Solid-colour meshes through walls");
                 if (!Hack.EnableChams.IsEnabled()) return;
 
                 GUILayout.Space(5);
@@ -52,7 +52,7 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.DoorChams,              "  Doors", null);
                 DrawHackToggle(Hack.BigDoorChams,           "  Big Doors", null);
                 DrawHackToggle(Hack.ShipDoorChams,          "  Ship Door", null);
-                DrawHackToggle(Hack.BreakerChams,           "  Breakers", null);
+                DrawHackToggle(Hack.BreakerChams,           "  Breaker Box", null);
                 DrawHackToggle(Hack.EnemyVentChams,         "  Enemy Vents", null);
                 DrawHackToggle(Hack.ItemDropshipChams,      "  Item Dropship", null);
                 DrawHackToggle(Hack.CruiserChams,           "  Cruiser", null);
@@ -63,7 +63,7 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.SteamValveChams,        "  Steam Valves", null);
 
                 GUILayout.Space(5);
-                Settings.UseSingleChamColor = GUILayout.Toggle(Settings.UseSingleChamColor, "  Use single color for all", _toggleStyle);
+                Settings.UseSingleChamColor = GUILayout.Toggle(Settings.UseSingleChamColor, "  One colour for everything", _toggleStyle);
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"  Min Distance: {Settings.ChamDistance:F0}m", _labelStyle, GUILayout.Width(120));
                 Settings.ChamDistance = GUILayout.HorizontalSlider(Settings.ChamDistance, 0f, 100f);
@@ -72,7 +72,7 @@ namespace LethalMenu.Menu
 
             DrawSection("Camera", () =>
             {
-                DrawHackToggle(Hack.FreeCam, "FreeCam", "WASD+Mouse to fly around");
+                DrawHackToggle(Hack.FreeCam, "FreeCam", "Fly the camera; your body stays put");
                 if (Hack.FreeCam.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
@@ -85,10 +85,10 @@ namespace LethalMenu.Menu
                     {
                         LethalMenu.Cheats.FreeCamCheat.TeleportToCameraPosition();
                     }
-                    GUILayout.Label("  Or hold Shift when disabling FreeCam", _labelStyle);
+                    GUILayout.Label("  Holding Shift while turning FreeCam off does the same.", _labelStyle);
                 }
 
-                DrawHackToggle(Hack.ThirdPerson, "Third Person", "Press V to toggle (view from behind)");
+                DrawHackToggle(Hack.ThirdPerson, "Third Person", "V switches view");
                 if (Hack.ThirdPerson.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
@@ -125,7 +125,7 @@ namespace LethalMenu.Menu
                 }
             });
 
-            DrawSection("HUD/Visual", () =>
+            DrawSection("HUD", () =>
             {
                 DrawHackToggle(Hack.AlwaysShowClock, "Always Show Clock", "Clock always visible");
                 DrawHackToggle(Hack.Crosshair, "Crosshair", "Show crosshair on screen");
@@ -151,12 +151,18 @@ namespace LethalMenu.Menu
                     ToggleHackButton(Hack.InfoDisplayTime, "Time", 50);
                     GUILayout.EndHorizontal();
                 }
+                DrawHackToggle(Hack.MinimalGUI, "Minimal GUI", "Hide the HUD");
+                DrawHackToggle(Hack.RadarPatch, "Radar+", "Extend in-ship radar coverage");
+                DrawHackToggle(Hack.EnemyDeathNotification, "Enemy Death Notifications", "HUD tip when an enemy dies");
+            });
 
-                DrawHackToggle(Hack.VisibleBody, "Visible Body", "Show your own character model in first person (vanilla hides it but renders the shadow)");
+            DrawSection("View", () =>
+            {
+                DrawHackToggle(Hack.VisibleBody, "Visible Body", "See your own body in first person");
                 DrawHackToggle(Hack.NoVisor, "No Visor", "Hide helmet visor");
                 DrawHackToggle(Hack.NoCameraShake, "No Camera Shake", "Disable screen shake");
                 DrawHackToggle(Hack.NoDepthOfField, "No Depth of Field", "Disable blur effects");
-
+                DrawHackToggle(Hack.NoFog, "No Fog", "Disable fog");
                 DrawHackToggle(Hack.FullRenderResolution, "Full Render Resolution", "Render at native screen resolution");
 
                 DrawHackToggle(Hack.CustomFOV, "Custom FOV", "Change field of view");
@@ -175,15 +181,6 @@ namespace LethalMenu.Menu
                     Settings.BreadcrumbInterval = GUILayout.HorizontalSlider(Settings.BreadcrumbInterval, 1f, 10f);
                     GUILayout.EndHorizontal();
                 }
-            });
-
-            DrawSection("Environment", () =>
-            {
-                DrawHackToggle(Hack.NoFog, "No Fog", "Remove all fog effects");
-                DrawHackToggle(Hack.ClearVisionMod, "Clear Vision", "Locally suppress HDRP fog/dust effects");
-                DrawHackToggle(Hack.MinimalGUIMod, "Minimal GUI", "Hide all HUD for cinematic shots");
-                DrawHackToggle(Hack.RadarPatch, "Radar+", "Extend in-ship radar coverage");
-                DrawHackToggle(Hack.EnemyDeathNotification, "Enemy Death Notifications", "HUD tip on every enemy death");
             });
         }
 

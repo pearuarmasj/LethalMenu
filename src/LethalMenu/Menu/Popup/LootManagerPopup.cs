@@ -23,9 +23,9 @@ namespace LethalMenu.Menu.Popup
             GUILayout.Space(5);
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("TP All to Ship", GUILayout.Height(28)))
+            if (GUILayout.Button("Teleport All To Ship", GUILayout.Height(28)))
                 Cheats.NetworkCheats.TeleportAllItemsToShip();
-            if (GUILayout.Button("TP Nearby to Me", GUILayout.Height(28)))
+            if (GUILayout.Button("Teleport Nearby To Me", GUILayout.Height(28)))
                 Cheats.NetworkCheats.TeleportNearbyItemsToPlayer(15f);
             GUILayout.EndHorizontal();
 
