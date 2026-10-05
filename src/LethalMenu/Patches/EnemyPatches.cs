@@ -84,31 +84,4 @@ namespace LethalMenu.Patches
             return true;
         }
     }
-
-    /// Anti Ghost Girl patches.
-    [HarmonyPatch(typeof(DressGirlAI))]
-    public static class AntiGhostGirlPatches
-    {
-        [HarmonyPatch("ChoosePlayerToHaunt")]
-        [HarmonyPostfix]
-        public static void ChoosePlayerToHauntPostfix(DressGirlAI __instance)
-        {
-            if (!Hack.AntiGhostGirl.IsEnabled() || __instance == null) return;
-            if (__instance.hauntingLocalPlayer)
-            {
-                __instance.hauntingPlayer = null;
-            }
-        }
-
-        [HarmonyPatch("BeginChasing")]
-        [HarmonyPostfix]
-        public static void BeginChasingPostfix(DressGirlAI __instance)
-        {
-            if (!Hack.AntiGhostGirl.IsEnabled() || __instance == null) return;
-            if (__instance.hauntingLocalPlayer)
-            {
-                __instance.hauntingPlayer = null;
-            }
-        }
-    }
 }

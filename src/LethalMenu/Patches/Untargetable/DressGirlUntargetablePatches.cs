@@ -3,6 +3,14 @@ using UnityEngine;
 
 namespace LethalMenu.Patches
 {
+    /// Untargetable and Anti-Ghost Girl both suppress a haunt aimed at the local player.
+    internal static class DressGirlHaunt
+    {
+        public static bool Suppressed(DressGirlAI girl) =>
+            girl.hauntingPlayer != null && girl.hauntingPlayer == LethalMenuMod.LocalPlayer &&
+            (Hack.Untargetable.IsEnabled() || Hack.AntiGhostGirl.IsEnabled());
+    }
+
     /// Untargetable vs Ghost Girl. DressGirlAI picks `hauntingPlayer` in ChoosePlayerToHaunt with a seeded weighted
     /// random over isPlayerControlled players (no PlayerIsTargetable), so a hidden local player can still be the
     /// haunted one, and every later step (stare placement, BeginChasing, teleports, the kill in OnCollideWithPlayer)
@@ -16,7 +24,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static bool Prefix(DressGirlAI __instance, ref Vector3 __result)
         {
-            if (!UntargetableSightPatches.IsHidden(__instance.hauntingPlayer))
+            if (!DressGirlHaunt.Suppressed(__instance))
                 return true;
             __instance.couldNotStareLastAttempt = true;
             __result = Vector3.zero;
@@ -31,7 +39,7 @@ namespace LethalMenu.Patches
     {
         [HarmonyPrefix]
         private static bool Prefix(DressGirlAI __instance) =>
-            !UntargetableSightPatches.IsHidden(__instance.hauntingPlayer);
+            !DressGirlHaunt.Suppressed(__instance);
     }
 
     /// If Untargetable is switched on while the ghost is already staring at or chasing the local player, end it at
@@ -42,7 +50,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(DressGirlAI __instance)
         {
-            if (!UntargetableSightPatches.IsHidden(__instance.hauntingPlayer))
+            if (!DressGirlHaunt.Suppressed(__instance))
                 return;
             if (__instance.currentBehaviourStateIndex == 1)
                 __instance.StopChasing();
