@@ -57,7 +57,7 @@ namespace LethalMenu
         public static List<VehicleController> Vehicles { get; } = new();
         public static List<GameObject> MoldSpores { get; } = new();
         public static List<MineshaftElevatorController> MineshaftElevators { get; } = new();
-        public static List<GameObject> SpikeRoofTraps { get; } = new();
+        public static List<SpikeRoofTrap> SpikeRoofTraps { get; } = new();
 
         private bool _minesEnabled = true;
         private bool _turretsEnabled = true;

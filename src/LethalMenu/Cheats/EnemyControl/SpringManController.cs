@@ -8,7 +8,7 @@ namespace LethalMenu.Cheats.EnemyControl
     {
         private bool GetStoppingMovement(SpringManAI enemy)
         {
-            return enemy.GetPrivateField<bool>("stoppingMovement");
+            return enemy.stoppingMovement;
         }
 
         public void OnSecondarySkillHold(SpringManAI enemy)

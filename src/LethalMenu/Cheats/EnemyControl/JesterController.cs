@@ -15,7 +15,7 @@ namespace LethalMenu.Cheats.EnemyControl
 
         private void SetNoPlayerChaseTimer(JesterAI enemy, float value)
         {
-            enemy.SetPrivateField("noPlayersToChaseTimer", value);
+            enemy.noPlayersToChaseTimer = value;
         }
 
         public void UsePrimarySkill(JesterAI enemy)

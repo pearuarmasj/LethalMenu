@@ -91,7 +91,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (!LethalMenuMod.LocalPlayer?.IsHost == true)
+            if (LethalMenuMod.LocalPlayer?.IsHost != true)
             {
                 HUDManager.Instance?.DisplayTip("Spawn Mimic", "Host only.");
                 return;

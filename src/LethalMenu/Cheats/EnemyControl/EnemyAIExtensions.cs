@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 
 namespace LethalMenu.Cheats.EnemyControl
 {
@@ -23,36 +22,6 @@ namespace LethalMenu.Cheats.EnemyControl
         {
             if (enemy.IsBehaviourState(state)) return;
             enemy.SwitchToBehaviourServerRpc(Convert.ToInt32(state));
-        }
-
-        /// 
-        /// Get a private field value using reflection.
-        /// 
-        public static T GetPrivateField<T>(this object obj, string fieldName)
-        {
-            var field = obj.GetType().GetField(fieldName, 
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            if (field == null)
-            {
-                Loader.LogError($"[EnemyControl] Field '{fieldName}' not found on {obj.GetType().Name}");
-                return default!;
-            }
-            return (T)field.GetValue(obj)!;
-        }
-
-        /// 
-        /// Set a private field value using reflection.
-        /// 
-        public static void SetPrivateField<T>(this object obj, string fieldName, T value)
-        {
-            var field = obj.GetType().GetField(fieldName, 
-                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            if (field == null)
-            {
-                Loader.LogError($"[EnemyControl] Field '{fieldName}' not found on {obj.GetType().Name}");
-                return;
-            }
-            field.SetValue(obj, value);
         }
 
         /// 

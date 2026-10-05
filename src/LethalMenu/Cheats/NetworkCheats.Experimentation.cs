@@ -33,7 +33,7 @@ namespace LethalMenu.Cheats
                 try
                 {
                     // private void TriggerMineOnLocalClientByExiting() - triggers locally
-                    ReflectionHelper.InvokePrivate(mine, "TriggerMineOnLocalClientByExiting");
+                    mine.TriggerMineOnLocalClientByExiting();
                     count++;
                 }
                 catch (Exception ex)
@@ -92,7 +92,7 @@ namespace LethalMenu.Cheats
                 try
                 {
                     // private void SwitchTurretMode(int mode) - local state change
-                    ReflectionHelper.InvokePrivate(turret, "SwitchTurretMode", mode);
+                    turret.SwitchTurretMode(mode);
                     count++;
                 }
                 catch (Exception ex)
@@ -126,7 +126,7 @@ namespace LethalMenu.Cheats
                 try
                 {
                     // private void ToggleTurretEnabledLocalClient(bool enabled)
-                    ReflectionHelper.InvokePrivate(turret, "ToggleTurretEnabledLocalClient", enabled);
+                    turret.ToggleTurretEnabledLocalClient(enabled);
                     count++;
                 }
                 catch (Exception ex)
@@ -154,7 +154,7 @@ namespace LethalMenu.Cheats
                 try
                 {
                     // public void ToggleMineEnabledLocalClient(bool enabled)
-                    ReflectionHelper.InvokePrivate(mine, "ToggleMineEnabledLocalClient", enabled);
+                    mine.ToggleMineEnabledLocalClient(enabled);
                     count++;
                 }
                 catch (Exception ex)
@@ -177,7 +177,7 @@ namespace LethalMenu.Cheats
 
             try
             {
-                ReflectionHelper.InvokePrivate(target, "DespawnHeldObjectOnClient");
+                target.DespawnHeldObjectOnClient();
                 HUDManager.Instance?.DisplayTip("Experiment", $"Cleared {target.playerUsername}'s held item (local).");
             }
             catch (Exception ex)
@@ -199,15 +199,8 @@ namespace LethalMenu.Cheats
 
             try
             {
-                // private void KillPlayerServerRpc(int playerId, bool spawnBody, Vector3 bodyVelocity, int causeOfDeath, int deathAnimation, Vector3 positionOffset)
-                ReflectionHelper.InvokePrivate(target,
-                    "KillPlayerServerRpc",
-                    (int)target.playerClientId,
-                    true,
-                    Vector3.zero,
-                    (int)CauseOfDeath.Unknown,
-                    0,
-                    Vector3.zero);
+                                target.KillPlayerServerRpc((int)target.playerClientId, true, Vector3.zero,
+                    (int)CauseOfDeath.Unknown, 0, Vector3.zero, false);
 
                 Debug.Log($"[NetworkCheats] KillPlayerServerRpc invoked on {target.playerUsername}");
                 HUDManager.Instance?.DisplayTip("Experiment", $"Kill RPC sent for {target.playerUsername}");
@@ -231,7 +224,7 @@ namespace LethalMenu.Cheats
             try
             {
                 // private void AddPlayerChatMessageServerRpc(string chatMessage, int playerId)
-                ReflectionHelper.InvokePrivate(hud, "AddPlayerChatMessageServerRpc", message, playerId);
+                hud.AddPlayerChatMessageServerRpc(message, playerId);
                 Debug.Log($"[NetworkCheats] Chat as player {playerId}: {message}");
                 HUDManager.Instance?.DisplayTip("Experiment", $"Chat RPC sent as player {playerId}");
             }
@@ -254,7 +247,7 @@ namespace LethalMenu.Cheats
             try
             {
                 // private void AddTextMessageServerRpc(string chatMessage)
-                ReflectionHelper.InvokePrivate(hud, "AddTextMessageServerRpc", message);
+                hud.AddTextMessageServerRpc(message);
                 Debug.Log($"[NetworkCheats] System message: {message}");
                 HUDManager.Instance?.DisplayTip("Experiment", "System message RPC sent");
             }
@@ -276,30 +269,12 @@ namespace LethalMenu.Cheats
             try
             {
                 // private void DespawnHeldObjectServerRpc() - no parameters
-                ReflectionHelper.InvokePrivate(target, "DespawnHeldObjectServerRpc");
+                target.DespawnHeldObjectServerRpc();
                 HUDManager.Instance?.DisplayTip("Experiment", $"Despawn RPC sent for {target.playerUsername}");
             }
             catch (Exception ex)
             {
                 Debug.LogWarning($"[NetworkCheats] Despawn RPC failed: {ex.Message}");
-            }
-        }
-
-        /// Force player position update via private UpdatePlayerPositionServerRpc (PRIVATE RPC).
-        public static void ExperimentalForcePosition(PlayerControllerB target, Vector3 position)
-        {
-            if (target == null) return;
-
-            try
-            {
-                // private void UpdatePlayerPositionServerRpc(Vector3 newPos, bool inElevator, bool inShipRoom, bool exhausted, bool isPlayerGrounded)
-                ReflectionHelper.InvokePrivate(target, "UpdatePlayerPositionServerRpc",
-                    position, false, false, false, true);
-                HUDManager.Instance?.DisplayTip("Experiment", $"Position RPC sent for {target.playerUsername}");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[NetworkCheats] Position RPC failed: {ex.Message}");
             }
         }
 
@@ -351,7 +326,7 @@ namespace LethalMenu.Cheats
 
             try
             {
-                ReflectionHelper.InvokePrivate(round, "ChangeLevelServerRpc", levelId, terminal.groupCredits);
+                round.ChangeLevelServerRpc(levelId, terminal.groupCredits);
                 HUDManager.Instance?.DisplayTip("Experiment", $"ChangeLevel to {levelId}." + (IsHost() ? "" : " (Not host)"));
             }
             catch (Exception ex)
@@ -373,7 +348,7 @@ namespace LethalMenu.Cheats
 
             try
             {
-                ReflectionHelper.InvokePrivate(round, "BuyShipUnlockableServerRpc", unlockableId, terminal.groupCredits);
+                round.BuyShipUnlockableServerRpc(unlockableId, terminal.groupCredits);
                 HUDManager.Instance?.DisplayTip("Experiment", $"Unlock {unlockableId}." + (IsHost() ? "" : " (Not host)"));
             }
             catch (Exception ex)

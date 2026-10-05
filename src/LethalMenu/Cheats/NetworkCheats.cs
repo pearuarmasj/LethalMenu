@@ -70,54 +70,26 @@ namespace LethalMenu.Cheats
             TeleportPlayerToPosition(source, target.transform.position);
         }
 
-        /// Teleports ANY player to a specific position.
+        /// Teleports a player to a position. The local player moves for real. A remote player's own
+        /// client is authoritative for its position, so for them this only moves their copy on every
+        /// other client (UpdatePlayerPositionRpc, SendTo.NotMe, no ownership requirement); the target
+        /// never sees the move and snaps back as soon as it walks.
         public static void TeleportPlayerToPosition(PlayerControllerB target, Vector3 position)
         {
-            if (target == null || target.isPlayerDead)
-            {
-                Debug.Log("[NetworkCheats] TeleportPlayerToPosition: Target is null or dead.");
-                return;
-            }
+            if (target == null || target.isPlayerDead) return;
 
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            
-            if (target == localPlayer)
+            if (target == LethalMenuMod.LocalPlayer)
             {
                 target.TeleportPlayer(position);
-                Debug.Log($"[NetworkCheats] Teleported self to {position}");
                 return;
             }
 
-            if (localPlayer == null || !localPlayer.IsHost)
-            {
-                HUDManager.Instance?.DisplayTip("Teleport", "Host only for remote players.");
-                return;
-            }
-
-            target.transform.position = position;
             target.serverPlayerPosition = position;
-            
-            if (target.thisController != null && target.thisController.enabled)
-            {
-                target.thisController.enabled = false;
-                target.transform.position = position;
-                target.thisController.enabled = true;
-            }
-
-            try
-            {
-                ReflectionHelper.InvokePrivate(target, "UpdatePlayerPositionServerRpc", 
-                    position, target.isInElevator, target.isInHangarShipRoom, target.isExhausted, true);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[NetworkCheats] UpdatePlayerPositionServerRpc reflection failed: {ex.Message}");
-            }
-
+            target.transform.position = position;
+            target.UpdatePlayerPositionRpc(position, target.isInElevator, target.isInHangarShipRoom, target.isExhausted, true);
             target.teleportedLastFrame = true;
-            
-            Debug.Log($"[NetworkCheats] Teleported {target.playerUsername} to {position}");
-            HUDManager.Instance?.DisplayTip("Teleport", $"Teleported {target.playerUsername}.");
+
+            HUDManager.Instance?.DisplayTip("Teleport", $"Moved {target.playerUsername} (others' view only).");
         }
 
         /// Teleports all players to the local player's position.
@@ -125,12 +97,6 @@ namespace LethalMenu.Cheats
         {
             var localPlayer = LethalMenuMod.LocalPlayer;
             if (localPlayer == null) return;
-
-            if (!localPlayer.IsHost)
-            {
-                HUDManager.Instance?.DisplayTip("Teleport All", "Host only.");
-                return;
-            }
 
             var players = StartOfRound.Instance?.allPlayerScripts;
             if (players == null) return;
@@ -145,7 +111,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            HUDManager.Instance?.DisplayTip("Teleport All", $"Teleported {count} players to you.");
+            HUDManager.Instance?.DisplayTip("Teleport All", $"Moved {count} players to you (others' view only).");
         }
 
         /// Teleports a player to a random position on the map.
@@ -204,29 +170,6 @@ namespace LethalMenu.Cheats
             HUDManager.Instance?.DisplayTip("Swap", $"Swapped {player1.playerUsername} ↔ {player2.playerUsername}");
         }
 
-        /// Teleport player to the void (notSpawnedPosition - instant death).
-        public static void SendToVoid(PlayerControllerB targetPlayer)
-        {
-            if (targetPlayer == null)
-            {
-                HUDManager.Instance?.DisplayTip("Void", "No target player.");
-                return;
-            }
-
-            var startOfRound = StartOfRound.Instance;
-            if (startOfRound == null)
-            {
-                HUDManager.Instance?.DisplayTip("Void", "Not in game.");
-                return;
-            }
-
-            Vector3 voidPos = startOfRound.notSpawnedPosition.position;
-            targetPlayer.TeleportPlayer(voidPos);
-            
-            Debug.Log($"[NetworkCheats] Sent {targetPlayer.playerUsername} to the void at {voidPos}");
-            HUDManager.Instance?.DisplayTip("Void", $"Sent {targetPlayer.playerUsername} to the void!");
-        }
-
         #endregion
 
         #region Noise
@@ -283,7 +226,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (!LethalMenuMod.LocalPlayer?.IsHost == true)
+            if (LethalMenuMod.LocalPlayer?.IsHost != true)
             {
                 HUDManager.Instance?.DisplayTip("Quota", "Host only.");
                 return;
@@ -311,7 +254,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (!LethalMenuMod.LocalPlayer?.IsHost == true)
+            if (LethalMenuMod.LocalPlayer?.IsHost != true)
             {
                 HUDManager.Instance?.DisplayTip("Quota", "Host only.");
                 return;

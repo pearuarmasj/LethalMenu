@@ -1,4 +1,3 @@
-using LethalMenu.Util;
 
 namespace LethalMenu.Cheats.EnemyControl
 {
@@ -34,9 +33,9 @@ namespace LethalMenu.Cheats.EnemyControl
         public bool CanUseEntranceDoors(BlobAI _) => false;
 
         private static void SetTamedTimer(BlobAI enemy, float time)
-            => enemy.Reflect().SetField("tamedTimer", time);
+            => enemy.tamedTimer = time;
 
         private static void SetAngeredTimer(BlobAI enemy, float time)
-            => enemy.Reflect().SetField("angeredTimer", time);
+            => enemy.angeredTimer = time;
     }
 }

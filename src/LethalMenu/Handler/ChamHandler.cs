@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using LethalMenu.Util;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -132,7 +131,7 @@ namespace LethalMenu.Handler
                 GameNetcodeStuff.PlayerControllerB _ => Hack.PlayerChams.IsEnabled(),
                 EnemyAI _ => Hack.EnemyChams.IsEnabled(),
                 SteamValveHazard steam => Hack.SteamValveChams.IsEnabled()
-                    && !steam.Reflect().GetField<bool>("valveHasBeenRepaired"),
+                    && !steam.valveHasBeenRepaired,
                 TerminalAccessibleObject term => term.isBigDoor && Hack.BigDoorChams.IsEnabled(),
                 DoorLock _ => Hack.DoorChams.IsEnabled(),
                 HangarShipDoor _ => Hack.ShipDoorChams.IsEnabled(),
@@ -143,12 +142,8 @@ namespace LethalMenu.Handler
                 MineshaftElevatorController _ => Hack.MineshaftElevatorChams.IsEnabled(),
                 EntranceTeleport _ => Hack.EntranceChams.IsEnabled(),
                 Turret _ => Hack.TurretChams.IsEnabled(),
-                GameObject go when go.name.StartsWith("MoldSpore", System.StringComparison.Ordinal)
-                    => Hack.MoldSporeChams.IsEnabled(),
-                GameObject go when go.name.StartsWith("AnimContainer", System.StringComparison.Ordinal)
-                    => Hack.SpikeRoofTrapChams.IsEnabled(),
-                GameObject go when go.name.StartsWith("TurretContainer", System.StringComparison.Ordinal)
-                    => Hack.TurretChams.IsEnabled(),
+                SpikeRoofTrap _ => Hack.SpikeRoofTrapChams.IsEnabled(),
+                GameObject _ => Hack.MoldSporeChams.IsEnabled(), // only mold spores are tracked as bare GameObjects
                 _ => false
             };
         }
@@ -183,12 +178,8 @@ namespace LethalMenu.Handler
                 MineshaftElevatorController _ => Settings.MineshaftElevatorChamColor,
                 EntranceTeleport _ => Settings.EntranceChamColor,
                 Turret _ => Settings.TurretChamColor,
-                GameObject go when go.name.StartsWith("MoldSpore", System.StringComparison.Ordinal)
-                    => Settings.MoldSporeChamColor,
-                GameObject go when go.name.StartsWith("AnimContainer", System.StringComparison.Ordinal)
-                    => Settings.SpikeRoofTrapChamColor,
-                GameObject go when go.name.StartsWith("TurretContainer", System.StringComparison.Ordinal)
-                    => Settings.TurretChamColor,
+                SpikeRoofTrap _ => Settings.SpikeRoofTrapChamColor,
+                GameObject _ => Settings.MoldSporeChamColor,
                 _ => Settings.ChamColor
             };
         }
@@ -198,6 +189,15 @@ namespace LethalMenu.Handler
             if (_target == null) return null;
             // DoorLock mesh sits on the parent (LM-master special case).
             if (_target is DoorLock door) return door.GetComponentsInParent<Renderer>().ToList();
+            if (_target is SpikeRoofTrap trap)
+            {
+                // The spike mesh is driven by spikeTrapAnimator, which may not sit under the trap's own transform.
+                var renderers = trap.GetComponentsInChildren<Renderer>().ToList();
+                if (trap.spikeTrapAnimator != null)
+                    foreach (var r in trap.spikeTrapAnimator.GetComponentsInChildren<Renderer>())
+                        if (!renderers.Contains(r)) renderers.Add(r);
+                return renderers;
+            }
             if (_target is GameObject go) return go.GetComponentsInChildren<Renderer>().ToList();
             if (_target is Component component) return component.GetComponentsInChildren<Renderer>().ToList();
             return null;

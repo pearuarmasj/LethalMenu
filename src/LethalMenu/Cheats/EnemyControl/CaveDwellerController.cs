@@ -1,4 +1,3 @@
-using LethalMenu.Util;
 
 namespace LethalMenu.Cheats.EnemyControl
 {
@@ -25,7 +24,7 @@ namespace LethalMenu.Cheats.EnemyControl
         {
             enemy.SwitchToBehaviourStateOnLocalClient(1);
             enemy.TurnIntoAdultServerRpc();
-            enemy.Reflect().Invoke("StartTransformationAnim");
+            enemy.StartTransformationAnim();
         }
     }
 }

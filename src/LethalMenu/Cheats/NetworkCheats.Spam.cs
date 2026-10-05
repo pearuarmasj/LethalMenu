@@ -230,11 +230,22 @@ namespace LethalMenu.Cheats
         private static int _spamCounter = 0;
 
         /// Call this every frame from Update() to process continuous spam toggles.
+        private static readonly Hack[] SpamToggles =
+        {
+            Hack.HornSpam, Hack.DoorSpam, Hack.SignalSpam, Hack.RPCLagSpam, Hack.TerminalSoundSpam,
+            Hack.EarrapeSpam, Hack.ChatSpam, Hack.CarHornSpam, Hack.DeskDoorSpam,
+        };
+
         public static void ProcessSpamToggles()
         {
+            bool any = false;
+            foreach (var hack in SpamToggles)
+                any |= hack.IsEnabled();
+            if (!any) return;
+
             float time = Time.time;
             var hud = HUDManager.Instance;
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
 
             // Horn Spam (every 0.15s)
             if (Hack.HornSpam.IsEnabled() && time - _lastHornSpam > 0.15f)
@@ -351,7 +362,7 @@ namespace LethalMenu.Cheats
             {
                 _lastCarHornSpam = time;
                 _spamCounter++;
-                var cars = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
+                var cars = LethalMenuMod.Vehicles;
                 var localPlayer = LethalMenuMod.LocalPlayer;
                 int playerId = localPlayer != null ? (int)localPlayer.playerClientId : -1;
                 foreach (var car in cars)

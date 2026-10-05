@@ -18,7 +18,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (!LethalMenuMod.LocalPlayer?.IsHost == true)
+            if (LethalMenuMod.LocalPlayer?.IsHost != true)
             {
                 Debug.LogWarning("[NetworkCheats] Must be host to revive all players.");
                 HUDManager.Instance?.DisplayTip("Revive All", "Host only.");
@@ -97,7 +97,7 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (!LethalMenuMod.LocalPlayer?.IsHost == true)
+            if (LethalMenuMod.LocalPlayer?.IsHost != true)
             {
                 HUDManager.Instance?.DisplayTip("Spawn Enemy", "Host only.");
                 return;

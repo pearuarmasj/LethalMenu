@@ -44,8 +44,8 @@ namespace LethalMenu.Util
             CollectEnemyVents();
             CollectItemDropships();
             CollectVehicles();
-            CollectMoldSpores();
             CollectMineshaftElevators();
+            CollectMoldSpores();
             CollectSpikeRoofTraps();
         }
 
@@ -217,14 +217,6 @@ namespace LethalMenu.Util
                 if (v != null) LethalMenuMod.Vehicles.Add(v);
         }
 
-        private static void CollectMoldSpores()
-        {
-            LethalMenuMod.MoldSpores.Clear();
-            foreach (var go in Object.FindObjectsOfType<GameObject>(includeInactive: true))
-                if (go != null && go.name.StartsWith("MoldSpore", System.StringComparison.Ordinal))
-                    LethalMenuMod.MoldSpores.Add(go);
-        }
-
         private static void CollectMineshaftElevators()
         {
             LethalMenuMod.MineshaftElevators.Clear();
@@ -232,12 +224,21 @@ namespace LethalMenu.Util
                 if (e != null) LethalMenuMod.MineshaftElevators.Add(e);
         }
 
+        /// Mold spores are plain GameObjects tracked by MoldSpreadManager.generatedMold.
+        private static void CollectMoldSpores()
+        {
+            LethalMenuMod.MoldSpores.Clear();
+            var manager = Object.FindObjectOfType<MoldSpreadManager>();
+            if (manager == null) return;
+            foreach (var go in manager.generatedMold)
+                if (go != null) LethalMenuMod.MoldSpores.Add(go);
+        }
+
         private static void CollectSpikeRoofTraps()
         {
             LethalMenuMod.SpikeRoofTraps.Clear();
-            foreach (var go in Object.FindObjectsOfType<GameObject>(includeInactive: true))
-                if (go != null && go.name.StartsWith("AnimContainer", System.StringComparison.Ordinal))
-                    LethalMenuMod.SpikeRoofTraps.Add(go);
+            foreach (var trap in Object.FindObjectsOfType<SpikeRoofTrap>(includeInactive: true))
+                if (trap != null) LethalMenuMod.SpikeRoofTraps.Add(trap);
         }
     }
 }

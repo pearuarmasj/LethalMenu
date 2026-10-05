@@ -1,4 +1,3 @@
-using LethalMenu.Util;
 
 namespace LethalMenu.Cheats.EnemyControl
 {
@@ -27,7 +26,7 @@ namespace LethalMenu.Cheats.EnemyControl
         public void UseSecondarySkill(CentipedeAI enemy)
         {
             if (IsClingingToSomething(enemy)) return;
-            enemy.Reflect().Invoke("RaycastToCeiling");
+            enemy.RaycastToCeiling();
             enemy.SetBehaviourState(State.Hiding);
         }
 
@@ -43,13 +42,12 @@ namespace LethalMenu.Cheats.EnemyControl
 
         private static bool IsClingingToSomething(CentipedeAI enemy)
         {
-            var reflector = enemy.Reflect();
             return enemy.clingingToPlayer != null
                 || enemy.inSpecialAnimation
-                || reflector.GetField<bool>("clingingToDeadBody")
-                || reflector.GetField<bool>("clingingToCeiling")
-                || reflector.GetField<bool>("startedCeilingAnimationCoroutine")
-                || reflector.GetField<bool>("inDroppingOffPlayerAnim");
+                || enemy.clingingToDeadBody
+                || enemy.clingingToCeiling
+                || enemy.startedCeilingAnimationCoroutine
+                || enemy.inDroppingOffPlayerAnim;
         }
     }
 }

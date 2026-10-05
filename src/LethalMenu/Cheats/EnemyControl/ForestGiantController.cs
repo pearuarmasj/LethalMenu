@@ -42,7 +42,7 @@ namespace LethalMenu.Cheats.EnemyControl
         public bool IsAbleToMove(ForestGiantAI enemy)
         {
             // Can't move during eating animation
-            return !enemy.GetPrivateField<bool>("inEatingPlayerAnimation");
+            return !enemy.inEatingPlayerAnimation;
         }
 
         public string? GetSecondarySkillName(ForestGiantAI _) => "(HOLD) Chase";

@@ -471,7 +471,7 @@ namespace LethalMenu.Menu
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("VOID", _buttonStyle, GUILayout.Width(60)))
                     {
-                        Cheats.NetworkCheats.SendToVoid(mobPlayers[_selectedMimicPlayerIndex]);
+                        Cheats.NetworkCheats.TeleportPlayerToVoid(mobPlayers[_selectedMimicPlayerIndex]);
                     }
                     if (GUILayout.Button("BOMB", _buttonStyle, GUILayout.Width(60)))
                     {

@@ -1,6 +1,5 @@
 using System.Linq;
 using GameNetcodeStuff;
-using LethalMenu.Util;
 using UnityEngine;
 
 namespace LethalMenu.Cheats.EnemyControl
@@ -25,11 +24,11 @@ namespace LethalMenu.Cheats.EnemyControl
             {
                 enemy.EnableEnemyMesh(true, true);
                 enemy.SwitchToBehaviourStateOnLocalClient(0);
-                enemy.Reflect().Invoke("BeginChasing");
+                enemy.BeginChasing();
             }
             else
             {
-                enemy.Reflect().Invoke("StopChasing");
+                enemy.StopChasing();
             }
         }
 
@@ -52,7 +51,7 @@ namespace LethalMenu.Cheats.EnemyControl
         {
             if (enemy.currentBehaviourStateIndex == ChaseStateIndex)
             {
-                enemy.Reflect().Invoke("StopChasing");
+                enemy.StopChasing();
             }
             enemy.transform.position = BanishPosition;
             enemy.EnableEnemyMesh(false, true);
