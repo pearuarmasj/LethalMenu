@@ -216,7 +216,15 @@ namespace LethalMenu.Cheats
 
         #region Quota
 
-        /// Set the profit quota. Host only.
+        /// Sets the profit quota (and optionally the fulfilled amount) for everyone. Host only.
+        /// Sync uses the game's own client RPCs:
+        ///   - TimeOfDay.SyncNewProfitQuotaClientRpc sets profitQuota on all clients. It also zeroes
+        ///     quotaFulfilled, resets the deadline, rotates the decor selection and shows the
+        ///     new-quota banner (those last two are unavoidable side effects).
+        ///   - TimeOfDay.SyncTimeClientRpc then puts the deadline back to what it was.
+        ///   - Fulfilled has no dedicated RPC; DepositItemsDesk.SellItemsClientRpc adds a profit to it on
+        ///     clients (with the payout banner). The desk only exists at the Company, so away from it a
+        ///     non-zero fulfilled can't be pushed and stays 0 for everyone after a quota change.
         public static void SetQuota(int amount, int fulfilled = -1)
         {
             var timeOfDay = TimeOfDay.Instance;
@@ -226,45 +234,41 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            if (LethalMenuMod.LocalPlayer?.IsHost != true)
+            if (!IsHost())
             {
                 HUDManager.Instance?.DisplayTip("Quota", "Host only.");
                 return;
             }
 
+            int targetFulfilled = fulfilled >= 0 ? fulfilled : timeOfDay.quotaFulfilled;
+            int deadline = (int)timeOfDay.timeUntilDeadline;
+
+            timeOfDay.SyncNewProfitQuotaClientRpc(amount, 0, timeOfDay.timesFulfilledQuota);
+            timeOfDay.SyncTimeClientRpc(timeOfDay.globalTime, deadline);
+            timeOfDay.timeUntilDeadline = deadline;
             timeOfDay.profitQuota = amount;
-            if (fulfilled >= 0)
+            timeOfDay.quotaFulfilled = 0;
+
+            string fulfilledNote = "";
+            if (targetFulfilled > 0)
             {
-                timeOfDay.quotaFulfilled = fulfilled;
+                var desk = UnityEngine.Object.FindObjectOfType<DepositItemsDesk>();
+                var terminal = LethalMenuMod.GameTerminal;
+                if (desk != null && terminal != null)
+                {
+                    // Server skips SellAndDisplayItemProfits for this RPC, so set the host's value directly.
+                    desk.SellItemsClientRpc(targetFulfilled, terminal.groupCredits, desk.itemsOnCounterAmount,
+                        StartOfRound.Instance.companyBuyingRate);
+                    timeOfDay.quotaFulfilled = targetFulfilled;
+                }
+                else
+                {
+                    fulfilledNote = " (fulfilled only syncs at the Company; reset to 0)";
+                }
             }
-            
+
             timeOfDay.UpdateProfitQuotaCurrentTime();
-
-            Debug.Log($"[NetworkCheats] Quota set to {amount}, fulfilled: {timeOfDay.quotaFulfilled}");
-            HUDManager.Instance?.DisplayTip("Quota", $"Quota: {amount} (Fulfilled: {timeOfDay.quotaFulfilled})");
-        }
-
-        /// Set fulfilled amount only. Host only.
-        public static void SetQuotaFulfilled(int fulfilled)
-        {
-            var timeOfDay = TimeOfDay.Instance;
-            if (timeOfDay == null)
-            {
-                HUDManager.Instance?.DisplayTip("Quota", "Not in game.");
-                return;
-            }
-
-            if (LethalMenuMod.LocalPlayer?.IsHost != true)
-            {
-                HUDManager.Instance?.DisplayTip("Quota", "Host only.");
-                return;
-            }
-
-            timeOfDay.quotaFulfilled = fulfilled;
-            timeOfDay.UpdateProfitQuotaCurrentTime();
-
-            Debug.Log($"[NetworkCheats] Quota fulfilled set to {fulfilled}");
-            HUDManager.Instance?.DisplayTip("Quota", $"Fulfilled: ${fulfilled} / ${timeOfDay.profitQuota}");
+            HUDManager.Instance?.DisplayTip("Quota", $"Quota: {amount} (Fulfilled: {timeOfDay.quotaFulfilled}){fulfilledNote}");
         }
 
         /// Auto-sell items to meet quota exactly.
