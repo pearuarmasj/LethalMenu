@@ -4,32 +4,29 @@ using UnityEngine;
 
 namespace LethalMenu.Patches
 {
-    /// Turret patches - make turrets ignore local player when Untargetable.
-    [HarmonyPatch(typeof(Turret))]
+    /// Turret patches - make turrets ignore the local player when Untargetable.
+    /// Turret.CheckForPlayersInLineOfSight is the only player query a turret has: the host's detection and
+    /// retarget loops use it, and the firing/berserk damage in Update (`CheckForPlayersInLineOfSight(3f) ==
+    /// localPlayerController` -> DamagePlayer/KillPlayer) runs on the victim's own client and goes through the
+    /// same method. Nulling its result for the hidden player closes detection, charging and damage on every client.
+    /// A target pushed by SwitchTargetedPlayerClientRpc is dropped at the start of Update so the turret never
+    /// switches to charging or aims at the hidden player.
+    [HarmonyPatch]
     public static class TurretPatches
     {
-        /// Return null if turret would target local player.
-        [HarmonyPatch("CheckForPlayersInLineOfSight")]
+        [HarmonyPatch(typeof(Turret), nameof(Turret.CheckForPlayersInLineOfSight))]
         [HarmonyPostfix]
         public static void CheckForPlayersPostfix(ref PlayerControllerB __result)
         {
-            if (!Hack.Untargetable.IsEnabled()) return;
-            if (__result == LethalMenuMod.LocalPlayer)
-            {
-                __result = null!;
-            }
+            if (UntargetableSightPatches.IsHidden(__result)) __result = null!;
         }
 
-        /// Clear turret target if it's the local player.
-        [HarmonyPatch("Update")]
-        [HarmonyPostfix]
-        public static void UpdatePostfix(Turret __instance)
+        [HarmonyPatch(typeof(Turret), nameof(Turret.Update))]
+        [HarmonyPrefix]
+        public static void UpdatePrefix(Turret __instance)
         {
-            if (!Hack.Untargetable.IsEnabled()) return;
-            if (__instance.targetPlayerWithRotation == LethalMenuMod.LocalPlayer)
-            {
+            if (UntargetableSightPatches.IsHidden(__instance.targetPlayerWithRotation))
                 __instance.targetPlayerWithRotation = null;
-            }
         }
     }
 
