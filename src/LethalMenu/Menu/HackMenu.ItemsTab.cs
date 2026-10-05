@@ -1,4 +1,3 @@
-using LethalMenu.Mixins;
 using UnityEngine;
 
 namespace LethalMenu.Menu
@@ -17,7 +16,6 @@ namespace LethalMenu.Menu
             {
                 DrawHackToggle(Hack.InfiniteBattery, "Infinite Battery", "Items never lose charge");
                 DrawHackToggle(Hack.OneHanded, "One-Handed", "Two-handed items become one-handed");
-                DrawHackToggle(Hack.StrongHands, "Strong Hands", "Two-handed items held one-handed");
                 DrawHackToggle(Hack.Reach, "Extended Reach", "Grab items from far away");
                 DrawHackToggle(Hack.LootThroughWalls, "Loot Through Walls", "Grab items through walls");
                 DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "Interact through walls");
@@ -25,7 +23,6 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.GrabNutcrackerShotgun, "Grab Nutcracker Gun", "Steal shotgun from Nutcracker");
                 DrawHackToggle(Hack.InfiniteScanRange, "Infinite Scan Range", "Q-scanner sees everything on the map");
                 DrawHackToggle(Hack.InfiniteGrab, "Infinite Grab", "Grab items from any distance");
-                DrawHackToggle(Hack.InfiniteItemUsage, "Infinite Item Usage", "Battery and charges never decrement");
                 DrawHackToggle(Hack.InfiniteDeposit, "Infinite Deposit", "Deposit desk has no item cap");
                 DrawHackToggle(Hack.LootAnyItemBeltBag, "Loot Any Item (Belt Bag)", "Belt bag accepts any grabbable");
                 DrawHackToggle(Hack.LootThroughWallsBeltBag, "Loot Through Walls (Belt Bag)", "Belt bag picks up scrap through walls");
@@ -80,11 +77,11 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("TP All to Ship", _buttonStyle, GUILayout.Height(28)))
                 {
-                    this.TeleportAllItemsToShip();
+                    Cheats.NetworkCheats.TeleportAllItemsToShip();
                 }
                 if (GUILayout.Button("TP Nearby to Me", _buttonStyle, GUILayout.Height(28)))
                 {
-                    this.TeleportNearbyItemsToPlayer(15f);
+                    Cheats.NetworkCheats.TeleportNearbyItemsToPlayer(15f);
                 }
                 GUILayout.EndHorizontal();
             });

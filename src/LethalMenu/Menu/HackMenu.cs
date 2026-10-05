@@ -2,7 +2,6 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Linq;
 using System.Collections;
-using LethalMenu.Mixins;
 using LethalMenu.Patches;
 using LethalMenu.Menu.Popup;
 
@@ -11,7 +10,7 @@ namespace LethalMenu.Menu
     ///
     /// Unity IMGUI-based menu system with styling.
     ///
-    public partial class HackMenu : ITeleporter, IHazardController, IShipController, IItemManipulator, IEnemyPrompter, IJetpack
+    public partial class HackMenu
     {
         private Rect _windowRect;
         private bool _windowRectInitialized = false;

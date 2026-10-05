@@ -3,20 +3,20 @@ namespace LethalMenu
     public enum Hack
     {
         // === Self ===
-        GodMode, DemiGod, InfiniteStamina, SpeedHack, JumpHack, NoClip, NightVision,
-        NoFallDamage, NoWeight, UnlimitedOxygen, AntiFlash, NoQuicksand, SuperSpeed,
-        SuperJump, UnlimitedJump, FastClimb, TauntSlide, ExtraItemSlots, TeleportWithItems,
+        GodMode, InfiniteStamina, SpeedHack, JumpHack, NoClip, NightVision,
+        NoFallDamage, NoWeight, UnlimitedOxygen, AntiFlash, NoQuicksand,
+        UnlimitedJump, FastClimb, TauntSlide, ExtraItemSlots, TeleportWithItems,
         BHop, SaneMod, LookDown, NoCooldown, Phantom,
 
         // === Enemy ===
-        Untargetable, GhostMode, AntiGhostGirl, EnemyControl, KillClick, StunClick,
+        Untargetable, AntiGhostGirl, EnemyControl, KillClick, StunClick,
 
         // === Items ===
-        InfiniteBattery, OneHanded, StrongHands, Reach, LootThroughWalls, InteractThroughWalls,
+        InfiniteBattery, OneHanded, Reach, LootThroughWalls, InteractThroughWalls,
         LootBeforeGameStarts, GrabNutcrackerShotgun, SuperShovel, SuperKnife, UnlimitedAmmo,
         MinigunShotgun, UnlimitedZapGun, UnlimitedTZP, NoTZPEffects, UnlimitedPresents,
         EggsAlwaysExplode, EggsNeverExplode,
-        InfiniteScanRange, InfiniteGrab, InfiniteItemUsage, InfiniteDeposit,
+        InfiniteScanRange, InfiniteGrab, InfiniteDeposit,
         LootAnyItemBeltBag, LootThroughWallsBeltBag,
 
         // === Visuals ===
@@ -28,7 +28,7 @@ namespace LethalMenu
         FullRenderResolution, CustomFOV, Breadcrumbs, NoFog, VisibleBody,
         MinimalGUIMod, ClearVisionMod, RadarPatch, EnemyDeathNotification,
         SteamValveESP, BigDoorESP, ShipDoorESP, EnemyVentESP, ItemDropshipESP,
-        CruiserESP, MoldSporeESP, MineshaftElevatorESP, EntranceESP, SpikeRoofTrapESP,
+        CruiserESP, MoldSporeESP, MineshaftElevatorESP, SpikeRoofTrapESP,
 
         // === Chams ===
         EnableChams,
@@ -39,7 +39,7 @@ namespace LethalMenu
 
         // === World ===
         BridgeNeverFalls, AutoOpenDropship, ShipDoorInSpace, NoShipDoorClose, Shoplifter,
-        GrabInLobby, AntiJeb, BuildAnywhere, InstantInteract,
+        AntiJeb, BuildAnywhere, InstantInteract,
         VehicleGodMode, TriggerGun,
 
         // === Network ===

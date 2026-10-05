@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace LethalMenu.Mixins
+namespace LethalMenu.Cheats
 {
-    public interface IItemManipulator { }
-
-    public static class ItemManipulatorMixin
+    public static partial class NetworkCheats
     {
-        public static void TeleportAllItemsToShip(this IItemManipulator _)
+        #region Item Teleport / Selling
+
+        public static void TeleportAllItemsToShip()
         {
             var startOfRound = StartOfRound.Instance ?? LethalMenuMod.GameInstance;
             var localPlayer = LethalMenuMod.LocalPlayer;
@@ -48,7 +48,7 @@ namespace LethalMenu.Mixins
             Loader.Log($"Teleported {teleported} loot items to ship (value: ${totalValue})");
         }
 
-        public static void TeleportNearbyItemsToPlayer(this IItemManipulator _, float radius)
+        public static void TeleportNearbyItemsToPlayer(float radius)
         {
             var startOfRound = StartOfRound.Instance ?? LethalMenuMod.GameInstance;
             var localPlayer = LethalMenuMod.LocalPlayer;
@@ -96,7 +96,7 @@ namespace LethalMenu.Mixins
             Loader.Log($"Teleported {teleported} nearby items to player (value: ${totalValue})");
         }
 
-        public static (int scrapCount, int totalItems, int rawValue, int adjustedValue) CalculateShipInventory(this IItemManipulator _)
+        public static (int scrapCount, int totalItems, int rawValue, int adjustedValue) CalculateShipInventory()
         {
             var startOfRound = StartOfRound.Instance ?? LethalMenuMod.GameInstance;
             if (startOfRound == null || startOfRound.shipBounds == null)
@@ -124,7 +124,7 @@ namespace LethalMenu.Mixins
             return (scrapCount, totalItems, rawValue, adjustedValue);
         }
 
-        public static void SellAllItemsNaturally(this IItemManipulator _)
+        public static void SellAllItemsNaturally()
         {
             var startOfRound = StartOfRound.Instance ?? LethalMenuMod.GameInstance;
             if (startOfRound?.currentLevel == null)
@@ -263,5 +263,7 @@ namespace LethalMenu.Mixins
             var y = index / 25 * 0.2f;
             return new Vector3(x, y, z);
         }
+
+        #endregion
     }
 }

@@ -111,20 +111,4 @@ namespace LethalMenu.Patches
             }
         }
     }
-
-    /// Ghost mode - enemies cannot see you (alternative to Untargetable).
-    [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.PlayerIsTargetable))]
-    public static class GhostModePatches
-    {
-        [HarmonyPrefix]
-        public static bool Prefix(PlayerControllerB playerScript)
-        {
-            if (Hack.GhostMode.IsEnabled() && LethalMenuMod.LocalPlayer != null && 
-                LethalMenuMod.LocalPlayer.playerClientId == playerScript.playerClientId)
-            {
-                return false;
-            }
-            return true;
-        }
-    }
 }

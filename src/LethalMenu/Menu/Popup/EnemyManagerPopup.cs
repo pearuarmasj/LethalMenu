@@ -1,9 +1,8 @@
 using UnityEngine;
-using LethalMenu.Mixins;
 
 namespace LethalMenu.Menu.Popup
 {
-    public class EnemyManagerPopup : PopupMenu, IEnemyPrompter
+    public class EnemyManagerPopup : PopupMenu
     {
         private int _selectedEnemyIndex;
         private string[]? _cachedEnemyNames;
@@ -24,11 +23,11 @@ namespace LethalMenu.Menu.Popup
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Kill All", GUILayout.Width(80)))
-                this.KillAllEnemies();
+                Cheats.NetworkCheats.KillAllEnemies();
             if (GUILayout.Button("Stun All", GUILayout.Width(80)))
-                this.StunAllEnemies();
+                Cheats.NetworkCheats.StunAllEnemies();
             if (GUILayout.Button("TP All Away", GUILayout.Width(100)))
-                this.TeleportAllEnemiesAway();
+                Cheats.NetworkCheats.TeleportAllEnemiesAway();
             GUILayout.EndHorizontal();
 
             DrawSpawner();

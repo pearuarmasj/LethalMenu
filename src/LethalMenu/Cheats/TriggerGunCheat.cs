@@ -1,14 +1,12 @@
 using System.Linq;
 using GameNetcodeStuff;
-using LethalMenu.Mixins;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace LethalMenu.Cheats
 {
     /// TriggerGun — middle-mouse fires a sphere-cast from the camera and activates whatever it hits.
-    /// Reuses existing mixin extension methods (IJetpack, IHazardController, IEnemyPrompter).
-    public class TriggerGunCheat : CheatBase, IHazardController, IEnemyPrompter
+    public class TriggerGunCheat : CheatBase
     {
         public override string Name => "Trigger Gun";
         public override Hack HackType => Hack.TriggerGun;
@@ -43,7 +41,7 @@ namespace LethalMenu.Cheats
 
             if (col.TryGetComponent(out Landmine mine))
             {
-                this.DetonateMine(mine);
+                mine.ExplodeMineServerRpc();
                 return true;
             }
             if (col.TryGetComponent(out Turret turret))
@@ -80,13 +78,13 @@ namespace LethalMenu.Cheats
                 }
                 else
                 {
-                    enemy.KillEnemyOnOwnerClient(false);
+                    NetworkCheats.KillEnemy(enemy);
                 }
                 return true;
             }
             if (col.TryGetComponent(out PlayerControllerB target))
             {
-                this.LureAllEnemies(target.transform.position);
+                NetworkCheats.LureAllEnemies(target.transform.position);
                 return true;
             }
             return false;

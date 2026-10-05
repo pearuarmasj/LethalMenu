@@ -1,10 +1,9 @@
 using UnityEngine;
 using System.Linq;
-using LethalMenu.Mixins;
 
 namespace LethalMenu.Menu.Popup
 {
-    public class LootManagerPopup : PopupMenu, IItemManipulator, ITeleporter
+    public class LootManagerPopup : PopupMenu
     {
         public LootManagerPopup() : base("Loot Manager", 20006, 400, 400) { }
 
@@ -15,7 +14,7 @@ namespace LethalMenu.Menu.Popup
             int totalValue = items.Where(i => i != null && i.itemProperties?.isScrap == true).Sum(i => i.scrapValue);
             int shipCount = items.Count(i => i != null && i.isInShipRoom && i.itemProperties?.isScrap == true);
             int shipValue = items.Where(i => i != null && i.isInShipRoom && i.itemProperties?.isScrap == true).Sum(i => i.scrapValue);
-            var (_, totalShipItems, rawShipValue, adjustedShipValue) = this.CalculateShipInventory();
+            var (_, totalShipItems, rawShipValue, adjustedShipValue) = Cheats.NetworkCheats.CalculateShipInventory();
             var buyRate = StartOfRound.Instance?.companyBuyingRate ?? 0f;
 
             GUILayout.Label($"Total Scrap: {scrapCount} items (${totalValue})");
@@ -25,16 +24,16 @@ namespace LethalMenu.Menu.Popup
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("TP All to Ship", GUILayout.Height(28)))
-                this.TeleportAllItemsToShip();
+                Cheats.NetworkCheats.TeleportAllItemsToShip();
             if (GUILayout.Button("TP Nearby to Me", GUILayout.Height(28)))
-                this.TeleportNearbyItemsToPlayer(15f);
+                Cheats.NetworkCheats.TeleportNearbyItemsToPlayer(15f);
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Sell Quota", GUILayout.Height(28)))
                 Hack.SellQuota.Execute();
             if (GUILayout.Button($"Sell All Ship Items ({totalShipItems}, ${rawShipValue})", GUILayout.Height(28)))
-                this.SellAllItemsNaturally();
+                Cheats.NetworkCheats.SellAllItemsNaturally();
             GUILayout.EndHorizontal();
 
             GUILayout.Space(8);

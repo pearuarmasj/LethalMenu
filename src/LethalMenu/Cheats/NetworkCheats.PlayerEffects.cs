@@ -76,6 +76,26 @@ namespace LethalMenu.Cheats
             }
         }
 
+        private static float _lastDemiGodHeal;
+        private const float DemiGodHealInterval = 0.5f;
+
+        /// Demi-God: tops up every player in Settings.DemiGodPlayers via HealPlayer. Runs every frame
+        /// from LethalMenuMod; the set is the single source of truth (self is just another member).
+        public static void ProcessDemiGod()
+        {
+            if (Settings.DemiGodPlayers.Count == 0) return;
+            if (Time.time - _lastDemiGodHeal < DemiGodHealInterval) return;
+
+            foreach (var player in LethalMenuMod.Players)
+            {
+                if (player == null || player.isPlayerDead || !Settings.IsDemiGod(player)) continue;
+                if (player.health >= 100) continue;
+
+                _lastDemiGodHeal = Time.time;
+                HealPlayer(player);
+            }
+        }
+
         /// Heals the local player to full health.
         public static void HealSelf()
         {

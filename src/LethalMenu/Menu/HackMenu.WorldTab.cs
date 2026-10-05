@@ -118,7 +118,6 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.BridgeNeverFalls, "Bridge Never Falls", "Bridges don't collapse");
                 DrawHackToggle(Hack.AutoOpenDropship, "Auto-Open Dropship", "Dropship opens on landing");
                 DrawHackToggle(Hack.Shoplifter, "Shoplifter", "Terminal items cost $0");
-                DrawHackToggle(Hack.GrabInLobby, "Grab In Lobby", "Grab items before round");
                 DrawHackToggle(Hack.AntiJeb, "Anti-Jeb", "Company desk won't attack");
                 DrawHackToggle(Hack.BuildAnywhere, "Build Anywhere", "Place furniture outside ship");
                 DrawHackToggle(Hack.InstantInteract, "Instant Interact", "No hold-to-interact delay");

@@ -15,7 +15,6 @@ namespace LethalMenu.Menu
             DrawSection("Enemy Protection", () =>
             {
                 DrawHackToggle(Hack.Untargetable, "Untargetable", "Enemies ignore you");
-                DrawHackToggle(Hack.GhostMode, "Ghost Mode", "Enemies can't target you (EnemyAI)");
                 DrawHackToggle(Hack.AntiGhostGirl, "Anti-Ghost Girl", "Ghost Girl won't haunt you");
             });
 

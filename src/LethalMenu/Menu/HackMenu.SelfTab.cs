@@ -1,4 +1,3 @@
-using LethalMenu.Mixins;
 using UnityEngine;
 
 namespace LethalMenu.Menu
@@ -86,8 +85,6 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
                 }
 
-                DrawHackToggle(Hack.SuperSpeed, "Super Speed", "Move much faster");
-                DrawHackToggle(Hack.SuperJump, "Super Jump", "Jump much higher");
                 DrawHackToggle(Hack.UnlimitedJump, "Unlimited Jump", "Jump in mid-air");
                 DrawHackToggle(Hack.FastClimb, "Fast Climb", "Climb ladders faster");
                 DrawHackToggle(Hack.TauntSlide, "Taunt Slide", "Emote while moving");

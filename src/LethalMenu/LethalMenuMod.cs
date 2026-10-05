@@ -6,7 +6,6 @@ using GameNetcodeStuff;
 using HarmonyLib;
 using LethalMenu.Cheats;
 using LethalMenu.Menu;
-using LethalMenu.Mixins;
 using LethalMenu.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,7 +15,7 @@ namespace LethalMenu
     /// <summary>
     /// Main mod MonoBehaviour - manages cheats, patches, and game state.
     /// </summary>
-    public class LethalMenuMod : MonoBehaviour, IItemManipulator, IEnemyPrompter
+    public class LethalMenuMod : MonoBehaviour
     {
         private const string HarmonyId = "com.lethalmenu.mod";
 
@@ -26,8 +25,9 @@ namespace LethalMenu
         // Harmony instance for patching
         private Harmony? _harmony;
 
-        // Active cheats
+        // Active cheats and their enabled state as of the last dispatched transition
         private readonly List<CheatBase> _cheats = new();
+        private readonly List<bool> _cheatWasEnabled = new();
 
         // Menu system
         private HackMenu? _menu;
@@ -121,7 +121,10 @@ namespace LethalMenu
                 try
                 {
                     if (Activator.CreateInstance(type) is CheatBase cheat)
+                    {
                         _cheats.Add(cheat);
+                        _cheatWasEnabled.Add(false);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -157,9 +160,9 @@ namespace LethalMenu
             });
             Hack.KillAllEnemies.RegisterExecutor(Cheats.NetworkCheats.KillAllEnemies);
             Hack.StunAllEnemies.RegisterExecutor(Cheats.NetworkCheats.StunAllEnemies);
-            Hack.TeleportAllEnemiesAway.RegisterExecutor(() => this.TeleportAllEnemiesAway());
-            Hack.TPAllItemsToShip.RegisterExecutor(() => this.TeleportAllItemsToShip());
-            Hack.TPNearbyItems.RegisterExecutor(() => this.TeleportNearbyItemsToPlayer(15f));
+            Hack.TeleportAllEnemiesAway.RegisterExecutor(Cheats.NetworkCheats.TeleportAllEnemiesAway);
+            Hack.TPAllItemsToShip.RegisterExecutor(Cheats.NetworkCheats.TeleportAllItemsToShip);
+            Hack.TPNearbyItems.RegisterExecutor(() => Cheats.NetworkCheats.TeleportNearbyItemsToPlayer(15f));
             Hack.UnlockAllDoors.RegisterExecutor(Cheats.NetworkCheats.UnlockAllDoors);
             Hack.BlowUpAllMines.RegisterExecutor(Cheats.NetworkCheats.BlowUpAllLandmines);
             Hack.ToggleMines.RegisterExecutor(() =>
@@ -218,6 +221,8 @@ namespace LethalMenu
             if (!Settings.ShowMenu)
                 HackExtensions.CheckKeyBinds();
 
+            DispatchTransitions();
+
             // Update all cheats (they internally check if enabled)
             foreach (var cheat in _cheats)
             {
@@ -227,86 +232,47 @@ namespace LethalMenu
                 }
                 catch (Exception ex)
                 {
-                    Loader.LogError($"[LethalMenu] Cheat {cheat.Name} update error: {ex.Message}");
+                    LogCheatError(cheat, "update", ex);
                 }
             }
 
-            // Update new runtime features
-            UpdateRuntimeFeatures();
-
-            // Process continuous spam toggles
             Cheats.NetworkCheats.ProcessSpamToggles();
+            Cheats.NetworkCheats.ProcessDemiGod();
 
             // Collect game objects periodically
             ObjectManager.CollectObjects();
         }
 
-        private void UpdateRuntimeFeatures()
+        private readonly HashSet<string> _loggedCheatErrors = new();
+
+        /// Logs a cheat exception once per (cheat, phase, exception) so a persistent per-frame fault
+        /// doesn't flood the log file.
+        private void LogCheatError(CheatBase cheat, string phase, Exception ex)
         {
-            // NoVisor
-            var visor = GameObject.Find("Systems/Rendering/PlayerHUDHelmetModel/");
-            if (visor != null)
-            {
-                visor.SetActive(!Hack.NoVisor.IsEnabled());
-            }
-
-            // Unlimited TZP
-            if (Hack.UnlimitedTZP.IsEnabled() && LocalPlayer != null)
-            {
-                var heldItem = LocalPlayer.currentlyHeldObjectServer;
-                if (heldItem is TetraChemicalItem tzp && tzp != null)
-                {
-                    // Use reflection to set fuel
-                    var fuelField = tzp.GetType().GetField("fuel", 
-                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                    fuelField?.SetValue(tzp, 1f);
-                }
-            }
-
-            // No TZP Effects
-            if (Hack.NoTZPEffects.IsEnabled() && LocalPlayer != null && HUD != null)
-            {
-                var heldItem = LocalPlayer.currentlyHeldObjectServer;
-                if (heldItem is TetraChemicalItem tzp && tzp != null)
-                {
-                    LocalPlayer.drunknessInertia = 0f;
-                    LocalPlayer.increasingDrunknessThisFrame = false;
-                    HUD.gasHelmetAnimator.SetBool("gasEmitting", false);
-                    
-                    // Set emittingGas to false via reflection
-                    var emitField = tzp.GetType().GetField("emittingGas",
-                        System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                    emitField?.SetValue(tzp, false);
-                }
-            }
-
-            // Eggs always explode
-            if (Hack.EggsAlwaysExplode.IsEnabled() && !Hack.EggsNeverExplode.IsEnabled() && LocalPlayer != null)
-            {
-                var heldItem = LocalPlayer.currentlyHeldObjectServer;
-                if (heldItem is StunGrenadeItem egg && egg != null && egg.explodeSFX?.name == "EasterEggPop")
-                {
-                    egg.SetExplodeOnThrowClientRpc(true);
-                }
-            }
-
-            // Minigun shotgun
-            UpdateMinigunShotgun();
+            if (_loggedCheatErrors.Add($"{cheat.Name}|{phase}|{ex.GetType().Name}|{ex.Message}"))
+                Loader.LogError($"[LethalMenu] Cheat {cheat.Name} {phase} error: {ex}");
         }
 
-        private void UpdateMinigunShotgun()
+        /// Fires OnEnable/OnDisable for every cheat whose flag changed since the last frame.
+        private void DispatchTransitions()
         {
-            if (!Hack.MinigunShotgun.IsEnabled() || LocalPlayer == null) return;
+            for (int i = 0; i < _cheats.Count; i++)
+            {
+                var cheat = _cheats[i];
+                bool now = cheat.IsEnabled;
+                if (now == _cheatWasEnabled[i]) continue;
+                _cheatWasEnabled[i] = now;
 
-            var shotgun = LocalPlayer.currentlyHeldObjectServer as ShotgunItem;
-            if (shotgun == null) return;
-
-            var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (mouse == null || !mouse.leftButton.isPressed) return;
-
-            var pos = LocalPlayer.transform.position - LocalPlayer.gameplayCamera.transform.up * 0.45f;
-            var dir = LocalPlayer.gameplayCamera.transform.forward;
-            shotgun.ShootGunServerRpc(pos, dir);
+                try
+                {
+                    if (now) cheat.OnEnable();
+                    else cheat.OnDisable();
+                }
+                catch (Exception ex)
+                {
+                    LogCheatError(cheat, now ? "enable" : "disable", ex);
+                }
+            }
         }
 
         private void FixedUpdate()
@@ -319,9 +285,9 @@ namespace LethalMenu
                     {
                         cheat.OnFixedUpdate();
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Silently ignore fixed update errors
+                        LogCheatError(cheat, "fixed-update", ex);
                     }
                 }
             }
@@ -337,7 +303,7 @@ namespace LethalMenu
                 }
                 catch (Exception ex)
                 {
-                    Loader.LogError($"[LethalMenu] Cheat {cheat.Name} late-update error: {ex.Message}");
+                    LogCheatError(cheat, "late-update", ex);
                 }
             }
         }
@@ -371,22 +337,11 @@ namespace LethalMenu
                     {
                         cheat.OnGUI();
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Silently ignore GUI errors
+                        LogCheatError(cheat, "GUI", ex);
                     }
                 }
-            }
-
-            // Draw crosshair
-            if (Hack.Crosshair.IsEnabled())
-            {
-                DrawCrosshair();
-            }
-
-            if (Hack.HPDisplay.IsEnabled() && LocalPlayer != null)
-            {
-                DrawHPDisplay();
             }
         }
 
@@ -399,32 +354,6 @@ namespace LethalMenu
                 GUI.skin = Theme.ThemeLoader.Skin;
         }
 
-        private static Texture2D? _crosshairTexture;
-        
-        private void DrawCrosshair()
-        {
-            if (_crosshairTexture == null)
-            {
-                _crosshairTexture = new Texture2D(1, 1);
-                _crosshairTexture.SetPixel(0, 0, Color.white);
-                _crosshairTexture.Apply();
-            }
-
-            float centerX = Screen.width / 2f;
-            float centerY = Screen.height / 2f;
-            float scale = Settings.CrosshairScale;
-            float thickness = Settings.CrosshairThickness;
-
-            GUI.color = Settings.CrosshairColor;
-
-            // Horizontal line
-            GUI.DrawTexture(new Rect(centerX - scale, centerY - thickness / 2, scale * 2, thickness), _crosshairTexture);
-            // Vertical line
-            GUI.DrawTexture(new Rect(centerX - thickness / 2, centerY - scale, thickness, scale * 2), _crosshairTexture);
-
-            GUI.color = Color.white;
-        }
-
         private void UpdateGameState()
         {
             GameInstance = StartOfRound.Instance;
@@ -432,7 +361,8 @@ namespace LethalMenu
 
             LocalPlayer = GameInstance.localPlayerController;
             QuickMenu = LocalPlayer?.quickMenuManager;
-            GameTerminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            if (GameTerminal == null)
+                GameTerminal = UnityEngine.Object.FindObjectOfType<Terminal>();
         }
 
         private void ToggleCursor(bool show)
@@ -462,39 +392,23 @@ namespace LethalMenu
         {
             _harmony?.UnpatchAll(HarmonyId);
 
-            foreach (var cheat in _cheats)
+            for (int i = 0; i < _cheats.Count; i++)
             {
-                cheat.IsEnabled = false;
-                cheat.OnDisable();
+                if (!_cheatWasEnabled[i]) continue;
+                try
+                {
+                    _cheats[i].OnDisable();
+                }
+                catch (Exception ex)
+                {
+                    LogCheatError(_cheats[i], "disable", ex);
+                }
             }
 
             _cheats.Clear();
+            _cheatWasEnabled.Clear();
             HackExtensions.InitializeDefaults();
             Instance = null;
-        }
-
-        private static GUIStyle? _hpStyle;
-
-        private void DrawHPDisplay()
-        {
-            if (_hpStyle == null)
-            {
-                _hpStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = 18,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.MiddleLeft
-                };
-            }
-
-            if (LocalPlayer == null) return;
-            
-            GUI.color = Color.green;
-            if (LocalPlayer.health < 50) GUI.color = Color.yellow;
-            if (LocalPlayer.health < 25) GUI.color = Color.red;
-
-            GUI.Label(new Rect(20, 80, 100, 40), $"HP: {LocalPlayer.health}", _hpStyle);
-            GUI.color = Color.white;
         }
     }
 }
