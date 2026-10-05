@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LethalMenu.Util
@@ -9,8 +10,35 @@ namespace LethalMenu.Util
     {
         /// `root` limits the name path checks to the object's own hierarchy (so a scene container
         /// like "mapPropsContainer" above it doesn't count); null checks the full scene path.
-        public static bool IsVisual(Renderer renderer, Transform? root = null)
+        public static bool IsVisual(Renderer renderer, Transform? root = null) =>
+            IsBodyRenderer(renderer, root, out int lod) && lod <= 0;
+
+        /// The visible body renderers under `target`, highest detail only: renderers without a LOD tag plus
+        /// those of the lowest LOD level present. Some models start at LOD1 (the player / Masked body mesh is
+        /// named "LOD1"), so "lowest present" rather than "LOD0".
+        public static void CollectVisual(Component target, List<Renderer> into)
         {
+            into.Clear();
+            var root = target.transform;
+            int lowest = int.MaxValue;
+            var lods = new List<int>();
+            foreach (var renderer in target.GetComponentsInChildren<Renderer>())
+            {
+                if (!IsBodyRenderer(renderer, root, out int lod)) continue;
+                into.Add(renderer);
+                lods.Add(lod);
+                if (lod >= 0 && lod < lowest) lowest = lod;
+            }
+
+            for (int i = into.Count - 1; i >= 0; i--)
+                if (lods[i] >= 0 && lods[i] != lowest)
+                    into.RemoveAt(i);
+        }
+
+        /// False for helper renderers. `lod` is the LOD level named in the renderer's path, -1 when untagged.
+        private static bool IsBodyRenderer(Renderer renderer, Transform? root, out int lod)
+        {
+            lod = -1;
             if (!(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) return false;
 
             string path = PathFrom(renderer.transform, root).ToLowerInvariant();
@@ -28,12 +56,9 @@ namespace LethalMenu.Util
                 path.Contains("tongue"))
                 return false;
 
-            // Keep LOD0 (or no LOD suffix); drop LOD1..LOD9.
-            for (int digit = 1; digit <= 9; digit++)
-            {
-                if (path.Contains("lod" + digit))
-                    return false;
-            }
+            int tag = path.LastIndexOf("lod");
+            if (tag >= 0 && tag + 3 < path.Length && char.IsDigit(path[tag + 3]))
+                lod = path[tag + 3] - '0';
 
             foreach (var material in renderer.sharedMaterials)
             {
