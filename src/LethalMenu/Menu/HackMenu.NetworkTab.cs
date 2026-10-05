@@ -617,6 +617,14 @@ namespace LethalMenu.Menu
                     }
                     GUILayout.EndHorizontal();
 
+                    if (!targetIsSelf)
+                    {
+                        bool isFriend = Settings.IsFriend(target);
+                        bool newFriend = DrawToggle("Friend", isFriend, "Escorts ignore friends; friends can't be hunted");
+                        if (newFriend != isFriend)
+                            Settings.SetFriend(target, newFriend);
+                    }
+
                     // Teleport options
                     string othersView = targetIsSelf ? "" : " (others' view)";
                     GUILayout.BeginHorizontal();

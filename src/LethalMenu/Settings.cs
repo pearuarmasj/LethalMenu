@@ -75,6 +75,20 @@ namespace LethalMenu
 
         // Networking state
         public static HashSet<ulong> KickedHostIds { get; set; } = new HashSet<ulong>();
+
+        // Players escorts ignore and that can't be hunt targets, by Steam ID so it survives lobbies.
+        public static HashSet<ulong> FriendSteamIds { get; set; } = new HashSet<ulong>();
+
+        public static bool IsFriend(PlayerControllerB? player) =>
+            player != null && player.playerSteamId != 0 && FriendSteamIds.Contains(player.playerSteamId);
+
+        public static void SetFriend(PlayerControllerB player, bool friend)
+        {
+            if (player == null || player.playerSteamId == 0) return;
+            if (friend) FriendSteamIds.Add(player.playerSteamId);
+            else FriendSteamIds.Remove(player.playerSteamId);
+        }
+
         internal static bool WasKicked { get; set; } = false;
         internal static bool HostQuit { get; set; } = false;
         public static ulong CurrentLobbyId { get; set; } = 0;
@@ -275,6 +289,7 @@ namespace LethalMenu
                     ["ChamDistance"] = ChamDistance,
 
                     ["KickedHostIds"] = new JArray(KickedHostIds.Select(id => (long)id)),
+                    ["FriendSteamIds"] = new JArray(FriendSteamIds.Select(id => (long)id)),
 
                     ["CollapsedSections"] = new JArray(CollapsedSections),
                     ["WindowX"] = WindowX,
@@ -367,6 +382,11 @@ namespace LethalMenu
                 if (config["KickedHostIds"] is JArray kickedArray)
                 {
                     KickedHostIds = new HashSet<ulong>(kickedArray.Select(t => (ulong)(long)t));
+                }
+
+                if (config["FriendSteamIds"] is JArray friendArray)
+                {
+                    FriendSteamIds = new HashSet<ulong>(friendArray.Select(t => (ulong)(long)t));
                 }
 
                 var collapsedArray = config["CollapsedSections"] as JArray;
