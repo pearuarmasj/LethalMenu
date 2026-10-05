@@ -11,8 +11,8 @@ namespace LethalMenu.Patches
     internal static class ForestGiantCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 
     /// Eat sequence: GrabPlayerClientRpc runs BeginEatPlayer, whose coroutine ends in
@@ -22,16 +22,16 @@ namespace LethalMenu.Patches
     internal static class ForestGiantGrabServerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.GrabPlayerClientRpc))]
     internal static class ForestGiantGrabClientPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     /// Chase target: chasingPlayer is only ever assigned by BeginChasingNewPlayerClientRpc (owner
@@ -43,24 +43,24 @@ namespace LethalMenu.Patches
     internal static class ForestGiantFindTargetPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(PlayerControllerB newPlayer) =>
-            !UntargetableSightPatches.IsHidden(newPlayer);
+        private static bool Prefix(EnemyAI __instance, PlayerControllerB newPlayer) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, newPlayer);
     }
 
     [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.BeginChasingNewPlayerServerRpc))]
     internal static class ForestGiantBeginChasingServerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.BeginChasingNewPlayerClientRpc))]
     internal static class ForestGiantBeginChasingClientPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     /// Stale state: a giant already chasing the player when Untargetable is enabled keeps
@@ -73,10 +73,10 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(ForestGiantAI __instance)
         {
-            if (UntargetableSightPatches.IsHidden(__instance.stunnedByPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.stunnedByPlayer))
                 __instance.stunnedByPlayer = null;
             if (__instance.IsOwner && __instance.currentBehaviourStateIndex == 1 &&
-                UntargetableSightPatches.IsHidden(__instance.chasingPlayer))
+                UntargetableSightPatches.IsHiddenFrom(__instance, __instance.chasingPlayer))
                 __instance.SwitchToBehaviourState(0);
         }
     }
@@ -88,7 +88,7 @@ namespace LethalMenu.Patches
     internal static class ForestGiantDeathCrushPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix() =>
-            !UntargetableSightPatches.IsHidden(GameNetworkManager.Instance.localPlayerController);
+        private static bool Prefix(EnemyAI __instance) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, GameNetworkManager.Instance.localPlayerController);
     }
 }

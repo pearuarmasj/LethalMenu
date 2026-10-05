@@ -25,10 +25,10 @@ namespace LethalMenu.Patches
 
         [HarmonyPatch(typeof(StingrayAI), nameof(StingrayAI.SpitOnLocalPlayer))]
         [HarmonyPrefix]
-        private static bool SpitOnLocalPlayerPrefix() => !HiddenPlayerHelpers.LocalPlayerHidden;
+        private static bool SpitOnLocalPlayerPrefix(EnemyAI __instance) => !HiddenPlayerHelpers.LocalPlayerHiddenFrom(__instance);
 
         [HarmonyPatch(typeof(StingrayAI), nameof(StingrayAI.ShowSpitOnPlayerServerRpc))]
         [HarmonyPrefix]
-        private static bool ShowSpitOnPlayerServerRpcPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool ShowSpitOnPlayerServerRpcPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
     }
 }

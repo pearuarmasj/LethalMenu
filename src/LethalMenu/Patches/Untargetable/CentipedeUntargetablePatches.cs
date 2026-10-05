@@ -14,7 +14,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static bool Prefix(CentipedeAI __instance, ulong clientId)
         {
-            if (!UntargetableSightPatches.IsHidden(LethalMenuMod.LocalPlayer) ||
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer) ||
                 clientId != NetworkManager.Singleton.LocalClientId)
                 return true;
             __instance.triggeredFall = false;
@@ -29,8 +29,8 @@ namespace LethalMenu.Patches
     internal static class CentipedeClingPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(PlayerControllerB playerScript) =>
-            !UntargetableSightPatches.IsHidden(playerScript);
+        private static bool Prefix(EnemyAI __instance, PlayerControllerB playerScript) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, playerScript);
     }
 
     /// CentipedeAI.DamagePlayerOnIntervals (state 3, only while clinging to the local client) deals 10 suffocation
@@ -42,7 +42,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static bool Prefix(CentipedeAI __instance)
         {
-            if (!UntargetableSightPatches.IsHidden(__instance.clingingToPlayer))
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, __instance.clingingToPlayer))
                 return true;
             if (!__instance.inDroppingOffPlayerAnim)
             {

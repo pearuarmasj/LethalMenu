@@ -8,7 +8,7 @@ namespace LethalMenu.Patches
     {
         public static bool Suppressed(DressGirlAI girl) =>
             girl.hauntingPlayer != null && girl.hauntingPlayer == LethalMenuMod.LocalPlayer &&
-            (Hack.Untargetable.IsEnabled() || Hack.AntiGhostGirl.IsEnabled());
+            (UntargetableSightPatches.IsHiddenFrom(girl, girl.hauntingPlayer) || Hack.AntiGhostGirl.IsEnabled());
     }
 
     /// Untargetable vs Ghost Girl. DressGirlAI picks `hauntingPlayer` in ChoosePlayerToHaunt with a seeded weighted

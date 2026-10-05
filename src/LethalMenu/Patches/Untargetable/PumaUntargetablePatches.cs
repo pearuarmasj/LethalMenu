@@ -14,9 +14,9 @@ namespace LethalMenu.Patches
     internal static class PumaPlayerIsTargetablePatch
     {
         [HarmonyPostfix]
-        private static void Postfix(ref bool __result, PlayerControllerB playerScript)
+        private static void Postfix(EnemyAI __instance, ref bool __result, PlayerControllerB playerScript)
         {
-            if (UntargetableSightPatches.IsHidden(playerScript))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, playerScript))
                 __result = false;
         }
     }
@@ -34,7 +34,7 @@ namespace LethalMenu.Patches
         {
             foreach (var knowledge in __instance.playerKnowledge)
             {
-                if (!UntargetableSightPatches.IsHidden(knowledge.playerScript))
+                if (!UntargetableSightPatches.IsHiddenFrom(__instance, knowledge.playerScript))
                     continue;
 
                 if (knowledge.playerScript.isPlayerControlled && !knowledge.playerScript.isInsideFactory &&
@@ -57,9 +57,9 @@ namespace LethalMenu.Patches
     internal static class PumaThreateningPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(PlayerControllerB playerScript, ref bool __result)
+        private static bool Prefix(EnemyAI __instance, PlayerControllerB playerScript, ref bool __result)
         {
-            if (!UntargetableSightPatches.IsHidden(playerScript))
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, playerScript))
                 return true;
             __result = false;
             return false;
@@ -74,8 +74,8 @@ namespace LethalMenu.Patches
         private const float IgnoreRadius = 5f;
 
         [HarmonyPrefix]
-        private static bool Prefix(Vector3 noisePosition) =>
-            !UntargetableSightPatches.IsHidden(LethalMenuMod.LocalPlayer) ||
+        private static bool Prefix(EnemyAI __instance, Vector3 noisePosition) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer) ||
             Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer!.transform.position) >= IgnoreRadius;
     }
 }

@@ -12,6 +12,6 @@ namespace LethalMenu.Patches
         [HarmonyPatch(typeof(DocileLocustBeesAI), nameof(DocileLocustBeesAI.DoAIInterval))]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> DoAIIntervalTranspiler(IEnumerable<CodeInstruction> instructions) =>
-            HiddenPlayerHelpers.HidePlayerFromCheckSphere(instructions);
+            HiddenPlayerHelpers.HidePlayerFromCheckSphere(instructions, forEnemy: true);
     }
 }

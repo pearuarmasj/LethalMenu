@@ -11,8 +11,8 @@ namespace LethalMenu.Patches
     internal static class PufferCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 
     /// Stale targets: PufferAI keeps closestSeenPlayer across DoAIInterval calls and, in state 2,
@@ -26,9 +26,9 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(PufferAI __instance)
         {
-            if (UntargetableSightPatches.IsHidden(__instance.closestSeenPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.closestSeenPlayer))
                 __instance.closestSeenPlayer = null;
-            if (UntargetableSightPatches.IsHidden(__instance.stunnedByPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.stunnedByPlayer))
                 __instance.stunnedByPlayer = null;
         }
     }

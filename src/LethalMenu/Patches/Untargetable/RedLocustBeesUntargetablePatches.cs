@@ -19,6 +19,6 @@ namespace LethalMenu.Patches
 
         [HarmonyPatch(typeof(RedLocustBees), nameof(RedLocustBees.BeeKillPlayerOnLocalClient))]
         [HarmonyPrefix]
-        private static bool BeeKillPlayerOnLocalClientPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool BeeKillPlayerOnLocalClientPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
     }
 }

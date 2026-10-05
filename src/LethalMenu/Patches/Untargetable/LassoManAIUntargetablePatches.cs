@@ -13,11 +13,11 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(LassoManAI), nameof(LassoManAI.OnCollideWithPlayer))]
         [HarmonyPrefix]
-        private static bool OnCollideWithPlayerPrefix(Collider other) => !HiddenPlayerHelpers.IsHiddenCollider(other);
+        private static bool OnCollideWithPlayerPrefix(EnemyAI __instance, Collider other) => !HiddenPlayerHelpers.IsHiddenCollider(__instance, other);
 
         [HarmonyPatch(typeof(LassoManAI), nameof(LassoManAI.BeginChasingPlayerServerRpc))]
         [HarmonyPrefix]
-        private static bool BeginChasingPlayerServerRpcPrefix(int playerObjectId) =>
-            !HiddenPlayerHelpers.IsHiddenId(playerObjectId);
+        private static bool BeginChasingPlayerServerRpcPrefix(EnemyAI __instance, int playerObjectId) =>
+            !HiddenPlayerHelpers.IsHiddenId(__instance, playerObjectId);
     }
 }

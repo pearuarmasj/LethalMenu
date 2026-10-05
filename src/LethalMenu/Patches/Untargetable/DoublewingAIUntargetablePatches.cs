@@ -13,12 +13,12 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(DoublewingAI), nameof(DoublewingAI.DetectNoise))]
         [HarmonyPrefix]
-        private static bool DetectNoisePrefix(Vector3 noisePosition) =>
-            !HiddenPlayerHelpers.IsNoiseFromHiddenPlayer(noisePosition);
+        private static bool DetectNoisePrefix(EnemyAI __instance, Vector3 noisePosition) =>
+            !HiddenPlayerHelpers.IsNoiseFromHiddenPlayer(__instance, noisePosition);
 
         [HarmonyPatch(typeof(DoublewingAI), nameof(DoublewingAI.TryLanding))]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> TryLandingTranspiler(IEnumerable<CodeInstruction> instructions) =>
-            HiddenPlayerHelpers.HidePlayerFromCheckSphere(instructions);
+            HiddenPlayerHelpers.HidePlayerFromCheckSphere(instructions, forEnemy: true);
     }
 }

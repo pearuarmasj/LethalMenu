@@ -8,12 +8,12 @@ namespace LethalMenu.Patches
     [HarmonyPatch(typeof(EnemyAI))]
     public static class EnemyPatches
     {
-        /// Make enemies unable to target local player.
+        /// Make enemies unable to target local player (Untargetable, or the enemy is directed).
         [HarmonyPatch("PlayerIsTargetable")]
         [HarmonyPostfix]
-        public static void PlayerIsTargetablePostfix(ref bool __result, PlayerControllerB playerScript)
+        public static void PlayerIsTargetablePostfix(EnemyAI __instance, ref bool __result, PlayerControllerB playerScript)
         {
-            if (Hack.Untargetable.IsEnabled() && playerScript == LethalMenuMod.LocalPlayer)
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, playerScript))
             {
                 __result = false;
             }
@@ -24,7 +24,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool EnemyUpdatePrefix(EnemyAI __instance)
         {
-            if (!Hack.Untargetable.IsEnabled()) return true;
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer)) return true;
             if (__instance.targetPlayer != LethalMenuMod.LocalPlayer) return true;
 
             __instance.targetPlayer = null;
@@ -37,7 +37,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool DetectNoisePrefix(EnemyAI __instance, Vector3 noisePosition)
         {
-            if (!Hack.Untargetable.IsEnabled()) return true;
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer)) return true;
             if (LethalMenuMod.LocalPlayer == null) return true;
 
             float distToPlayer = Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer.transform.position);
@@ -58,7 +58,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool DetectNoisePrefix(MouthDogAI __instance, Vector3 noisePosition)
         {
-            if (!Hack.Untargetable.IsEnabled()) return true;
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer)) return true;
             if (LethalMenuMod.LocalPlayer == null) return true;
 
             float distToPlayer = Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer.transform.position);
@@ -74,8 +74,8 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static bool EnterLungePrefix(MouthDogAI __instance)
         {
-            if (!Hack.Untargetable.IsEnabled()) return true;
-            
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer)) return true;
+
             if (__instance.targetPlayer == LethalMenuMod.LocalPlayer)
             {
                 __instance.targetPlayer = null;

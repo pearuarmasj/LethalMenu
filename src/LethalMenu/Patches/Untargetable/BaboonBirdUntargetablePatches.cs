@@ -19,7 +19,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(BaboonBirdAI __instance)
         {
-            if (__instance.focusedThreat?.threatScript is not PlayerControllerB player || !UntargetableSightPatches.IsHidden(player))
+            if (__instance.focusedThreat?.threatScript is not PlayerControllerB player || !UntargetableSightPatches.IsHiddenFrom(__instance, player))
                 return;
 
             __instance.threats.Remove(player.transform);
@@ -38,10 +38,10 @@ namespace LethalMenu.Patches
     internal static class BaboonBirdFocusSyncPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(NetworkObjectReference netObject) =>
+        private static bool Prefix(EnemyAI __instance, NetworkObjectReference netObject) =>
             !(netObject.TryGet(out var networkObject) &&
               networkObject.TryGetComponent(out PlayerControllerB player) &&
-              UntargetableSightPatches.IsHidden(player));
+              UntargetableSightPatches.IsHiddenFrom(__instance, player));
     }
 
     /// Stab: BaboonBirdAI.OnCollideWithPlayer calls DamagePlayer(20) on the local player after
@@ -51,7 +51,7 @@ namespace LethalMenu.Patches
     internal static class BaboonBirdCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 }

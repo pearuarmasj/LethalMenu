@@ -11,6 +11,6 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(SandWormAI), nameof(SandWormAI.EatPlayer))]
         [HarmonyPrefix]
-        private static bool EatPlayerPrefix(PlayerControllerB playerScript) => !HiddenPlayerHelpers.IsHidden(playerScript);
+        private static bool EatPlayerPrefix(EnemyAI __instance, PlayerControllerB playerScript) => !HiddenPlayerHelpers.IsHiddenFrom(__instance, playerScript);
     }
 }

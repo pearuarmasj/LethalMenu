@@ -16,24 +16,24 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.HitEnemy))]
         [HarmonyPrefix]
-        private static void HitEnemyPrefix(ref PlayerControllerB playerWhoHit)
+        private static void HitEnemyPrefix(EnemyAI __instance, ref PlayerControllerB playerWhoHit)
         {
-            if (HiddenPlayerHelpers.IsHidden(playerWhoHit)) playerWhoHit = null!;
+            if (HiddenPlayerHelpers.IsHiddenFrom(__instance, playerWhoHit)) playerWhoHit = null!;
         }
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Update))]
         [HarmonyPrefix]
         private static void UpdatePrefix(MouthDogAI __instance)
         {
-            if (HiddenPlayerHelpers.IsHidden(__instance.stunnedByPlayer)) __instance.stunnedByPlayer = null;
+            if (HiddenPlayerHelpers.IsHiddenFrom(__instance, __instance.stunnedByPlayer)) __instance.stunnedByPlayer = null;
         }
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.ChaseLocalPlayer))]
         [HarmonyPrefix]
-        private static bool ChaseLocalPlayerPrefix() => !HiddenPlayerHelpers.LocalPlayerHidden;
+        private static bool ChaseLocalPlayerPrefix(EnemyAI __instance) => !HiddenPlayerHelpers.LocalPlayerHiddenFrom(__instance);
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillPlayerClientRpc))]
         [HarmonyPrefix]
-        private static bool KillPlayerClientRpcPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool KillPlayerClientRpcPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
     }
 }

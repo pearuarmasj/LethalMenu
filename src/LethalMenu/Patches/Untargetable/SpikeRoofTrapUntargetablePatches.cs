@@ -10,17 +10,18 @@ namespace LethalMenu.Patches
     ///   (or no enemy is within 8 m); the hidden player's colliders no longer count.
     /// - OnTriggerStay: while slamming, the local player under the spikes gets KillPlayer(Crushing); the hidden
     ///   player resolves to no player there.
+    /// SpikeRoofTrap is not an EnemyAI, so both transpilers use the enemy-less helper form (Untargetable toggle only).
     [HarmonyPatch]
     internal static class SpikeRoofTrapUntargetablePatches
     {
         [HarmonyPatch(typeof(SpikeRoofTrap), nameof(SpikeRoofTrap.Update))]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> UpdateTranspiler(IEnumerable<CodeInstruction> instructions) =>
-            HiddenPlayerHelpers.HidePlayerFromCheckSphere(HiddenPlayerHelpers.HidePlayerFromComponentLookups(instructions));
+            HiddenPlayerHelpers.HidePlayerFromCheckSphere(HiddenPlayerHelpers.HidePlayerFromComponentLookups(instructions, forEnemy: false), forEnemy: false);
 
         [HarmonyPatch(typeof(SpikeRoofTrap), nameof(SpikeRoofTrap.OnTriggerStay))]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> OnTriggerStayTranspiler(IEnumerable<CodeInstruction> instructions) =>
-            HiddenPlayerHelpers.HidePlayerFromComponentLookups(instructions);
+            HiddenPlayerHelpers.HidePlayerFromComponentLookups(instructions, forEnemy: false);
     }
 }

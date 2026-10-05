@@ -13,7 +13,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(CrawlerAI __instance)
         {
-            if (UntargetableSightPatches.IsHidden(__instance.stunnedByPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.stunnedByPlayer))
                 __instance.stunnedByPlayer = null;
         }
     }
@@ -31,7 +31,7 @@ namespace LethalMenu.Patches
         [HarmonyPostfix]
         private static void Postfix(CrawlerAI __instance, PlayerControllerB? __state)
         {
-            if (UntargetableSightPatches.IsHidden(__instance.targetPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.targetPlayer))
                 __instance.targetPlayer = __state;
         }
     }

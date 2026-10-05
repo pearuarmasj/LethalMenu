@@ -17,18 +17,18 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(RadMechAI), nameof(RadMechAI.GrabPlayerServerRpc))]
         [HarmonyPrefix]
-        private static bool GrabPlayerServerRpcPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool GrabPlayerServerRpcPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
 
         [HarmonyPatch(typeof(RadMechAI), nameof(RadMechAI.BeginTorchPlayer))]
         [HarmonyPrefix]
-        private static bool BeginTorchPlayerPrefix(PlayerControllerB playerBeingTorched) =>
-            !HiddenPlayerHelpers.IsHidden(playerBeingTorched);
+        private static bool BeginTorchPlayerPrefix(EnemyAI __instance, PlayerControllerB playerBeingTorched) =>
+            !HiddenPlayerHelpers.IsHiddenFrom(__instance, playerBeingTorched);
 
         [HarmonyPatch(typeof(RadMechAI), nameof(RadMechAI.Update))]
         [HarmonyPostfix]
         private static void UpdatePostfix(RadMechAI __instance)
         {
-            if (HiddenPlayerHelpers.IsHidden(__instance.inSpecialAnimationWithPlayer))
+            if (HiddenPlayerHelpers.IsHiddenFrom(__instance, __instance.inSpecialAnimationWithPlayer))
                 __instance.CancelTorchPlayerAnimation();
         }
 

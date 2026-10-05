@@ -25,10 +25,9 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void UpdatePrefix(ButlerEnemyAI __instance)
         {
-            if (!Hack.Untargetable.IsEnabled()) return;
-            if (HiddenPlayerHelpers.IsHidden(__instance.watchingPlayer)) __instance.watchingPlayer = null;
-            if (HiddenPlayerHelpers.IsHidden(__instance.syncedTargetPlayer)) __instance.syncedTargetPlayer = null;
-            if (!HiddenPlayerHelpers.IsHidden(__instance.targetPlayer)) return;
+            if (HiddenPlayerHelpers.IsHiddenFrom(__instance, __instance.watchingPlayer)) __instance.watchingPlayer = null;
+            if (HiddenPlayerHelpers.IsHiddenFrom(__instance, __instance.syncedTargetPlayer)) __instance.syncedTargetPlayer = null;
+            if (!HiddenPlayerHelpers.IsHiddenFrom(__instance, __instance.targetPlayer)) return;
 
             if (__instance.IsOwner && __instance.currentBehaviourStateIndex == 2)
             {
@@ -40,7 +39,7 @@ namespace LethalMenu.Patches
 
         [HarmonyPatch(typeof(ButlerEnemyAI), nameof(ButlerEnemyAI.DetectNoise))]
         [HarmonyPrefix]
-        private static bool DetectNoisePrefix(Vector3 noisePosition) =>
-            !HiddenPlayerHelpers.IsNoiseFromHiddenPlayer(noisePosition);
+        private static bool DetectNoisePrefix(EnemyAI __instance, Vector3 noisePosition) =>
+            !HiddenPlayerHelpers.IsNoiseFromHiddenPlayer(__instance, noisePosition);
     }
 }

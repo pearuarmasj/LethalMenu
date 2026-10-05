@@ -13,8 +13,8 @@ namespace LethalMenu.Patches
     internal static class MaskedCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 
     /// Kill animation requests naming the hidden player: MaskedPlayerEnemy.KillPlayerAnimationServerRpc
@@ -24,16 +24,16 @@ namespace LethalMenu.Patches
     internal static class MaskedKillAnimationServerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObjectId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObjectId]);
+        private static bool Prefix(EnemyAI __instance, int playerObjectId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObjectId]);
     }
 
     [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.KillPlayerAnimationClientRpc))]
     internal static class MaskedKillAnimationClientPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObjectId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObjectId]);
+        private static bool Prefix(EnemyAI __instance, int playerObjectId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObjectId]);
     }
 
     /// Stare: LookAtPlayerClientRpc makes every client's Masked set stareAtTransform to the named
@@ -43,15 +43,15 @@ namespace LethalMenu.Patches
     internal static class MaskedLookAtPlayerServerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.LookAtPlayerClientRpc))]
     internal static class MaskedLookAtPlayerClientPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 }

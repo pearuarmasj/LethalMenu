@@ -13,7 +13,7 @@ namespace LethalMenu.Patches
     internal static class SpringManCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 }

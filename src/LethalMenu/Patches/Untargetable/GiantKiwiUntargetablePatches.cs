@@ -14,7 +14,8 @@ namespace LethalMenu.Patches
     /// and the chase state all use to pick `watchingThreat`, send SyncWatchingThreatServerRpc /
     /// AddToThreatsHoldingEggListServerRpc and start StartAttackingAndSync. The single
     /// `Component.TryGetComponent&lt;IVisibleThreat&gt;` that reads each collider is routed through TryGetThreat, which
-    /// reports "no threat" for the hidden local player.
+    /// reports "no threat" for the hidden local player. GiantKiwiAI.CheckLOSForCreatures is a plain instance method, so the
+    /// transpiler is enemy-aware: it pushes `ldarg.0` after the call's operands and TryGetThreat takes the enemy last.
     [HarmonyPatch(typeof(GiantKiwiAI), nameof(GiantKiwiAI.CheckLOSForCreatures))]
     internal static class GiantKiwiThreatScanPatch
     {
@@ -32,6 +33,10 @@ namespace LethalMenu.Patches
                     typeof(Component).IsAssignableFrom(method.DeclaringType) &&
                     method.GetGenericArguments()[0] == typeof(IVisibleThreat))
                 {
+                    var enemy = new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(instruction);
+                    enemy.blocks.AddRange(instruction.blocks);
+                    instruction.blocks.Clear();
+                    yield return enemy;
                     instruction.opcode = OpCodes.Call;
                     instruction.operand = replacement;
                     replaced++;
@@ -42,9 +47,9 @@ namespace LethalMenu.Patches
                 throw new InvalidOperationException("GiantKiwiAI.CheckLOSForCreatures: TryGetComponent<IVisibleThreat> not found");
         }
 
-        private static bool TryGetThreat(Component source, out IVisibleThreat threat)
+        private static bool TryGetThreat(Component source, out IVisibleThreat threat, EnemyAI enemy)
         {
-            if (source.TryGetComponent(out threat) && !UntargetableSightPatches.IsHidden(threat as PlayerControllerB))
+            if (source.TryGetComponent(out threat) && !UntargetableSightPatches.IsHiddenFrom(enemy, threat as PlayerControllerB))
                 return true;
             threat = null!;
             return false;
@@ -63,8 +68,8 @@ namespace LethalMenu.Patches
     internal static class GiantKiwiReactPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(IVisibleThreat threat) =>
-            !UntargetableSightPatches.IsHidden(threat as PlayerControllerB);
+        private static bool Prefix(EnemyAI __instance, IVisibleThreat threat) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, threat as PlayerControllerB);
     }
 
     [HarmonyPatch(typeof(GiantKiwiAI), nameof(GiantKiwiAI.Update))]
@@ -73,16 +78,16 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(GiantKiwiAI __instance)
         {
-            if (!UntargetableSightPatches.IsHidden(LethalMenuMod.LocalPlayer))
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer))
                 return;
 
-            if (UntargetableSightPatches.IsHidden(__instance.stunnedByPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.stunnedByPlayer))
                 __instance.stunnedByPlayer = null;
-            if (UntargetableSightPatches.IsHidden(__instance.lastPlayerWhoAttacked))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.lastPlayerWhoAttacked))
                 __instance.lastPlayerWhoAttacked = null;
-            if (UntargetableSightPatches.IsHidden(__instance.watchingThreat as PlayerControllerB))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.watchingThreat as PlayerControllerB))
                 __instance.watchingThreat = null;
-            if (UntargetableSightPatches.IsHidden(__instance.attackingThreat as PlayerControllerB))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.attackingThreat as PlayerControllerB))
             {
                 __instance.attackingThreat = null;
                 if (__instance.currentBehaviourStateIndex == 2)
@@ -100,7 +105,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(GiantKiwiAI __instance)
         {
-            if (UntargetableSightPatches.IsHidden(LethalMenuMod.LocalPlayer) && __instance.timeSinceHittingPlayer < 0.1f)
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer) && __instance.timeSinceHittingPlayer < 0.1f)
                 __instance.timeSinceHittingPlayer = 0.1f;
         }
     }
@@ -113,8 +118,8 @@ namespace LethalMenu.Patches
         private const float IgnoreRadius = 5f;
 
         [HarmonyPrefix]
-        private static bool Prefix(Vector3 noisePosition) =>
-            !UntargetableSightPatches.IsHidden(LethalMenuMod.LocalPlayer) ||
+        private static bool Prefix(EnemyAI __instance, Vector3 noisePosition) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer) ||
             Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer!.transform.position) >= IgnoreRadius;
     }
 }

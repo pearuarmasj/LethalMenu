@@ -10,8 +10,8 @@ namespace LethalMenu.Patches
     internal static class CadaverInfectPlayersPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix() =>
-            !UntargetableSightPatches.IsHidden(GameNetworkManager.Instance.localPlayerController);
+        private static bool Prefix(EnemyAI __instance) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, GameNetworkManager.Instance.localPlayerController);
     }
 
     /// Spore infection source 2: CadaverGrowthAI.CoughSporesRpc (another infected player coughing in
@@ -23,16 +23,16 @@ namespace LethalMenu.Patches
     internal static class CadaverInfectPlayerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(GameNetcodeStuff.PlayerControllerB playerScript) =>
-            !UntargetableSightPatches.IsHidden(playerScript);
+        private static bool Prefix(EnemyAI __instance, GameNetcodeStuff.PlayerControllerB playerScript) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, playerScript);
     }
 
     [HarmonyPatch(typeof(CadaverGrowthAI), nameof(CadaverGrowthAI.InfectPlayerRpc))]
     internal static class CadaverInfectPlayerRpcPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     /// Already infected: a player infected before Untargetable was enabled would still advance
@@ -46,7 +46,7 @@ namespace LethalMenu.Patches
         private static void Prefix(CadaverGrowthAI __instance)
         {
             var local = GameNetworkManager.Instance.localPlayerController;
-            if (!UntargetableSightPatches.IsHidden(local)) return;
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, local)) return;
 
             int id = (int)local.playerClientId;
             if (!__instance.playerInfections[id].infected) return;

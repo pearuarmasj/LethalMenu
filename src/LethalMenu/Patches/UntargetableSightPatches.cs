@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using GameNetcodeStuff;
 using HarmonyLib;
+using LethalMenu.Cheats.Directives;
 using UnityEngine;
 
 namespace LethalMenu.Patches
@@ -24,6 +25,13 @@ namespace LethalMenu.Patches
         public static bool IsHidden(PlayerControllerB? player) =>
             player != null && Hack.Untargetable.IsEnabled() && player == LethalMenuMod.LocalPlayer;
 
+        /// IsHidden, plus: a directed enemy (escort / hunt) treats the local player exactly as hidden,
+        /// regardless of the Untargetable toggle, so it never targets or harms the player directing it.
+        /// Used wherever the enemy instance is available.
+        public static bool IsHiddenFrom(EnemyAI? enemy, PlayerControllerB? player) =>
+            IsHidden(player) ||
+            (player != null && player == LethalMenuMod.LocalPlayer && enemy != null && EnemyDirector.IsDirected(enemy));
+
         private static IEnumerable<MethodBase> TargetMethods()
         {
             yield return AccessTools.Method(typeof(EnemyAI), nameof(EnemyAI.CheckLineOfSightForPlayer));
@@ -32,23 +40,25 @@ namespace LethalMenu.Patches
             yield return AccessTools.Method(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.Update));
         }
 
-        public static Vector3 SightPosition(PlayerControllerB player)
+        public static Vector3 SightPositionFrom(PlayerControllerB player, EnemyAI enemy)
         {
-            if (IsHidden(player))
+            if (IsHiddenFrom(enemy, player))
                 return HiddenPosition;
             return player.gameplayCamera.transform.position;
         }
 
         /// Replaces `ldfld gameplayCamera; callvirt get_transform; callvirt get_position` (stack: player)
-        /// with `call SightPosition(player)`. Reusable by other patches:
-        /// `[HarmonyTranspiler] static IEnumerable<CodeInstruction> T(IEnumerable<CodeInstruction> c) => UntargetableSightPatches.Transpiler(c);`
+        /// with `ldarg.0; call SightPositionFrom(player, enemy)`. Enemy-aware form: every target method
+        /// (EnemyAI.CheckLineOfSightForPlayer/ForClosestPlayer, NutcrackerEnemyAI.CheckLineOfSightForLocalPlayer/Update)
+        /// is a plain instance method of an EnemyAI, so ldarg.0 is the enemy and directed enemies hide the local
+        /// player too. Only valid for such targets.
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             var cameraField = AccessTools.Field(typeof(PlayerControllerB), nameof(PlayerControllerB.gameplayCamera));
             var getTransform = AccessTools.PropertyGetter(typeof(Component), nameof(Component.transform));
             var getPosition = AccessTools.PropertyGetter(typeof(Transform), nameof(Transform.position));
-            var sightPosition = AccessTools.Method(typeof(UntargetableSightPatches), nameof(SightPosition));
+            var sightPosition = AccessTools.Method(typeof(UntargetableSightPatches), nameof(SightPositionFrom));
 
             var codes = new List<CodeInstruction>(instructions);
             for (int i = 0; i < codes.Count; i++)
@@ -56,9 +66,10 @@ namespace LethalMenu.Patches
                 if (i + 2 < codes.Count && codes[i].LoadsField(cameraField) &&
                     codes[i + 1].Calls(getTransform) && codes[i + 2].Calls(getPosition))
                 {
-                    var call = new CodeInstruction(OpCodes.Call, sightPosition).MoveLabelsFrom(codes[i]);
-                    call.blocks.AddRange(codes[i].blocks);
-                    yield return call;
+                    var enemy = new CodeInstruction(OpCodes.Ldarg_0).MoveLabelsFrom(codes[i]);
+                    enemy.blocks.AddRange(codes[i].blocks);
+                    yield return enemy;
+                    yield return new CodeInstruction(OpCodes.Call, sightPosition);
                     i += 2;
                     continue;
                 }
@@ -68,14 +79,14 @@ namespace LethalMenu.Patches
     }
 
     /// Nutcracker only reports a player it sees moving; the local player never counts as moving while
-    /// Untargetable.
+    /// Untargetable or directed.
     [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.IsLocalPlayerMoving))]
     internal static class NutcrackerMovingPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(ref bool __result)
+        private static bool Prefix(NutcrackerEnemyAI __instance, ref bool __result)
         {
-            if (!Hack.Untargetable.IsEnabled()) return true;
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer)) return true;
             __result = false;
             return false;
         }

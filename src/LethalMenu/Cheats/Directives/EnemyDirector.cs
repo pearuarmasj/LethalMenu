@@ -61,8 +61,17 @@ namespace LethalMenu.Cheats.Directives
             if (enemy == null || !Directives.ContainsKey(enemy)) return;
             var adapter = DirectiveAdapterRegistry.Get(enemy);
             Remove(enemy);
-            if (adapter != null && enemy.IsOwner && !enemy.isEnemyDead)
+            if (adapter == null || !enemy.IsOwner || enemy.isEnemyDead) return;
+            try
+            {
                 adapter.Release(enemy);
+            }
+            catch (Exception ex)
+            {
+                string key = $"{enemy.GetType().Name}|release|{ex.GetType().Name}|{ex.Message}";
+                if (LoggedErrors.Add(key))
+                    Loader.LogError($"[Directives] {enemy.GetType().Name} release failed: {ex}");
+            }
         }
 
         public static void ReleaseAll()
@@ -162,6 +171,13 @@ namespace LethalMenu.Cheats.Directives
             if (!Directives.TryGetValue(enemy, out var d) || !enemy.IsOwner || enemy.isEnemyDead) return;
             try
             {
+                // Vanilla Update paths (stun retaliation, cling, anger) can retarget an escort that has no
+                // engaged target onto the director or a friend; drop such a target before the adapter runs.
+                if (enemy.targetPlayer != null && !DirectiveTargeting.IsValidTarget(enemy.targetPlayer))
+                {
+                    enemy.targetPlayer = null;
+                    enemy.movingTowardsTargetPlayer = false;
+                }
                 DirectiveAdapterRegistry.Get(enemy)?.AfterUpdate(enemy, d.Engaged);
             }
             catch (Exception ex)

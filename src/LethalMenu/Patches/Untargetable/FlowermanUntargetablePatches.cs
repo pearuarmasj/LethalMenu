@@ -11,8 +11,8 @@ namespace LethalMenu.Patches
     internal static class FlowermanCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 
     /// Kill animation requests naming the hidden player: FlowermanAI.KillPlayerAnimationServerRpc
@@ -22,16 +22,16 @@ namespace LethalMenu.Patches
     internal static class FlowermanKillAnimationServerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObjectId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObjectId]);
+        private static bool Prefix(EnemyAI __instance, int playerObjectId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObjectId]);
     }
 
     [HarmonyPatch(typeof(FlowermanAI), nameof(FlowermanAI.KillPlayerAnimationClientRpc))]
     internal static class FlowermanKillAnimationClientPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObjectId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObjectId]);
+        private static bool Prefix(EnemyAI __instance, int playerObjectId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObjectId]);
     }
 
     /// Stare-down escalation: FlowermanAI.Update lets the local player's line of sight to the Bracken
@@ -43,15 +43,15 @@ namespace LethalMenu.Patches
     internal static class FlowermanStareTriggerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObj) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObj]);
+        private static bool Prefix(EnemyAI __instance, int playerObj) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObj]);
     }
 
     [HarmonyPatch(typeof(FlowermanAI), nameof(FlowermanAI.ResetFlowermanStealthTimerServerRpc))]
     internal static class FlowermanStealthResetPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObj) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObj]);
+        private static bool Prefix(EnemyAI __instance, int playerObj) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObj]);
     }
 }

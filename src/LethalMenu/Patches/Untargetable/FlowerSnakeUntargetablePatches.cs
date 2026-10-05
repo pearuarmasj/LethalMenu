@@ -13,8 +13,8 @@ namespace LethalMenu.Patches
     internal static class FlowerSnakeClingPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(PlayerControllerB playerToCling) =>
-            !UntargetableSightPatches.IsHidden(playerToCling);
+        private static bool Prefix(EnemyAI __instance, PlayerControllerB playerToCling) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, playerToCling);
     }
 
     /// FlowerSnakeEnemy.MainSnakeActAsConductor (every frame for the lead snake, clingPosition 4) applies the lift
@@ -26,7 +26,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static bool Prefix(FlowerSnakeEnemy __instance)
         {
-            if (!UntargetableSightPatches.IsHidden(__instance.clingingToPlayer))
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, __instance.clingingToPlayer))
                 return true;
             __instance.StopClingingOnLocalClient(isMainSnake: true);
             __instance.StopClingingServerRpc((int)LethalMenuMod.LocalPlayer!.playerClientId);

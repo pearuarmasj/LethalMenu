@@ -14,10 +14,10 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.SeeMovingThreatServerRpc))]
         [HarmonyPrefix]
-        private static bool SeeMovingThreatServerRpcPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool SeeMovingThreatServerRpcPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
 
         [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.LegKickPlayer))]
         [HarmonyPrefix]
-        private static bool LegKickPlayerPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool LegKickPlayerPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
     }
 }

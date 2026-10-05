@@ -18,6 +18,6 @@ namespace LethalMenu.Patches
 
         [HarmonyPatch(typeof(JesterAI), nameof(JesterAI.KillPlayerClientRpc))]
         [HarmonyPrefix]
-        private static bool KillPlayerClientRpcPrefix(int playerId) => !HiddenPlayerHelpers.IsHiddenId(playerId);
+        private static bool KillPlayerClientRpcPrefix(EnemyAI __instance, int playerId) => !HiddenPlayerHelpers.IsHiddenId(__instance, playerId);
     }
 }

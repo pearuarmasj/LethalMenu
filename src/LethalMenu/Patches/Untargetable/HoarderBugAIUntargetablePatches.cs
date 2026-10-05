@@ -12,7 +12,7 @@ namespace LethalMenu.Patches
     {
         [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.DetectNoise))]
         [HarmonyPrefix]
-        private static bool DetectNoisePrefix(Vector3 noisePosition) =>
-            !HiddenPlayerHelpers.IsNoiseFromHiddenPlayer(noisePosition);
+        private static bool DetectNoisePrefix(EnemyAI __instance, Vector3 noisePosition) =>
+            !HiddenPlayerHelpers.IsNoiseFromHiddenPlayer(__instance, noisePosition);
     }
 }

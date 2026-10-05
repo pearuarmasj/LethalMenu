@@ -13,8 +13,8 @@ namespace LethalMenu.Patches
     internal static class CaveDwellerKillRequestPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerObjectId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObjectId]);
+        private static bool Prefix(EnemyAI __instance, int playerObjectId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObjectId]);
     }
 
     /// CaveDwellerAI.KillPlayerAnimationClientRpc calls KillPlayer(Mauling) on the local player whenever the id in
@@ -28,7 +28,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static bool Prefix(CaveDwellerAI __instance, int playerObjectId)
         {
-            if (!UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerObjectId]))
+            if (!UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerObjectId]))
                 return true;
             __instance.startingKillAnimationLocalClient = false;
             return false;
@@ -43,8 +43,8 @@ namespace LethalMenu.Patches
         private const float IgnoreRadius = 5f;
 
         [HarmonyPrefix]
-        private static bool Prefix(Vector3 noisePosition) =>
-            !UntargetableSightPatches.IsHidden(LethalMenuMod.LocalPlayer) ||
+        private static bool Prefix(EnemyAI __instance, Vector3 noisePosition) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, LethalMenuMod.LocalPlayer) ||
             Vector3.Distance(noisePosition, LethalMenuMod.LocalPlayer!.transform.position) >= IgnoreRadius;
     }
 }

@@ -12,8 +12,8 @@ namespace LethalMenu.Patches
     internal static class BushWolfCollisionPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(Collider other) =>
-            !UntargetableSightPatches.IsHidden(other.gameObject.GetComponent<PlayerControllerB>());
+        private static bool Prefix(EnemyAI __instance, Collider other) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, other.gameObject.GetComponent<PlayerControllerB>());
     }
 
     /// Spotted meter / staring: BushWolfEnemy.Update (state 0 and 1 loops over allPlayerScripts) rates
@@ -43,7 +43,7 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         private static void Prefix(BushWolfEnemy __instance)
         {
-            if (UntargetableSightPatches.IsHidden(__instance.lastHitByPlayer))
+            if (UntargetableSightPatches.IsHiddenFrom(__instance, __instance.lastHitByPlayer))
                 __instance.lastHitByPlayer = null;
         }
     }
@@ -56,15 +56,15 @@ namespace LethalMenu.Patches
     internal static class BushWolfAttackSyncServerPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 
     [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.SyncTargetPlayerAndAttackClientRpc))]
     internal static class BushWolfAttackSyncClientPatch
     {
         [HarmonyPrefix]
-        private static bool Prefix(int playerId) =>
-            !UntargetableSightPatches.IsHidden(StartOfRound.Instance.allPlayerScripts[playerId]);
+        private static bool Prefix(EnemyAI __instance, int playerId) =>
+            !UntargetableSightPatches.IsHiddenFrom(__instance, StartOfRound.Instance.allPlayerScripts[playerId]);
     }
 }
