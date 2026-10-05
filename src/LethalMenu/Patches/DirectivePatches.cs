@@ -7,25 +7,41 @@ using LethalMenu.Cheats.Directives;
 
 namespace LethalMenu.Patches
 {
-    /// Every concrete enemy type's most-derived declaration of `name` (EnemyAI's own when not overridden).
+    /// Every declaration of `name` in the EnemyAI hierarchy (EnemyAI's own plus each override), looked up
+    /// with DeclaredOnly. Type.GetMethod without it returns an inherited method whose ReflectedType is the
+    /// derived type; Harmony refuses those ("You can only patch implemented methods"), which fails the
+    /// whole patch class, and such MethodInfos never compare equal to the declaring type's own.
     internal static class EnemyMethods
     {
-        private const BindingFlags Instance = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        private const BindingFlags Declared =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
-        public static IEnumerable<MethodBase> MostDerived(string name) =>
-            typeof(EnemyAI).Assembly.GetTypes()
-                .Where(t => typeof(EnemyAI).IsAssignableFrom(t) && !t.IsAbstract)
-                .Select(t => (MethodBase)t.GetMethod(name, Instance, null, Type.EmptyTypes, null))
+        public static IEnumerable<MethodBase> AllDeclared(string name) =>
+            AccessTools.GetTypesFromAssembly(typeof(EnemyAI).Assembly)
+                .Where(t => typeof(EnemyAI).IsAssignableFrom(t))
+                .Select(t => t.GetMethod(name, Declared, null, Type.EmptyTypes, null))
                 .Where(m => m != null && !m.IsAbstract)
-                .Distinct();
+                .Cast<MethodBase>();
+
+        /// The type whose declaration of `name` runs first for an instance of `type` (the outermost override).
+        public static Type OutermostDeclarer(Type type, string name)
+        {
+            for (var t = type; t != null; t = t.BaseType)
+            {
+                if (t.GetMethod(name, Declared, null, Type.EmptyTypes, null) != null)
+                    return t;
+            }
+            return typeof(EnemyAI);
+        }
     }
 
     /// Directed enemies skip their vanilla AI tick; EnemyDirector.Tick runs instead. Patched on every
-    /// override because a prefix on EnemyAI.DoAIInterval alone only intercepts the base call.
+    /// declaration: the outermost override's prefix returns false, so nothing below it (including
+    /// base.DoAIInterval) runs and Tick fires once per interval.
     [HarmonyPatch]
     internal static class DirectiveIntervalPatch
     {
-        private static IEnumerable<MethodBase> TargetMethods() => EnemyMethods.MostDerived(nameof(EnemyAI.DoAIInterval));
+        private static IEnumerable<MethodBase> TargetMethods() => EnemyMethods.AllDeclared(nameof(EnemyAI.DoAIInterval));
 
         [HarmonyPrefix]
         private static bool Prefix(EnemyAI __instance)
@@ -37,26 +53,26 @@ namespace LethalMenu.Patches
     }
 
     /// Lets the adapter undo per-frame re-targeting the vanilla Update did. Overrides call base.Update(),
-    /// so a postfix on EnemyAI.Update would also fire mid-frame for them; only the instance's
-    /// most-derived Update triggers AfterUpdate.
+    /// so the postfix fires once per hierarchy level; only the outermost declaration's postfix (which
+    /// finishes last) triggers AfterUpdate.
     [HarmonyPatch]
     internal static class DirectiveUpdatePatch
     {
-        private static readonly Dictionary<Type, MethodBase> MostDerivedUpdate = new();
+        private static readonly Dictionary<Type, Type> Outermost = new();
 
-        private static IEnumerable<MethodBase> TargetMethods() => EnemyMethods.MostDerived(nameof(EnemyAI.Update));
+        private static IEnumerable<MethodBase> TargetMethods() => EnemyMethods.AllDeclared(nameof(EnemyAI.Update));
 
         [HarmonyPostfix]
         private static void Postfix(EnemyAI __instance, MethodBase __originalMethod)
         {
             if (!EnemyDirector.IsDirected(__instance)) return;
             var type = __instance.GetType();
-            if (!MostDerivedUpdate.TryGetValue(type, out var update))
+            if (!Outermost.TryGetValue(type, out var declarer))
             {
-                update = type.GetMethod(nameof(EnemyAI.Update), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, Type.EmptyTypes, null)!;
-                MostDerivedUpdate[type] = update;
+                declarer = EnemyMethods.OutermostDeclarer(type, nameof(EnemyAI.Update));
+                Outermost[type] = declarer;
             }
-            if (__originalMethod != update) return;
+            if (__originalMethod.DeclaringType != declarer) return;
             EnemyDirector.AfterUpdate(__instance);
         }
     }
