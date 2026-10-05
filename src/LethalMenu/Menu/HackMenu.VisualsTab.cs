@@ -89,12 +89,7 @@ namespace LethalMenu.Menu
                     GUILayout.Label("  Or hold Shift when disabling FreeCam", _labelStyle);
                 }
 
-                bool prevThirdPerson = Hack.ThirdPerson.IsEnabled();
                 DrawHackToggle(Hack.ThirdPerson, "Third Person", "Press V to toggle (view from behind)");
-                if (prevThirdPerson != Hack.ThirdPerson.IsEnabled())
-                {
-                    LethalMenu.Cheats.ThirdPersonCheat.Toggle();
-                }
                 if (Hack.ThirdPerson.IsEnabled())
                 {
                     GUILayout.BeginHorizontal();
@@ -163,12 +158,7 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.NoCameraShake, "No Camera Shake", "Disable screen shake");
                 DrawHackToggle(Hack.NoDepthOfField, "No Depth of Field", "Disable blur effects");
 
-                bool prevFullRes = Hack.FullRenderResolution.IsEnabled();
                 DrawHackToggle(Hack.FullRenderResolution, "Full Render Resolution", "Render at native screen resolution");
-                if (prevFullRes != Hack.FullRenderResolution.IsEnabled())
-                {
-                    FullRenderResolutionPatch.ApplyResolution(LethalMenuMod.LocalPlayer);
-                }
 
                 DrawHackToggle(Hack.CustomFOV, "Custom FOV", "Change field of view");
                 if (Hack.CustomFOV.IsEnabled())

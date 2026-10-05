@@ -13,6 +13,14 @@ namespace LethalMenu.Components
         
         public float Sensitivity { get; set; } = 0.2f;
 
+        /// Starts from the transform's current orientation instead of snapping to yaw/pitch 0.
+        public void SyncFrom(Transform source)
+        {
+            var euler = source.eulerAngles;
+            _yaw = euler.y;
+            _pitch = euler.x > 180f ? euler.x - 360f : euler.x;
+        }
+
         private void Update()
         {
             if (Cursor.visible) return;

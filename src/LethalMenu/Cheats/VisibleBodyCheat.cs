@@ -34,7 +34,7 @@ namespace LethalMenu.Cheats
         private const float EyeForward = 0.05f;
         private const float EyeUp = 0.10f;
 
-        private bool _wasEnabled;
+        private GameNetcodeStuff.PlayerControllerB? _bonesOwner;
         private readonly List<Transform> _headBones = new();
         private readonly List<Vector3> _cachedScales = new();
         private bool _scalesCached;
@@ -43,17 +43,8 @@ namespace LethalMenu.Cheats
         public override void OnUpdate()
         {
             var player = LethalMenuMod.LocalPlayer;
-            if (IsEnabled)
-            {
-                if (player != null && player.thisPlayerModel != null)
-                    player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
-                _wasEnabled = true;
-            }
-            else if (_wasEnabled)
-            {
-                Restore(player);
-                _wasEnabled = false;
-            }
+            if (IsEnabled && player != null && player.thisPlayerModel != null)
+                player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.On;
         }
 
         public override void OnLateUpdate()
@@ -77,7 +68,9 @@ namespace LethalMenu.Cheats
                     _headBones[i].localScale = Vector3.zero;
             }
 
-            if (Hack.FreeCam.IsEnabled() || Hack.SpectatePlayer.IsEnabled()) return;
+            // Any feature that owns the gameplay camera's position wins over the neck anchor.
+            if (Hack.FreeCam.IsEnabled() || Hack.SpectatePlayer.IsEnabled() || Hack.Phantom.IsEnabled() ||
+                EnemyControlCheat.IsControlling) return;
             if (_neckBone == null || player.gameplayCamera == null) return;
 
             var camTf = player.gameplayCamera.transform;
@@ -88,6 +81,12 @@ namespace LethalMenu.Cheats
 
         private void EnsureBones(GameNetcodeStuff.PlayerControllerB player)
         {
+            if (_bonesOwner != player)
+            {
+                RestoreHeadScales();
+                ClearBones();
+                _bonesOwner = player;
+            }
             if (_headBones.Count > 0 && _neckBone != null) return;
             var bones = player.thisPlayerModel.bones;
             if (bones == null) return;
@@ -132,10 +131,16 @@ namespace LethalMenu.Cheats
                 player.thisPlayerModel.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
 
             RestoreHeadScales();
+            ClearBones();
+        }
+
+        private void ClearBones()
+        {
             _headBones.Clear();
             _cachedScales.Clear();
             _scalesCached = false;
             _neckBone = null;
+            _bonesOwner = null;
         }
     }
 }

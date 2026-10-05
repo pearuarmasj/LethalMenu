@@ -77,62 +77,43 @@ namespace LethalMenu.Cheats
         /// Stun all enemies near a position.
         public static void StunEnemiesAtPosition(Vector3 position, float radius = 10f, float stunDuration = 5f)
         {
-            var enemies = UnityEngine.Object.FindObjectsOfType<EnemyAI>(includeInactive: true);
             int count = 0;
-
-            foreach (var enemy in enemies)
+            foreach (var enemy in LethalMenuMod.Enemies)
             {
                 if (enemy == null || enemy.isEnemyDead) continue;
-                
-                float distance = Vector3.Distance(enemy.transform.position, position);
-                if (distance <= radius)
-                {
-                    enemy.SetEnemyStunned(true, stunDuration);
-                    count++;
-                }
+                if (Vector3.Distance(enemy.transform.position, position) > radius) continue;
+                StunEnemy(enemy, stunDuration);
+                count++;
             }
-
             HUDManager.Instance?.DisplayTip("Stun", $"Stunned {count} enemies.");
         }
 
-        /// Stun enemy/turret/landmine that the camera is looking at.
+        /// Stun the enemy under the crosshair, or trip the terminal function (temporary disable) of
+        /// the turret/landmine under it.
         public static void StunAtCrosshair()
         {
-            var cam = Camera.main;
+            var cam = LethalMenuMod.LocalPlayer?.gameplayCamera;
             if (cam == null) return;
 
-            Ray ray = new Ray(cam.transform.position, cam.transform.forward);
-            if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+            var hits = Physics.RaycastAll(new Ray(cam.transform.position, cam.transform.forward), 100f);
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
             {
-                var enemy = hit.collider.GetComponentInParent<EnemyAI>();
-                if (enemy != null)
+                var enemy = hit.collider.GetComponent<EnemyAICollisionDetect>()?.mainScript
+                    ?? hit.collider.GetComponentInParent<EnemyAI>();
+                if (enemy != null && !enemy.isEnemyDead)
                 {
-                    enemy.SetEnemyStunned(true, 5f);
+                    StunEnemy(enemy);
                     HUDManager.Instance?.DisplayTip("Stun", $"Stunned {enemy.enemyType?.enemyName}");
                     return;
                 }
 
-                var turret = hit.collider.GetComponent<Turret>();
-                if (turret != null)
+                var terminalObj = hit.collider.GetComponentInParent<Turret>()?.GetComponent<TerminalAccessibleObject>()
+                    ?? hit.collider.GetComponentInParent<Landmine>()?.GetComponent<TerminalAccessibleObject>();
+                if (terminalObj != null)
                 {
-                    var terminalObj = turret.GetComponent<TerminalAccessibleObject>();
-                    if (terminalObj != null)
-                    {
-                        terminalObj.CallFunctionFromTerminal();
-                        HUDManager.Instance?.DisplayTip("Stun", "Disabled turret.");
-                    }
-                    return;
-                }
-
-                var landmine = hit.collider.GetComponent<Landmine>();
-                if (landmine != null)
-                {
-                    var terminalObj = landmine.GetComponent<TerminalAccessibleObject>();
-                    if (terminalObj != null)
-                    {
-                        terminalObj.CallFunctionFromTerminal();
-                        HUDManager.Instance?.DisplayTip("Stun", "Disabled landmine.");
-                    }
+                    terminalObj.CallFunctionFromTerminal();
+                    HUDManager.Instance?.DisplayTip("Stun", $"Disabled {terminalObj.gameObject.name}.");
                     return;
                 }
             }

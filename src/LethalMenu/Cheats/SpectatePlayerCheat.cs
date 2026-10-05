@@ -12,6 +12,12 @@ namespace LethalMenu.Cheats
         private AudioListener? _audioListener;
         private bool _wasEnabled;
         private Camera? _originalCamera;
+        private static SpectatePlayerCheat? _instance;
+
+        public SpectatePlayerCheat() => _instance = this;
+
+        /// The spectate camera while it is active, otherwise null.
+        public static Camera? ActiveCamera => _instance?._specCam;
 
         public override void OnUpdate()
         {
@@ -142,62 +148,6 @@ namespace LethalMenu.Cheats
                 _specCam.transform.position = playerCam.transform.position;
                 _specCam.transform.rotation = playerCam.transform.rotation;
                 _specCam.fieldOfView = playerCam.fieldOfView;
-            }
-        }
-
-        public void ForceDisable()
-        {
-            Hack.SpectatePlayer.SetEnabled(false);
-            Settings.SpectatePlayerIndex = -1;
-            DisableSpectate();
-            _wasEnabled = false;
-        }
-
-        public void CycleNextPlayer()
-        {
-            if (LethalMenuMod.Players.Count <= 1) return;
-
-            int startIndex = Settings.SpectatePlayerIndex;
-            int nextIndex = (startIndex + 1) % LethalMenuMod.Players.Count;
-
-            while (nextIndex != startIndex)
-            {
-                var player = LethalMenuMod.Players[nextIndex];
-                if (player != null && player != LethalMenuMod.LocalPlayer && !player.isPlayerDead)
-                {
-                    Settings.SpectatePlayerIndex = nextIndex;
-                    if (_wasEnabled)
-                    {
-                        DisableSpectate();
-                        EnableSpectate();
-                    }
-                    return;
-                }
-                nextIndex = (nextIndex + 1) % LethalMenuMod.Players.Count;
-            }
-        }
-
-        public void CyclePreviousPlayer()
-        {
-            if (LethalMenuMod.Players.Count <= 1) return;
-
-            int startIndex = Settings.SpectatePlayerIndex;
-            int prevIndex = (startIndex - 1 + LethalMenuMod.Players.Count) % LethalMenuMod.Players.Count;
-
-            while (prevIndex != startIndex)
-            {
-                var player = LethalMenuMod.Players[prevIndex];
-                if (player != null && player != LethalMenuMod.LocalPlayer && !player.isPlayerDead)
-                {
-                    Settings.SpectatePlayerIndex = prevIndex;
-                    if (_wasEnabled)
-                    {
-                        DisableSpectate();
-                        EnableSpectate();
-                    }
-                    return;
-                }
-                prevIndex = (prevIndex - 1 + LethalMenuMod.Players.Count) % LethalMenuMod.Players.Count;
             }
         }
     }

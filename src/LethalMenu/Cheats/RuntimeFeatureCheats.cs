@@ -19,50 +19,48 @@ namespace LethalMenu.Cheats
         }
     }
 
+    /// Overrides the gameplay camera FOV. Written in LateUpdate so it lands after
+    /// PlayerControllerB.Update's own lerp towards targetFOV; while disabled (and in the terminal)
+    /// it writes nothing and the game's sprint/inspect/terminal FOV logic is untouched.
     public class CustomFOVCheat : CheatBase
     {
         public override string Name => "Custom FOV";
         public override Hack HackType => Hack.CustomFOV;
 
-        public override void OnUpdate()
+        public override void OnLateUpdate()
         {
-            var camera = LethalMenuMod.LocalPlayer?.gameplayCamera;
-            if (camera == null) return;
+            var player = LethalMenuMod.LocalPlayer;
+            if (!IsEnabled || player?.gameplayCamera == null || player.inTerminalMenu) return;
 
-            camera.fieldOfView = LethalMenuMod.LocalPlayer!.inTerminalMenu || !IsEnabled
-                ? 66f
-                : Settings.FOVValue;
+            player.gameplayCamera.fieldOfView = Settings.FOVValue;
         }
     }
 
-    /// Disables every LocalVolumetricFog component. Re-scans each frame so new fogs (moon travel,
+    /// Disables every LocalVolumetricFog component. Re-scans once a second so new fogs (moon travel,
     /// weather) get caught; tracks what we touched so toggle-off restores them.
     public class NoFogCheat : CheatBase
     {
         public override string Name => "No Fog";
         public override Hack HackType => Hack.NoFog;
 
+        private const float ScanInterval = 1f;
         private readonly System.Collections.Generic.HashSet<LocalVolumetricFog> _disabled = new();
-        private bool _wasEnabled;
+        private float _nextScan;
 
         public override void OnUpdate()
         {
-            if (IsEnabled)
+            if (!IsEnabled || Time.time < _nextScan) return;
+            _nextScan = Time.time + ScanInterval;
+
+            foreach (var fog in Object.FindObjectsOfType<LocalVolumetricFog>())
             {
-                foreach (var fog in Object.FindObjectsOfType<LocalVolumetricFog>())
-                {
-                    if (fog == null || !fog.enabled) continue;
-                    fog.enabled = false;
-                    _disabled.Add(fog);
-                }
-                _wasEnabled = true;
-            }
-            else if (_wasEnabled)
-            {
-                RestoreAll();
-                _wasEnabled = false;
+                if (fog == null || !fog.enabled) continue;
+                fog.enabled = false;
+                _disabled.Add(fog);
             }
         }
+
+        public override void OnEnable() => _nextScan = 0f;
 
         public override void OnDisable() => RestoreAll();
 
@@ -120,7 +118,7 @@ namespace LethalMenu.Cheats
                 _breadcrumbStyle.normal.textColor = Color.yellow;
             }
 
-            var camera = LethalMenuMod.LocalPlayer?.gameplayCamera;
+            var camera = Util.ViewCamera.Current;
             if (camera == null) return;
 
             for (int i = 0; i < _breadcrumbs.Count; i++)
@@ -145,6 +143,7 @@ namespace LethalMenu.Cheats
         }
     }
 
+    /// LMB kills the enemy under the crosshair (for everyone).
     public class KillClickCheat : CheatBase
     {
         public override string Name => "Kill Click";
@@ -152,34 +151,19 @@ namespace LethalMenu.Cheats
 
         public override void OnUpdate()
         {
-            if (!IsEnabled || Settings.ShowMenu || LethalMenuMod.LocalPlayer == null) return;
-
+            if (!IsEnabled || Settings.ShowMenu) return;
             var mouse = Mouse.current;
             if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
 
-            var camera = LethalMenuMod.LocalPlayer.gameplayCamera;
-            if (camera == null) return;
+            var enemy = CrosshairTarget.Enemy();
+            if (enemy == null) return;
 
-            var ray = new Ray(camera.transform.position, camera.transform.forward);
-            foreach (var hit in Physics.RaycastAll(ray, 100f))
-            {
-                var enemyCollider = hit.collider.GetComponent<EnemyAICollisionDetect>();
-                if (enemyCollider?.mainScript == null) continue;
-
-                var enemy = enemyCollider.mainScript;
-                enemy.ChangeEnemyOwnerServerRpc(LethalMenuMod.LocalPlayer.actualClientId);
-
-                if (enemy is NutcrackerEnemyAI nutcracker)
-                    nutcracker.KillEnemy();
-                else
-                    enemy.KillEnemyServerRpc(true);
-
-                Loader.Log($"Killed {enemy.enemyType?.enemyName ?? "enemy"}");
-                break;
-            }
+            NetworkCheats.KillEnemy(enemy);
+            HUDManager.Instance?.DisplayTip("Kill", $"Killed {enemy.enemyType?.enemyName ?? "enemy"}");
         }
     }
 
+    /// MMB stuns the enemy under the crosshair, or temporarily disables a turret/landmine.
     public class StunClickCheat : CheatBase
     {
         public override string Name => "Stun Click";
@@ -187,41 +171,33 @@ namespace LethalMenu.Cheats
 
         public override void OnUpdate()
         {
-            if (!IsEnabled || Settings.ShowMenu || LethalMenuMod.LocalPlayer == null) return;
-
+            if (!IsEnabled || Settings.ShowMenu) return;
             var mouse = Mouse.current;
             if (mouse == null || !mouse.middleButton.wasPressedThisFrame) return;
 
-            var camera = LethalMenuMod.LocalPlayer.gameplayCamera;
-            if (camera == null) return;
+            NetworkCheats.StunAtCrosshair();
+        }
+    }
 
-            var ray = new Ray(camera.transform.position, camera.transform.forward);
-            foreach (var hit in Physics.RaycastAll(ray, 100f))
+    /// Raycast helper shared by the crosshair-click cheats.
+    internal static class CrosshairTarget
+    {
+        private const float Range = 100f;
+
+        public static EnemyAI? Enemy()
+        {
+            var camera = LethalMenuMod.LocalPlayer?.gameplayCamera;
+            if (camera == null) return null;
+
+            var hits = Physics.RaycastAll(new Ray(camera.transform.position, camera.transform.forward), Range);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
             {
-                var enemyCollider = hit.collider.GetComponent<EnemyAICollisionDetect>();
-                if (enemyCollider?.mainScript != null)
-                {
-                    enemyCollider.mainScript.SetEnemyStunned(true, 5f);
-                    HUDManager.Instance?.DisplayTip("Stun", $"Stunned {enemyCollider.mainScript.enemyType?.enemyName}");
-                    return;
-                }
-
-                var turret = hit.collider.GetComponent<Turret>();
-                if (turret != null)
-                {
-                    turret.GetComponent<TerminalAccessibleObject>()?.CallFunctionFromTerminal();
-                    HUDManager.Instance?.DisplayTip("Stun", "Disabled turret");
-                    return;
-                }
-
-                var landmine = hit.collider.GetComponent<Landmine>();
-                if (landmine != null)
-                {
-                    landmine.GetComponent<TerminalAccessibleObject>()?.CallFunctionFromTerminal();
-                    HUDManager.Instance?.DisplayTip("Stun", "Disabled landmine");
-                    return;
-                }
+                var detect = hit.collider.GetComponent<EnemyAICollisionDetect>();
+                if (detect != null && detect.mainScript != null && !detect.mainScript.isEnemyDead)
+                    return detect.mainScript;
             }
+            return null;
         }
     }
 }

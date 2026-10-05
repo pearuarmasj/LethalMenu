@@ -3,6 +3,7 @@ using System.Linq;
 using GameNetcodeStuff;
 using LethalMenu.Cheats.EnemyControl;
 using LethalMenu.Components;
+using LethalMenu.Util;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -39,6 +40,12 @@ namespace LethalMenu.Cheats
         private static AIMovement? _movement;
         private static AudioListener? _audioListener;
         private static Transform? _originalCameraParent;
+        private static Vector3 _originalCameraLocalPosition;
+        private static Quaternion _originalCameraLocalRotation;
+        private static readonly object InputOwner = new();
+
+        private const float OwnershipRequestInterval = 0.5f;
+        private static float _nextOwnershipRequest;
 
         public static bool IsControlling => _controlledEnemy != null;
         public static bool IsAIControlled { get; private set; } = false;
@@ -87,9 +94,12 @@ namespace LethalMenu.Cheats
                 _mainEntrance = RoundManager.FindMainEntranceScript(true);
             }
 
-            // Keep ownership
-            if (_controlledEnemy.IsSpawned && LethalMenuMod.LocalPlayer != null)
+            // Re-claim ownership if the server handed the enemy to someone else (throttled; the RPC
+            // used to be sent every frame).
+            if (_controlledEnemy.IsSpawned && !_controlledEnemy.IsOwner && LethalMenuMod.LocalPlayer != null &&
+                Time.time >= _nextOwnershipRequest)
             {
+                _nextOwnershipRequest = Time.time + OwnershipRequestInterval;
                 _controlledEnemy.ChangeEnemyOwnerServerRpc(LethalMenuMod.LocalPlayer.actualClientId);
             }
 
@@ -205,7 +215,7 @@ namespace LethalMenu.Cheats
             }
 
             // Backup: check nearby enemies we're looking at
-            foreach (var enemy in UnityEngine.Object.FindObjectsOfType<EnemyAI>(includeInactive: true))
+            foreach (var enemy in LethalMenuMod.Enemies)
             {
                 if (enemy == null || enemy.isEnemyDead) continue;
 
@@ -308,36 +318,13 @@ namespace LethalMenu.Cheats
             HUDManager.Instance?.DisplayTip("Enemy Control", NoClipEnabled ? "NoClip: ON (Space=Up, Ctrl=Down)" : "NoClip: OFF");
         }
 
-        /// 
-        /// Kill the controlled enemy and despawn it (if host).
-        /// 
+        /// Kill the controlled enemy for everyone and release control.
         private void KillAndDespawnEnemy()
         {
             if (_controlledEnemy == null) return;
 
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            if (localPlayer == null) return;
-
-            // Kill the enemy
-            _controlledEnemy.KillEnemyOnOwnerClient(false);
-
-            // If we're the host, despawn the network object
-            if (localPlayer.IsHost || localPlayer.IsServer)
-            {
-                if (_controlledEnemy.TryGetComponent(out NetworkObject networkObject))
-                {
-                    try
-                    {
-                        networkObject.Despawn(true);
-                    }
-                    catch (Exception ex)
-                    {
-                        UnityEngine.Debug.LogWarning($"[EnemyControl] Failed to despawn: {ex.Message}");
-                    }
-                }
-            }
-
-            HUDManager.Instance?.DisplayTip("Enemy Control", "Enemy killed" + (localPlayer.IsHost ? " and despawned" : ""));
+            NetworkCheats.KillEnemy(_controlledEnemy);
+            HUDManager.Instance?.DisplayTip("Enemy Control", "Enemy killed");
             StopControl();
         }
 
@@ -562,8 +549,17 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            // Store original camera parent for restoration
-            _originalCameraParent = LethalMenuMod.LocalPlayer?.gameplayCamera?.transform.parent;
+            // Store original camera placement for restoration
+            var gameplayCamera = LethalMenuMod.LocalPlayer?.gameplayCamera;
+            if (gameplayCamera != null)
+            {
+                _originalCameraParent = gameplayCamera.transform.parent;
+                _originalCameraLocalPosition = gameplayCamera.transform.localPosition;
+                _originalCameraLocalRotation = gameplayCamera.transform.localRotation;
+            }
+
+            // WASD/E/LMB drive the enemy now, not the player's body.
+            GameInput.SetBlocked(InputOwner, true);
 
             // Notify controller
             _controller.OnTakeControl(enemy);
@@ -614,8 +610,8 @@ namespace LethalMenu.Cheats
                 if (camera != null && _originalCameraParent != null)
                 {
                     camera.transform.SetParent(_originalCameraParent);
-                    camera.transform.localPosition = Vector3.zero;
-                    camera.transform.localRotation = Quaternion.identity;
+                    camera.transform.localPosition = _originalCameraLocalPosition;
+                    camera.transform.localRotation = _originalCameraLocalRotation;
                 }
 
                 // Restore cursor tip
@@ -627,6 +623,8 @@ namespace LethalMenu.Cheats
                     HUDManager.Instance?.holdButtonToEndGameEarlyMeter?.gameObject?.SetActive(true);
                 }
             }
+
+            GameInput.SetBlocked(InputOwner, false);
 
             // Cleanup
             if (_controllerObject != null)

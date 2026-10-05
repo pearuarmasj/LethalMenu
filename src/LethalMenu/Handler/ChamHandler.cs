@@ -7,12 +7,15 @@ using Object = UnityEngine.Object;
 
 namespace LethalMenu.Handler
 {
-    /// Per-object material swap. Substitutes a single shared cham material (Unity's
-    /// Hidden/Internal-Colored shader, ZTest Always, ZWrite Off, double-sided) so chammed
-    /// objects glow through walls in their category color.
+    /// Per-object material swap. Substitutes a cham material (Unity's Hidden/Internal-Colored
+    /// shader, ZTest Always, ZWrite Off, double-sided) so chammed objects glow through walls in their
+    /// category color. Works on sharedMaterials only: Renderer.materials instantiates a copy per
+    /// renderer on every access, which leaked materials and saved copies instead of the originals.
+    /// One cham material per color is cached; renderers swap to the matching one when a color changes.
     public class ChamHandler
     {
         private static readonly Dictionary<int, Material[]> _originalMaterials = new();
+        private static readonly Dictionary<Color, Material> _colorMaterials = new();
         private static Material? _chamMaterial;
         private static int _colorPropId;
 
@@ -71,14 +74,20 @@ namespace LethalMenu.Handler
         {
             var renderers = GetRenderers();
             if (renderers == null) return;
+            var material = MaterialFor(Settings.UseSingleChamColor ? Settings.ChamColor : ResolveCategoryColor());
             foreach (var r in renderers)
             {
-                if (r == null || r.materials == null) continue;
+                if (r == null) continue;
                 int id = r.GetInstanceID();
-                if (_originalMaterials.ContainsKey(id)) continue; // already chammed
-                _originalMaterials[id] = r.materials;
-                r.SetMaterials(Enumerable.Repeat(_chamMaterial!, r.materials.Length).ToList());
-                UpdateChamColor(r);
+                var current = r.sharedMaterials;
+                if (!_originalMaterials.ContainsKey(id))
+                    _originalMaterials[id] = current;
+                else if (current.Length > 0 && current[0] == material)
+                    continue; // already chammed in this color
+
+                var swapped = new Material[_originalMaterials[id].Length];
+                for (int i = 0; i < swapped.Length; i++) swapped[i] = material;
+                r.sharedMaterials = swapped;
             }
         }
 
@@ -91,7 +100,7 @@ namespace LethalMenu.Handler
                 if (r == null) continue;
                 int id = r.GetInstanceID();
                 if (!_originalMaterials.TryGetValue(id, out var original)) continue;
-                r.SetMaterials(original.ToList());
+                r.sharedMaterials = original;
                 _originalMaterials.Remove(id);
             }
         }
@@ -108,7 +117,7 @@ namespace LethalMenu.Handler
             {
                 if (liveRenderers.TryGetValue(id, out var r) && r != null)
                 {
-                    r.SetMaterials(_originalMaterials[id].ToList());
+                    r.sharedMaterials = _originalMaterials[id];
                 }
                 _originalMaterials.Remove(id);
             }
@@ -144,13 +153,15 @@ namespace LethalMenu.Handler
             };
         }
 
-        private void UpdateChamColor(Renderer renderer)
+        private static Material MaterialFor(Color color)
         {
-            if (renderer == null || renderer.materials == null) return;
+            if (_colorMaterials.TryGetValue(color, out var material) && material != null)
+                return material;
 
-            Color color = Settings.UseSingleChamColor ? Settings.ChamColor : ResolveCategoryColor();
-            foreach (var m in renderer.materials)
-                if (m != null) m.SetColor(_colorPropId, color);
+            material = new Material(_chamMaterial!) { hideFlags = _chamMaterial!.hideFlags };
+            material.SetColor(_colorPropId, color);
+            _colorMaterials[color] = material;
+            return material;
         }
 
         private Color ResolveCategoryColor()
@@ -187,7 +198,6 @@ namespace LethalMenu.Handler
             if (_target == null) return null;
             // DoorLock mesh sits on the parent (LM-master special case).
             if (_target is DoorLock door) return door.GetComponentsInParent<Renderer>().ToList();
-            if (_target is RadMechAI rad) return rad.GetComponentsInChildren<Renderer>().ToList();
             if (_target is GameObject go) return go.GetComponentsInChildren<Renderer>().ToList();
             if (_target is Component component) return component.GetComponentsInChildren<Renderer>().ToList();
             return null;

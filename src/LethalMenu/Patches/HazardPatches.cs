@@ -1,6 +1,5 @@
 using GameNetcodeStuff;
 using HarmonyLib;
-using LethalMenu.Cheats;
 using UnityEngine;
 
 namespace LethalMenu.Patches
@@ -90,64 +89,6 @@ namespace LethalMenu.Patches
         public static bool Prefix()
         {
             return !Hack.NoCameraShake.IsEnabled();
-        }
-    }
-
-    /// Third-person camera patches for menu/terminal/death state transitions.
-    [HarmonyPatch(typeof(QuickMenuManager))]
-    public static class ThirdPersonMenuPatches
-    {
-        /// Disable third-person when opening quick menu.
-        [HarmonyPatch("OpenQuickMenu")]
-        [HarmonyPrefix]
-        public static void OpenQuickMenuPrefix()
-        {
-            ThirdPersonCheat.StoreAndDisable();
-        }
-
-        /// Restore third-person when closing quick menu.
-        [HarmonyPatch("CloseQuickMenu")]
-        [HarmonyPrefix]
-        public static void CloseQuickMenuPrefix()
-        {
-            ThirdPersonCheat.RestoreState();
-        }
-    }
-
-    /// Third-person patches for terminal transitions.
-    [HarmonyPatch(typeof(Terminal))]
-    public static class ThirdPersonTerminalPatches
-    {
-        /// Disable third-person when entering terminal.
-        [HarmonyPatch("BeginUsingTerminal")]
-        [HarmonyPrefix]
-        public static void BeginUsingTerminalPrefix()
-        {
-            ThirdPersonCheat.StoreAndDisable();
-        }
-
-        /// Restore third-person when exiting terminal.
-        [HarmonyPatch("QuitTerminal")]
-        [HarmonyPrefix]
-        public static void QuitTerminalPrefix()
-        {
-            ThirdPersonCheat.RestoreState();
-        }
-    }
-
-    /// Third-person patches for player death.
-    [HarmonyPatch(typeof(GameNetcodeStuff.PlayerControllerB))]
-    public static class ThirdPersonDeathPatches
-    {
-        /// Disable third-person on death.
-        [HarmonyPatch("KillPlayer")]
-        [HarmonyPrefix]
-        public static void KillPlayerPrefix(GameNetcodeStuff.PlayerControllerB __instance)
-        {
-            if (__instance == LethalMenuMod.LocalPlayer)
-            {
-                ThirdPersonCheat.ForceDisable();
-            }
         }
     }
 }

@@ -18,7 +18,7 @@ namespace LethalMenu.Cheats
         {
             if (!IsEnabled) return;
 
-            var camera = GetActiveCamera();
+            var camera = Util.ViewCamera.Current;
             if (camera == null) return;
 
             InitializeStyles();
@@ -210,17 +210,6 @@ namespace LethalMenu.Cheats
                     DrawESP(camera, s.transform.position, "Spike Trap", new Color(1f, 0f, 0.25f), 1f);
                 }
             }
-        }
-
-        private Camera? GetActiveCamera()
-        {
-            if (LethalMenuMod.LocalPlayer == null)
-                return Camera.main;
-
-            if (LethalMenuMod.LocalPlayer.isPlayerDead && LethalMenuMod.GameInstance != null)
-                return LethalMenuMod.GameInstance.spectateCamera;
-
-            return LethalMenuMod.LocalPlayer.gameplayCamera ?? Camera.main;
         }
 
         private bool WorldToScreen(Camera camera, Vector3 worldPos, out Vector2 screenPos)

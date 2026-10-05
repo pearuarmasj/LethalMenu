@@ -1,3 +1,4 @@
+using LethalMenu.Util;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,7 +20,6 @@ namespace LethalMenu.Cheats
         private Light? _light;
         private Vector3 _position;
         private Vector2 _rotation;
-        private bool _wasEnabled;
         private Camera? _originalCamera;
         
         // Phantom mode - player cycling
@@ -31,35 +31,29 @@ namespace LethalMenu.Cheats
             _instance = this;
         }
 
+        /// The free camera while it is active, otherwise null.
+        public static Camera? ActiveCamera => _instance?._freeCam;
+
         public override void OnUpdate()
         {
-            bool shouldEnable = IsEnabled;
+            if (!IsEnabled) return;
 
-            // Handle toggle on/off
-            if (shouldEnable && !_wasEnabled)
-            {
-                EnableFreeCam();
-            }
-            else if (!shouldEnable && _wasEnabled)
-            {
-                // Check if shift is held - teleport player to camera
-                var keyboard = Keyboard.current;
-                if (keyboard != null && keyboard.leftShiftKey.isPressed && _freeCam != null)
-                {
-                    TeleportPlayerToCamera();
-                }
-                
-                DisableFreeCam();
-            }
+            // Enabled before a local player existed (e.g. restored from config): start once one does.
+            if (_freeCam == null) EnableFreeCam();
+            if (_freeCam == null) return;
 
-            _wasEnabled = shouldEnable;
-
-            if (!shouldEnable || _freeCam == null) return;
-
-            // Handle movement
             HandleMovement();
             HandleRotation();
             HandlePlayerSnap();
+        }
+
+        public override void OnDisable()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.leftShiftKey.isPressed && _freeCam != null)
+                TeleportPlayerToCamera();
+
+            DisableFreeCam();
         }
 
         private void EnableFreeCam()
@@ -124,6 +118,9 @@ namespace LethalMenu.Cheats
                 LethalMenuMod.LocalPlayer.activeAudioListener.enabled = false;
             }
 
+            // The disabled PlayerControllerB still receives event-driven input (item use, interact).
+            GameInput.SetBlocked(this, true);
+
             // Reset target player
             _targetPlayerIndex = -1;
 
@@ -133,11 +130,11 @@ namespace LethalMenu.Cheats
 
         private void DisableFreeCam()
         {
-            if (_freeCam != null)
-            {
-                Object.Destroy(_freeCam.gameObject);
-                _freeCam = null;
-            }
+            if (_freeCam == null) return;
+
+            Object.Destroy(_freeCam.gameObject);
+            _freeCam = null;
+            GameInput.SetBlocked(this, false);
 
             _audioListener = null;
             _light = null;
@@ -341,19 +338,6 @@ namespace LethalMenu.Cheats
         public static void TeleportToCameraPosition()
         {
             _instance?.TeleportPlayerToCamera();
-        }
-
-        /// Get current camera position (for UI display or other uses).
-        public static Vector3? GetCameraPosition()
-        {
-            return _instance?._freeCam?.transform.position;
-        }
-
-        public void ForceDisable()
-        {
-            Hack.FreeCam.SetEnabled(false);
-            DisableFreeCam();
-            _wasEnabled = false;
         }
     }
 }

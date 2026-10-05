@@ -365,18 +365,28 @@ namespace LethalMenu
                 GameTerminal = UnityEngine.Object.FindObjectOfType<Terminal>();
         }
 
+        private static readonly object MenuInputOwner = new();
+
         private void ToggleCursor(bool show)
         {
-            Cursor.visible = show;
-            Cursor.lockState = show ? CursorLockMode.None : CursorLockMode.Locked;
+            GameInput.SetBlocked(MenuInputOwner, show);
 
-            // Disable player input when menu is open
-            if (LocalPlayer != null)
+            if (show)
             {
-                if (show)
-                    LocalPlayer.playerActions.Disable();
-                else
-                    LocalPlayer.playerActions.Enable();
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+                return;
+            }
+
+            // Only re-lock when gameplay owns the cursor; the main menu, terminal and pause menu
+            // keep it free.
+            var player = LocalPlayer;
+            bool gameplayHasCursor = player != null && !player.inTerminalMenu &&
+                                     !(player.quickMenuManager != null && player.quickMenuManager.isMenuOpen);
+            if (gameplayHasCursor)
+            {
+                Cursor.visible = false;
+                Cursor.lockState = CursorLockMode.Locked;
             }
         }
 
@@ -407,6 +417,7 @@ namespace LethalMenu
 
             _cheats.Clear();
             _cheatWasEnabled.Clear();
+            GameInput.Reset();
             HackExtensions.InitializeDefaults();
             Instance = null;
         }
