@@ -45,7 +45,7 @@ namespace LethalMenu.Cheats
                 );
 
                 Debug.Log("[NetworkCheats] FakeDeath: Death broadcasted to other players. You appear dead but can still move.");
-                HUDManager.Instance?.DisplayTip("Fake Death", "Other players think you're dead!\nYou'll actually die when ship leaves.");
+                HUDManager.Instance?.DisplayTip("Fake Death", "Others see you dead.\nYou die for real when the ship leaves.");
             }
             catch (Exception ex)
             {
