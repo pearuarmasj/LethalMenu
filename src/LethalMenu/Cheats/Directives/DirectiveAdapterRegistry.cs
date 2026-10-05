@@ -8,6 +8,8 @@ namespace LethalMenu.Cheats.Directives
     {
         private static readonly Dictionary<Type, IDirectiveAdapter> Adapters = new()
         {
+            { typeof(CrawlerAI), new Adapters.CrawlerDirectiveAdapter() },
+            { typeof(FlowermanAI), new Adapters.FlowermanDirectiveAdapter() },
         };
 
         public static IDirectiveAdapter? Get(EnemyAI enemy) =>
