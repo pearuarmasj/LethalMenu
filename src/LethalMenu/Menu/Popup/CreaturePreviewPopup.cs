@@ -846,7 +846,7 @@ namespace LethalMenu.Menu.Popup
             {
                 if (renderer is MeshRenderer || renderer is SkinnedMeshRenderer)
                 {
-                    if (!IsCreatureRenderer(renderer))
+                    if (!Util.RendererFilter.IsVisual(renderer))
                         renderer.enabled = false;
                 }
             }
@@ -903,7 +903,7 @@ namespace LethalMenu.Menu.Popup
             var previewRenderers = new System.Collections.Generic.List<Renderer>();
             foreach (var renderer in allRenderers)
             {
-                if ((renderer is MeshRenderer || renderer is SkinnedMeshRenderer) && IsCreatureRenderer(renderer))
+                if (Util.RendererFilter.IsVisual(renderer))
                     previewRenderers.Add(renderer);
             }
 
@@ -916,67 +916,6 @@ namespace LethalMenu.Menu.Popup
             return previewRenderers.ToArray();
         }
 
-        private static bool IsCreatureRenderer(Renderer renderer)
-        {
-            string path = GetTransformPath(renderer.transform).ToLowerInvariant();
-            if (path.Contains("scannode") ||
-                path.Contains("scan node") ||
-                path.Contains("scan") ||
-                path.Contains("mapdot") ||
-                path.Contains("map dot") ||
-                path.Contains("map") ||
-                path.Contains("radar") ||
-                path.Contains("terminal") ||
-                path.Contains("trigger") ||
-                path.Contains("playerhead") ||
-                path.Contains("player head") ||
-                path.Contains("tongue"))
-                return false;
-
-            if (IsHigherLODRenderer(path))
-                return false;
-
-            foreach (var material in renderer.sharedMaterials)
-            {
-                if (material != null && IsRuntimePlaceholderMaterial(material))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool IsHigherLODRenderer(string lowerPath)
-        {
-            // Filter LOD1/LOD2/LOD3/etc., keep LOD0 (highest detail) or any GameObject with no LOD suffix.
-            // Matches against transform path like "BodyLOD2" — checks for "lod1".."lod9" but not "lod0".
-            for (int digit = 1; digit <= 9; digit++)
-            {
-                if (lowerPath.Contains("lod" + digit))
-                    return true;
-            }
-            return false;
-        }
-
-        private static bool IsRuntimePlaceholderMaterial(Material material)
-        {
-            string name = material.name.ToLowerInvariant();
-            return name.Contains("testtrigger") ||
-                name.Contains("ghostsheet") ||
-                name.Contains("mapdot") ||
-                name.Contains("defaulthdmaterial");
-        }
-
-        private static string GetTransformPath(Transform transform)
-        {
-            string path = transform.name;
-            while (transform.parent != null)
-            {
-                transform = transform.parent;
-                path = transform.name + "/" + path;
-            }
-
-            return path;
-        }
 
         private Material GetFlatMaterial()
         {
