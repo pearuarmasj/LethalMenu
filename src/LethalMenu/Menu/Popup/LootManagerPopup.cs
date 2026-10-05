@@ -41,7 +41,7 @@ namespace LethalMenu.Menu.Popup
 
             GUILayout.Space(8);
 
-            GUILayout.Label("--- Ship Inventory ---");
+            GUILayout.Label("Ship Inventory");
             foreach (var item in items)
             {
                 if (item == null || !item.isInShipRoom) continue;
@@ -51,7 +51,7 @@ namespace LethalMenu.Menu.Popup
             }
 
             GUILayout.Space(5);
-            GUILayout.Label("--- Outside Loot ---");
+            GUILayout.Label("Outside Loot");
             foreach (var item in items)
             {
                 if (item == null || item.isInShipRoom || item.isHeld) continue;

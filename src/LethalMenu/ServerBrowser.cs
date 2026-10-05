@@ -568,7 +568,7 @@ namespace LethalMenu
                 if (lobby.IsKickedHost)
                 {
                     sb.AppendLine();
-                    sb.AppendLine("⚠ WARNING: This host kicked you before!");
+                    sb.AppendLine("This host kicked you before.");
                 }
 
                 return sb.ToString();

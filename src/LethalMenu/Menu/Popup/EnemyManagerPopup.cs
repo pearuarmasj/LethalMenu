@@ -33,7 +33,7 @@ namespace LethalMenu.Menu.Popup
             DrawSpawner();
 
             GUILayout.Space(10);
-            GUILayout.Label("--- Enemy List ---");
+            GUILayout.Label("Enemy List");
 
             foreach (var enemy in LethalMenuMod.Enemies)
             {
@@ -56,7 +56,7 @@ namespace LethalMenu.Menu.Popup
         private void DrawSpawner()
         {
             GUILayout.Space(10);
-            GUILayout.Label("--- Spawn Enemy ---");
+            GUILayout.Label("Spawn Enemy");
 
             if (LethalMenuMod.LocalPlayer?.IsHost != true)
             {

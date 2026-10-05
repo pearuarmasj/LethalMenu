@@ -87,7 +87,7 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("+1000", _buttonStyle)) Cheats.NetworkCheats.SetCredits(GetCurrentCredits() + 1000);
                 if (GUILayout.Button("+10000", _buttonStyle)) Cheats.NetworkCheats.SetCredits(GetCurrentCredits() + 10000);
-                if (GUILayout.Button("MAX", _buttonStyle)) Cheats.NetworkCheats.SetCredits(999999);
+                if (GUILayout.Button("Max", _buttonStyle)) Cheats.NetworkCheats.SetCredits(999999);
                 GUILayout.EndHorizontal();
             });
 
@@ -188,7 +188,7 @@ namespace LethalMenu.Menu
                         Cheats.NetworkCheats.SpamSystemMessage(_chatMessageInput, 10);
                     }
                 }
-                if (GUILayout.Button("MAX SPAM x50", _buttonStyle))
+                if (GUILayout.Button("Chat + system x50", _buttonStyle))
                 {
                     if (!string.IsNullOrEmpty(_chatMessageInput))
                     {
@@ -261,7 +261,7 @@ namespace LethalMenu.Menu
                     Cheats.NetworkCheats.SetShipDoors(true);
                 }
                 GUI.enabled = isHost;
-                if (GUILayout.Button(isHost ? "OVERHEAT" : "OVERHEAT (host)", _buttonStyle))
+                if (GUILayout.Button(isHost ? "Overheat" : "Overheat (host)", _buttonStyle))
                 {
                     Cheats.NetworkCheats.OverheatShipDoors();
                 }
@@ -343,13 +343,13 @@ namespace LethalMenu.Menu
                 }
                 else
                 {
-                    GUILayout.Label("  No vehicles found. Buy a Cruiser!", _labelStyle);
+                    GUILayout.Label("  No vehicles on the map.", _labelStyle);
                 }
             });
 
             DrawSection("Player Level (Cosmetic)", () =>
             {
-                GUILayout.Label("Changes your badge - purely visual flex", _labelStyle);
+                GUILayout.Label("Changes your level badge (cosmetic)", _labelStyle);
 
                 var levelNames = Cheats.NetworkCheats.GetLevelNames();
                 int currentLevel = Cheats.NetworkCheats.GetCurrentLevelIndex();
@@ -358,7 +358,7 @@ namespace LethalMenu.Menu
                 GUILayout.Label($"Current: {(levelNames.Length > currentLevel ? levelNames[currentLevel] : "?")} ({currentXP} XP)", _labelStyle);
 
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("MAX LEVEL", _buttonStyle, GUILayout.Height(28)))
+                if (GUILayout.Button("Max level", _buttonStyle, GUILayout.Height(28)))
                 {
                     Cheats.NetworkCheats.MaxOutXP();
                 }
@@ -462,34 +462,34 @@ namespace LethalMenu.Menu
                     GUILayout.Label(mobPlayerNames[_selectedMimicPlayerIndex], _labelStyle, GUILayout.Width(100));
                     if (GUILayout.Button(">", _buttonStyle, GUILayout.Width(30)))
                         _selectedMimicPlayerIndex = (_selectedMimicPlayerIndex + 1) % mobPlayerNames.Length;
-                    if (GUILayout.Button("MOB!", _buttonStyle, GUILayout.Width(60)))
+                    if (GUILayout.Button("Mob", _buttonStyle, GUILayout.Width(60)))
                     {
                         Cheats.NetworkCheats.MobPlayer(mobPlayers[_selectedMimicPlayerIndex], false);
                     }
-                    if (GUILayout.Button("MOB+TP!", _buttonStyle, GUILayout.Width(70)))
+                    if (GUILayout.Button("Mob + TP", _buttonStyle, GUILayout.Width(70)))
                     {
                         Cheats.NetworkCheats.MobPlayer(mobPlayers[_selectedMimicPlayerIndex], true);
                     }
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("VOID", _buttonStyle, GUILayout.Width(60)))
+                    if (GUILayout.Button("Void", _buttonStyle, GUILayout.Width(60)))
                     {
                         Cheats.NetworkCheats.TeleportPlayerToVoid(mobPlayers[_selectedMimicPlayerIndex]);
                     }
                     bool isHost = IsLocalHost;
                     GUI.enabled = isHost;
-                    if (GUILayout.Button(isHost ? "BOMB" : "BOMB (host)", _buttonStyle, GUILayout.Width(isHost ? 60 : 100)))
+                    if (GUILayout.Button(isHost ? "Bomb" : "BOMB (host)", _buttonStyle, GUILayout.Width(isHost ? 60 : 100)))
                     {
                         Cheats.NetworkCheats.BombPlayer(mobPlayers[_selectedMimicPlayerIndex]);
                     }
-                    if (GUILayout.Button(isHost ? "LAG" : "LAG (host)", _buttonStyle, GUILayout.Width(isHost ? 50 : 90)))
+                    if (GUILayout.Button(isHost ? "Lag" : "LAG (host)", _buttonStyle, GUILayout.Width(isHost ? 50 : 90)))
                     {
                         Cheats.NetworkCheats.LagPlayer(mobPlayers[_selectedMimicPlayerIndex]);
                     }
                     GUI.enabled = true;
                     GUILayout.EndHorizontal();
-                    GUILayout.Label("  VOID=others' view only | BOMB=jetpack | LAG=bracken", _labelStyle);
+                    GUILayout.Label("  Void: others' view only | Bomb: jetpack | Lag: brackens", _labelStyle);
 
                     GUILayout.Space(5);
                     GUILayout.Label("Spin Player:", _labelStyle);
@@ -504,7 +504,7 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("SPIN! (your view)", _buttonStyle, GUILayout.Width(120)))
+                    if (GUILayout.Button("Spin (your view)", _buttonStyle, GUILayout.Width(120)))
                     {
                         Cheats.NetworkCheats.SpinPlayer(
                             mobPlayers[_selectedMimicPlayerIndex],
@@ -512,7 +512,7 @@ namespace LethalMenu.Menu
                             Settings.SpinCamera,
                             Settings.SpinModel);
                     }
-                    if (GUILayout.Button("STOP", _buttonStyle, GUILayout.Width(50)))
+                    if (GUILayout.Button("Stop", _buttonStyle, GUILayout.Width(50)))
                     {
                         Cheats.NetworkCheats.StopSpinPlayer(mobPlayers[_selectedMimicPlayerIndex]);
                     }
@@ -661,7 +661,7 @@ namespace LethalMenu.Menu
                         GUILayout.Label(RemoteTeleportNote, new GUIStyle(_tooltipStyle) { wordWrap = true });
 
                     // Teleport to ship via teleporter (works on any player)
-                    if (GUILayout.Button("TELEPORT TO SHIP (via TP)", _buttonStyle, GUILayout.Height(28)))
+                    if (GUILayout.Button("Teleport to ship (ship teleporter)", _buttonStyle, GUILayout.Height(28)))
                     {
                         Cheats.NetworkCheats.TeleportPlayerViaShipTeleporter(players[_selectedPlayerIndex]);
                     }
@@ -678,12 +678,11 @@ namespace LethalMenu.Menu
             });
 
             // Malicious section - only show if enabled
-            DrawSection("Trolling / Malicious (USE RESPONSIBLY)", () =>
+            DrawSection("Trolling", () =>
             {
-                GUILayout.Label("These can ruin other players' experience.", new GUIStyle(_labelStyle) { normal = { textColor = Color.red } });
 
                 // SPAM TOGGLES - Continuous spam while enabled
-                GUILayout.Label("--- Continuous Spam Toggles ---", _labelStyle);
+                GUILayout.Label("Spam toggles", _labelStyle);
 
                 GUILayout.BeginHorizontal();
                 DrawHackToggle(Hack.HornSpam, "Horn Spam", null);
@@ -697,7 +696,7 @@ namespace LethalMenu.Menu
 
                 GUILayout.BeginHorizontal();
                 DrawHackToggle(Hack.TerminalSoundSpam, "Terminal Spam", null);
-                DrawHackToggle(Hack.EarrapeSpam, "EARRAPE", null);
+                DrawHackToggle(Hack.EarrapeSpam, "Earrape", null);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
@@ -726,11 +725,11 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
 
                 GUILayout.Space(5);
-                GUILayout.Label("--- One-Shot Actions ---", _labelStyle);
+                GUILayout.Label("One-shot", _labelStyle);
 
                 // One-shot chaos buttons
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("MAX CHAOS", _buttonStyle))
+                if (GUILayout.Button("Horn + lights + doors + signal", _buttonStyle))
                 {
                     Hack.MaxChaos.Execute();
                 }
@@ -740,9 +739,9 @@ namespace LethalMenu.Menu
                 }
                 GUILayout.EndHorizontal();
 
-                // Bracken Lag Attack (the real deal)
+                // Bracken ownership lag
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("BRACKEN LAG ALL", _buttonStyle))
+                if (GUILayout.Button("Bracken lag (all)", _buttonStyle))
                 {
                     Cheats.NetworkCheats.BrackenLagAllPlayers();
                 }

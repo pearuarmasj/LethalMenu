@@ -16,7 +16,7 @@ namespace LethalMenu.Menu
 
         private void DrawExperimentationTab()
         {
-            GUILayout.Label("WARNING: Private/protected calls. Host recommended. May desync.", _labelStyle);
+            GUILayout.Label("Direct private game calls. Can desync; best used as host.", _labelStyle);
             bool isHost = Cheats.NetworkCheats.IsHost();
             GUILayout.Label($"Status: {(isHost ? "HOST" : "CLIENT")}", _labelStyle);
             GUILayout.Space(4);

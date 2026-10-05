@@ -10,7 +10,7 @@ namespace LethalMenu.Cheats
     {
         #region Enemy Targeting
 
-        /// Target all enemies at a specific player. Ultimate troll move.
+        /// Point every enemy at a specific player.
         public static void MobPlayer(PlayerControllerB targetPlayer, bool teleportEnemies = false)
         {
             if (targetPlayer == null)
@@ -71,7 +71,7 @@ namespace LethalMenu.Cheats
             }
 
             Debug.Log($"[NetworkCheats] Mobbed {count} enemies on {targetPlayer.playerUsername}");
-            HUDManager.Instance?.DisplayTip("Mob", $"{count} enemies targeting {targetPlayer.playerUsername}!");
+            HUDManager.Instance?.DisplayTip("Mob", $"{count} enemies targeting {targetPlayer.playerUsername}.");
         }
 
         /// Stun all enemies near a position.
@@ -192,7 +192,7 @@ namespace LethalMenu.Cheats
             }
 
             Debug.Log($"[NetworkCheats] Spawned {successCount} INVISIBLE Brackens targeting {targetPlayer.playerUsername}");
-            HUDManager.Instance?.DisplayTip("Lag", $"Spawned {successCount} invisible Brackens on {targetPlayer.playerUsername}!");
+            HUDManager.Instance?.DisplayTip("Lag", $"Spawned {successCount} invisible Brackens on {targetPlayer.playerUsername}.");
         }
 
         private static IEnumerator MakeEnemyInvisibleDelayed(EnemyAI enemy)

@@ -125,7 +125,7 @@ namespace LethalMenu.Cheats
 
         private static IEnumerator MaxChaosCoroutine()
         {
-            Debug.Log("[NetworkCheats] MAXIMUM CHAOS ENGAGED!");
+            Debug.Log("[NetworkCheats] Max chaos started.");
 
             // Start all chaos coroutines simultaneously
             var instance = LethalMenuMod.Instance;

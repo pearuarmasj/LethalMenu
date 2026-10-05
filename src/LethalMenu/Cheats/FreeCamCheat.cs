@@ -331,7 +331,7 @@ namespace LethalMenu.Cheats
             LethalMenuMod.LocalPlayer.TeleportPlayer(teleportPos);
             
             Debug.Log($"[FreeCam] Teleported player to {teleportPos}");
-            HUDManager.Instance?.DisplayTip("FreeCam", "Teleported to camera position!");
+            HUDManager.Instance?.DisplayTip("FreeCam", "Teleported to camera position.");
         }
 
         /// Static method to teleport player to camera (can be called from UI).

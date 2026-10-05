@@ -285,7 +285,7 @@ namespace LethalMenu.Cheats
             int quotaLeft = timeOfDay.profitQuota - timeOfDay.quotaFulfilled;
             if (quotaLeft <= 0)
             {
-                HUDManager.Instance?.DisplayTip("Sell Quota", "Quota already met!");
+                HUDManager.Instance?.DisplayTip("Sell Quota", "Quota already met.");
                 return;
             }
 
@@ -450,7 +450,7 @@ namespace LethalMenu.Cheats
             jetpack.ExplodeJetpackServerRpc();
             
             Debug.Log($"[NetworkCheats] Bombed {targetPlayer.playerUsername}");
-            HUDManager.Instance?.DisplayTip("Bomb", $"Jetpack exploded on {targetPlayer.playerUsername}!");
+            HUDManager.Instance?.DisplayTip("Bomb", $"Jetpack exploded on {targetPlayer.playerUsername}.");
         }
 
         #endregion

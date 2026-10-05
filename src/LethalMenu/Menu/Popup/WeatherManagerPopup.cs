@@ -22,7 +22,7 @@ namespace LethalMenu.Menu.Popup
             GUILayout.Label($"Current Weather: {instance.currentLevel?.currentWeather}");
             GUILayout.Space(10);
 
-            GUILayout.Label("--- All Moons Weather ---");
+            GUILayout.Label("All Moons Weather");
             var levels = instance.levels;
             if (levels == null) return;
 

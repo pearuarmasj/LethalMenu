@@ -42,7 +42,7 @@ namespace LethalMenu.Menu.Popup
 
             _selectedEntryIndex = Mathf.Clamp(_selectedEntryIndex, 0, terminal.scannedEnemyIDs.Count - 1);
 
-            GUILayout.Label("--- Wildlife On Record ---");
+            GUILayout.Label("Wildlife On Record");
             _entryScrollPosition = GUILayout.BeginScrollView(_entryScrollPosition, GUILayout.Height(150));
             for (int i = 0; i < terminal.scannedEnemyIDs.Count; i++)
             {
@@ -76,7 +76,7 @@ namespace LethalMenu.Menu.Popup
                 return;
             }
 
-            GUILayout.Label($"--- {selectedNode.creatureName ?? "Unknown"} ---");
+            GUILayout.Label($"{selectedNode.creatureName ?? "Unknown"}");
             GUILayout.BeginHorizontal();
             DrawTerminalMedia(selectedNode);
             GUILayout.BeginVertical();

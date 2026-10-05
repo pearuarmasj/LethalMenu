@@ -96,7 +96,7 @@ namespace LethalMenu.Cheats
             return HUDManager.Instance?.localPlayerXP ?? 0;
         }
 
-        /// Sets XP to maximum for flex purposes.
+        /// Sets XP to the maximum level.
         public static void MaxOutXP()
         {
             var hud = HUDManager.Instance;

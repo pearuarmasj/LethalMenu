@@ -44,7 +44,7 @@ namespace LethalMenu.Menu.Popup
 
         private void DrawStoredObjects(StartOfRound startOfRound, List<(int index, UnlockableItem item)> stored)
         {
-            GUILayout.Label("--- Stored Objects ---");
+            GUILayout.Label("Stored Objects");
             if (stored.Count == 0)
             {
                 GUILayout.Label("[No items stored. While moving an object with B, press X to store it.]");
@@ -86,7 +86,7 @@ namespace LethalMenu.Menu.Popup
             if (_selectedStorageIndex >= 0 && _selectedStorageIndex < stored.Count)
             {
                 var (unlockableId, item) = stored[_selectedStorageIndex];
-                GUILayout.Label("--- Selected ---");
+                GUILayout.Label("Selected");
                 GUILayout.Label($"ID: {unlockableId}");
                 GUILayout.Label($"Name: {item.unlockableName ?? "Unknown"}");
                 GUILayout.Label($"Type: {GetStorageTypeName(item)}");
@@ -97,7 +97,7 @@ namespace LethalMenu.Menu.Popup
 
         private void DrawShipObjects(StartOfRound startOfRound, List<(PlaceableShipObject placeable, UnlockableItem item)> shipObjects)
         {
-            GUILayout.Label("--- In Ship ---");
+            GUILayout.Label("In Ship");
             if (shipObjects.Count == 0)
             {
                 GUILayout.Label("No storable ship objects found.");
@@ -139,7 +139,7 @@ namespace LethalMenu.Menu.Popup
             if (_selectedShipObjectIndex >= 0 && _selectedShipObjectIndex < shipObjects.Count)
             {
                 var (placeable, item) = shipObjects[_selectedShipObjectIndex];
-                GUILayout.Label("--- Selected Ship Object ---");
+                GUILayout.Label("Selected Ship Object");
                 GUILayout.Label($"ID: {placeable.unlockableID}");
                 GUILayout.Label($"Name: {item.unlockableName ?? "Unknown"}");
                 GUILayout.Label($"Type: {GetStorageTypeName(item)}");

@@ -153,7 +153,7 @@ namespace LethalMenu.Cheats
                 startOfRound.shipAnimator?.ResetTrigger("ShipLeave");
 
                 Debug.Log("[NetworkCheats] SelfRevive: Successfully respawned local player.");
-                HUDManager.Instance?.DisplayTip("Self Revive", "You have been respawned at the ship!");
+                HUDManager.Instance?.DisplayTip("Self Revive", "Respawned at the ship.");
             }
             catch (Exception ex)
             {

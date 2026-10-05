@@ -27,7 +27,7 @@ namespace LethalMenu.Cheats
                 }
             }
 
-            HUDManager.Instance?.DisplayTip("Spin", $"Spinning {shipObjects.Length} ship objects!");
+            HUDManager.Instance?.DisplayTip("Spin", $"Spinning {shipObjects.Length} ship objects.");
         }
 
         /// Snap every ship object back to the position/rotation it had when the lobby loaded.
@@ -124,7 +124,7 @@ namespace LethalMenu.Cheats
             }
 
             string mode = spinCamera && spinModel ? "camera+model" : (spinCamera ? "camera" : "model");
-            HUDManager.Instance?.DisplayTip("Spin", $"Spinning {targetPlayer.playerUsername} ({mode}) for {duration}s!");
+            HUDManager.Instance?.DisplayTip("Spin", $"Spinning {targetPlayer.playerUsername} ({mode}) for {duration}s.");
         }
 
         /// Stop spinning a player and reset their camera and model.

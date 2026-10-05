@@ -584,7 +584,7 @@ namespace LethalMenu.Menu
             DrawSection("Store", () =>
             {
                 // ====== CONSUMABLE ITEMS ======
-                GUILayout.Label("--- Consumable Items ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                GUILayout.Label("Consumable Items", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 if (buyableItems.Length == 0)
                 {
@@ -639,7 +639,7 @@ namespace LethalMenu.Menu
                 GUILayout.Space(8);
 
                 // ====== SHIP UPGRADES (Loud horn, Signal Translator, Teleporter, Inverse Teleporter) ======
-                GUILayout.Label("--- Ship Upgrades ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                GUILayout.Label("Ship Upgrades", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 var unlockables = startOfRound.unlockablesList?.unlockables;
                 var upgrades = new System.Collections.Generic.List<(int index, UnlockableItem item)>();
@@ -699,7 +699,7 @@ namespace LethalMenu.Menu
                 GUILayout.Space(8);
 
                 // ====== VEHICLES (Cruiser etc.) ======
-                GUILayout.Label("--- Vehicles ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                GUILayout.Label("Vehicles", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 if (buyableVehicles.Length == 0)
                 {
@@ -740,7 +740,7 @@ namespace LethalMenu.Menu
                 GUILayout.Space(8);
 
                 // ====== SUITS ======
-                GUILayout.Label("--- Suits ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                GUILayout.Label("Suits", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 var suits = new System.Collections.Generic.List<(int index, UnlockableItem item)>();
                 if (unlockables != null)
@@ -798,7 +798,7 @@ namespace LethalMenu.Menu
                 GUILayout.Space(8);
 
                 // ====== SHIP DECOR (Weekly rotating) ======
-                GUILayout.Label("--- Ship Decor (Weekly) ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                GUILayout.Label("Ship Decor (Weekly)", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 var decorSelection = terminal.ShipDecorSelection;
                 if (decorSelection == null || decorSelection.Count == 0)
@@ -855,7 +855,7 @@ namespace LethalMenu.Menu
                 GUILayout.Space(8);
 
                 // ====== DELIVERY OPTIONS ======
-                GUILayout.Label("--- Delivery ---", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+                GUILayout.Label("Delivery", new GUIStyle(_labelStyle) { fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
 
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Instant Spawn (Host)", _buttonStyle))

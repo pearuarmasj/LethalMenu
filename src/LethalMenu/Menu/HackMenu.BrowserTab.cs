@@ -128,7 +128,7 @@ namespace LethalMenu.Menu
             // Lobby name (truncated)
             string displayName = lobby.Name.Length > 25 ? lobby.Name.Substring(0, 22) + "..." : lobby.Name;
             if (lobby.IsKickedHost)
-                displayName = "⚠ " + displayName;
+                displayName = "[kicked] " + displayName;
 
             GUILayout.Label(displayName, _labelStyle, GUILayout.Width(180));
 
@@ -160,11 +160,11 @@ namespace LethalMenu.Menu
                 // Status indicators
                 GUILayout.BeginHorizontal();
                 if (lobby.IsChallenge)
-                    GUILayout.Label("🏆 Challenge", _labelStyle, GUILayout.Width(80));
+                    GUILayout.Label("Challenge", _labelStyle, GUILayout.Width(80));
                 if (lobby.IsStarted)
-                    GUILayout.Label("🎮 In Progress", _labelStyle, GUILayout.Width(85));
+                    GUILayout.Label("In progress", _labelStyle, GUILayout.Width(85));
                 if (!lobby.IsJoinable)
-                    GUILayout.Label("🔒 Locked", _labelStyle, GUILayout.Width(70));
+                    GUILayout.Label("Locked", _labelStyle, GUILayout.Width(70));
                 GUILayout.EndHorizontal();
 
                 // Version info
@@ -181,7 +181,7 @@ namespace LethalMenu.Menu
                 if (lobby.IsKickedHost)
                 {
                     GUIStyle warnStyle = new GUIStyle(_labelStyle) { normal = { textColor = Color.red } };
-                    GUILayout.Label("⚠ WARNING: This host kicked you before!", warnStyle);
+                    GUILayout.Label("This host kicked you before.", warnStyle);
                 }
 
                 GUILayout.Space(5);
