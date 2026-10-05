@@ -52,9 +52,10 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// Lets the adapter undo per-frame re-targeting the vanilla Update did. Overrides call base.Update(),
-    /// so the postfix fires once per hierarchy level; only the outermost declaration's postfix (which
-    /// finishes last) triggers AfterUpdate.
+    /// Brackets the vanilla Update of a directed enemy. Overrides call base.Update(), so each patch fires
+    /// once per hierarchy level; only the outermost declaration (first prefix, last postfix) acts.
+    /// Prefix: BeforeUpdate (host-logic elevation). Postfix: AfterUpdate, where the adapter undoes per-frame
+    /// re-targeting. Finalizer: the elevation never outlives the Update, exception or not.
     [HarmonyPatch]
     internal static class DirectiveUpdatePatch
     {
@@ -62,18 +63,36 @@ namespace LethalMenu.Patches
 
         private static IEnumerable<MethodBase> TargetMethods() => EnemyMethods.AllDeclared(nameof(EnemyAI.Update));
 
-        [HarmonyPostfix]
-        private static void Postfix(EnemyAI __instance, MethodBase __originalMethod)
+        private static bool IsOutermost(EnemyAI enemy, MethodBase original)
         {
-            if (!EnemyDirector.IsDirected(__instance)) return;
-            var type = __instance.GetType();
+            var type = enemy.GetType();
             if (!Outermost.TryGetValue(type, out var declarer))
             {
                 declarer = EnemyMethods.OutermostDeclarer(type, nameof(EnemyAI.Update));
                 Outermost[type] = declarer;
             }
-            if (__originalMethod.DeclaringType != declarer) return;
-            EnemyDirector.AfterUpdate(__instance);
+            return original.DeclaringType == declarer;
+        }
+
+        [HarmonyPrefix]
+        private static void Prefix(EnemyAI __instance, MethodBase __originalMethod)
+        {
+            if (EnemyDirector.IsDirected(__instance) && IsOutermost(__instance, __originalMethod))
+                EnemyDirector.BeforeUpdate(__instance);
+        }
+
+        [HarmonyPostfix]
+        private static void Postfix(EnemyAI __instance, MethodBase __originalMethod)
+        {
+            if (EnemyDirector.IsDirected(__instance) && IsOutermost(__instance, __originalMethod))
+                EnemyDirector.AfterUpdate(__instance);
+        }
+
+        [HarmonyFinalizer]
+        private static void Finalizer(EnemyAI __instance, MethodBase __originalMethod)
+        {
+            if (IsOutermost(__instance, __originalMethod))
+                DirectiveAuthority.Drop(__instance);
         }
     }
 

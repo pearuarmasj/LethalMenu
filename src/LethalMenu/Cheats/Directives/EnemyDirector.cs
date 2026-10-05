@@ -165,6 +165,14 @@ namespace LethalMenu.Cheats.Directives
             }
         }
 
+        /// Before the enemy's vanilla Update (DirectivePatches).
+        public static void BeforeUpdate(EnemyAI enemy)
+        {
+            if (!Directives.ContainsKey(enemy) || !enemy.IsOwner || enemy.isEnemyDead) return;
+            if (DirectiveAdapterRegistry.Get(enemy)?.RunsServerLogic(enemy) == true)
+                DirectiveAuthority.Elevate(enemy);
+        }
+
         /// After the enemy's vanilla Update (DirectivePatches).
         public static void AfterUpdate(EnemyAI enemy)
         {

@@ -20,6 +20,9 @@ namespace LethalMenu.Cheats.Directives
         float SightRange(EnemyAI enemy);
         float SightAngle(EnemyAI enemy);
         bool CanUseEntrances(EnemyAI enemy);
+        /// True when the enemy's vanilla Update logic gated on IsServer must run on the director's client
+        /// (DirectiveAuthority.Elevate for the duration of Update).
+        bool RunsServerLogic(EnemyAI enemy);
     }
 
     /// Typed base. Adapters derive from this; the explicit interface methods do the cast.
@@ -41,6 +44,7 @@ namespace LethalMenu.Cheats.Directives
         public virtual float SightRange(T enemy) => 40f;
         public virtual float SightAngle(T enemy) => 60f;
         public virtual bool CanUseEntrances(T enemy) => true;
+        public virtual bool RunsServerLogic(T enemy) => false;
 
         void IDirectiveAdapter.Follow(EnemyAI enemy, Vector3 position) => Follow((T)enemy, position);
         void IDirectiveAdapter.Engage(EnemyAI enemy, PlayerControllerB target) => Engage((T)enemy, target);
@@ -50,5 +54,6 @@ namespace LethalMenu.Cheats.Directives
         float IDirectiveAdapter.SightRange(EnemyAI enemy) => SightRange((T)enemy);
         float IDirectiveAdapter.SightAngle(EnemyAI enemy) => SightAngle((T)enemy);
         bool IDirectiveAdapter.CanUseEntrances(EnemyAI enemy) => CanUseEntrances((T)enemy);
+        bool IDirectiveAdapter.RunsServerLogic(EnemyAI enemy) => RunsServerLogic((T)enemy);
     }
 }
