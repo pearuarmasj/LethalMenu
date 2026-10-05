@@ -359,9 +359,13 @@ namespace LethalMenu
         private void UpdateGameState()
         {
             if (GameInstance != StartOfRound.Instance)
+            {
                 Settings.DemiGodPlayers.Clear();
+                Cheats.Directives.EnemyDirector.Clear();
+            }
             GameInstance = StartOfRound.Instance;
             if (GameInstance == null) return;
+            Cheats.Directives.EnemyDirector.Prune();
 
             LocalPlayer = GameInstance.localPlayerController;
             QuickMenu = LocalPlayer?.quickMenuManager;
@@ -404,6 +408,7 @@ namespace LethalMenu
         /// </summary>
         public void Cleanup()
         {
+            Cheats.Directives.EnemyDirector.ReleaseAll();
             _harmony?.UnpatchAll(HarmonyId);
 
             for (int i = 0; i < _cheats.Count; i++)
