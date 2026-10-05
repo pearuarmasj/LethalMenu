@@ -7,27 +7,8 @@ using UnityEngine;
 
 namespace LethalMenu.Patches
 {
-    /// Baboon hawk sight: BaboonBirdAI.DoLOSCheck overlap-spheres visibleThreatsMask, takes every
-    /// IVisibleThreat (PlayerControllerB implements it explicitly) and skips a threat whose
-    /// GetVisibility() is 0. The hidden player reports 0, so it never enters `threats`, never
-    /// raises fearLevel and is never passed to ReactToThreat / focused.
-    [HarmonyPatch]
-    internal static class BaboonBirdVisibilityPatch
-    {
-        private static MethodBase TargetMethod()
-        {
-            var map = typeof(PlayerControllerB).GetInterfaceMap(typeof(IVisibleThreat));
-            int index = Array.IndexOf(map.InterfaceMethods, typeof(IVisibleThreat).GetMethod(nameof(IVisibleThreat.GetVisibility)));
-            return map.TargetMethods[index];
-        }
-
-        [HarmonyPostfix]
-        private static void Postfix(PlayerControllerB __instance, ref float __result)
-        {
-            if (UntargetableSightPatches.IsHidden(__instance))
-                __result = 0f;
-        }
-    }
+    // Baboon hawk sight (DoLOSCheck skips IVisibleThreats whose GetVisibility() is 0) is closed by
+    // PlayerVisibleThreatPatches in RadMechAIUntargetablePatches.cs, which zeroes the hidden player's visibility.
 
     /// Already-focused threat: a baboon that focused the player before Untargetable was enabled keeps
     /// focusedThreat (aggressiveMode 2 in DoAIInterval walks to the threat's position and fights) for
