@@ -22,8 +22,10 @@ namespace LethalMenu.Cheats
         private GUIStyle? _healthStyle;
 
         private const float SkinPadding = 0.2f;
-        private static readonly Vector3 EntranceBoxOffset = Vector3.up * 1.2f;
-        private static readonly Vector3 EntranceBoxSize = new Vector3(1.4f, 2.4f, 1.4f);
+        private const float DoorHeight = 2.4f;
+        private const float MainDoorWidth = 2.2f;
+        private const float FireExitWidth = 1.2f;
+        private const float DoorThickness = 0.2f;
 
         private sealed class Body
         {
@@ -82,13 +84,12 @@ namespace LethalMenu.Cheats
 
             if (Hack.DoorESP.IsEnabled())
             {
-                // An entrance is a trigger with no door mesh of its own: a door-sized box at its entrance point.
+                // An entrance is a trigger with no door mesh of its own: a door-shaped box in the door plane.
                 foreach (var entrance in LethalMenuMod.Entrances)
                 {
                     if (entrance == null) continue;
-                    var point = entrance.entrancePoint != null ? entrance.entrancePoint : entrance.transform;
-                    DrawESP(camera, entrance, entrance.isEntranceToBuilding ? "Entrance" : "Exit", Settings.DoorColor,
-                        new Bounds(point.position + EntranceBoxOffset, EntranceBoxSize));
+                    FillDoorCorners(entrance);
+                    DrawESP(camera, entrance, entrance.isEntranceToBuilding ? "Entrance" : "Exit", Settings.DoorColor, cornersFilled: true);
                 }
             }
 
@@ -96,7 +97,7 @@ namespace LethalMenu.Cheats
             {
                 foreach (var mine in LethalMenuMod.Landmines)
                     if (mine != null && !mine.hasExploded)
-                        DrawESP(camera, mine, "Mine", Settings.MineColor);
+                        DrawESP(camera, PrefabRoot(mine), "Mine", Settings.MineColor);
             }
 
             if (Hack.TurretESP.IsEnabled())
@@ -112,7 +113,7 @@ namespace LethalMenu.Cheats
                         TurretMode.Berserk => "Turret\nBERSERK",
                         _ => "Turret"
                     };
-                    DrawESP(camera, turret, mode, Settings.TurretColor);
+                    DrawESP(camera, PrefabRoot(turret), mode, Settings.TurretColor);
                 }
             }
 
@@ -143,12 +144,12 @@ namespace LethalMenu.Cheats
             if (Hack.MineshaftElevatorESP.IsEnabled())
                 foreach (var e in LethalMenuMod.MineshaftElevators) if (e != null) DrawESP(camera, e, "Elevator", new Color(0.7f, 0.7f, 0.7f));
             if (Hack.SpikeRoofTrapESP.IsEnabled())
-                foreach (var s in LethalMenuMod.SpikeRoofTraps) if (s != null) DrawESP(camera, s, "Spike Trap", new Color(1f, 0f, 0.25f));
+                foreach (var s in LethalMenuMod.SpikeRoofTraps) if (s != null) DrawESP(camera, PrefabRoot(s), "Spike Trap", new Color(1f, 0f, 0.25f));
         }
 
-        private void DrawESP(Camera camera, Component target, string label, Color color, Bounds? fixedBounds = null)
+        private void DrawESP(Camera camera, Component target, string label, Color color, bool cornersFilled = false)
         {
-            if (!TryGetScreenBox(camera, target, out Rect box, out float distance, fixedBounds)) return;
+            if (!TryGetScreenBox(camera, target, out Rect box, out float distance, cornersFilled)) return;
 
             DrawBox(box, color);
             DrawLabelAbove(box, $"{label}\n{distance:F0}m", color, distance);
@@ -182,31 +183,72 @@ namespace LethalMenu.Cheats
             ShadowLabel(distRect, distContent, distColor);
         }
 
-        /// Projects the target's body bounds (or `fixedBounds`) to a GUI-space rect. Falls back to a 1 m box
-        /// above the root transform when the object has no visible renderers.
-        private bool TryGetScreenBox(Camera camera, Component target, out Rect box, out float distance, Bounds? fixedBounds = null)
+        /// Turret and Landmine scripts sit on a child of their prefab (the gun head, the trigger); the stand
+        /// and casing are siblings. The spawned prefab's NetworkObject is the whole object.
+        private static Component PrefabRoot(Component part)
+        {
+            var root = part.GetComponentInParent<Unity.Netcode.NetworkObject>();
+            return root != null ? root : part;
+        }
+
+        /// The door an EntranceTeleport stands for. The teleport's transform sits in the door plane and its
+        /// entrancePoint on the floor in front of it, which gives the door's facing and its bottom edge.
+        private void FillDoorCorners(EntranceTeleport entrance)
+        {
+            Vector3 door = entrance.transform.position;
+            Vector3 normal = entrance.transform.forward;
+            float floor = door.y - DoorHeight / 2f;
+            if (entrance.entrancePoint != null)
+            {
+                Vector3 toPoint = entrance.entrancePoint.position - door;
+                toPoint.y = 0f;
+                if (toPoint.sqrMagnitude > 0.01f) normal = toPoint;
+                floor = entrance.entrancePoint.position.y;
+            }
+            normal.y = 0f;
+            normal.Normalize();
+
+            float width = entrance.entranceId == 0 ? MainDoorWidth : FireExitWidth;
+            Vector3 side = Vector3.Cross(Vector3.up, normal) * (width / 2f);
+            Vector3 depth = normal * (DoorThickness / 2f);
+            Vector3 bottom = new Vector3(door.x, floor, door.z);
+            Vector3 top = bottom + Vector3.up * DoorHeight;
+
+            _corners[0] = bottom - side - depth;
+            _corners[1] = bottom + side - depth;
+            _corners[2] = bottom - side + depth;
+            _corners[3] = bottom + side + depth;
+            _corners[4] = top - side - depth;
+            _corners[5] = top + side - depth;
+            _corners[6] = top - side + depth;
+            _corners[7] = top + side + depth;
+        }
+
+        /// Projects the target's body bounds (or the corners the caller already put in _corners) to a GUI-space
+        /// rect. Falls back to a 1 m box above the root transform when the object has no visible renderers.
+        private bool TryGetScreenBox(Camera camera, Component target, out Rect box, out float distance, bool cornersFilled = false)
         {
             box = default;
             Vector3 root = target.transform.position;
             distance = Vector3.Distance(camera.transform.position, root);
             if (distance > MaxDistance) return false;
 
-            Bounds bounds;
-            if (fixedBounds.HasValue)
-                bounds = fixedBounds.Value;
-            else if (!TryGetBounds(target, out bounds))
-                bounds = new Bounds(root + Vector3.up * 0.5f, Vector3.one);
+            if (!cornersFilled)
+            {
+                if (!TryGetBounds(target, out Bounds bounds))
+                    bounds = new Bounds(root + Vector3.up * 0.5f, Vector3.one);
 
-            var min = bounds.min;
-            var max = bounds.max;
-            _corners[0] = new Vector3(min.x, min.y, min.z);
-            _corners[1] = new Vector3(max.x, min.y, min.z);
-            _corners[2] = new Vector3(min.x, max.y, min.z);
-            _corners[3] = new Vector3(max.x, max.y, min.z);
-            _corners[4] = new Vector3(min.x, min.y, max.z);
-            _corners[5] = new Vector3(max.x, min.y, max.z);
-            _corners[6] = new Vector3(min.x, max.y, max.z);
-            _corners[7] = new Vector3(max.x, max.y, max.z);
+                var min = bounds.min;
+                var max = bounds.max;
+                _corners[0] = new Vector3(min.x, min.y, min.z);
+                _corners[1] = new Vector3(max.x, min.y, min.z);
+                _corners[2] = new Vector3(min.x, max.y, min.z);
+                _corners[3] = new Vector3(max.x, max.y, min.z);
+                _corners[4] = new Vector3(min.x, min.y, max.z);
+                _corners[5] = new Vector3(max.x, min.y, max.z);
+                _corners[6] = new Vector3(min.x, max.y, max.z);
+                _corners[7] = new Vector3(max.x, max.y, max.z);
+            }
 
             float xMin = float.MaxValue, yMin = float.MaxValue, xMax = float.MinValue, yMax = float.MinValue;
             foreach (var corner in _corners)
