@@ -504,7 +504,7 @@ namespace LethalMenu.Menu
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("SPIN!", _buttonStyle, GUILayout.Width(60)))
+                    if (GUILayout.Button("SPIN! (your view)", _buttonStyle, GUILayout.Width(120)))
                     {
                         Cheats.NetworkCheats.SpinPlayer(
                             mobPlayers[_selectedMimicPlayerIndex],

@@ -183,10 +183,18 @@ namespace LethalMenu.Cheats
             Loader.Log($"  RAW TOTAL: ${rawValue}");
             Loader.Log($"  ADJUSTED ({startOfRound.companyBuyingRate:P0}): ${adjustedValue}");
 
-            var terminal = Object.FindObjectOfType<Terminal>();
-            if (terminal == null)
+            var terminal = LethalMenuMod.GameTerminal;
+            var desk = Object.FindObjectOfType<DepositItemsDesk>();
+            if (terminal == null || desk == null)
             {
-                Loader.Log("[LethalMenu] Terminal not found.");
+                Loader.Log("[LethalMenu] Terminal or deposit desk not found.");
+                return;
+            }
+
+            // Credits, quota and despawning are server state; a client could only fake them locally.
+            if (!IsHost())
+            {
+                HUDManager.Instance?.DisplayTip("Sell", "Host only.");
                 return;
             }
 
@@ -217,14 +225,13 @@ namespace LethalMenu.Cheats
                 hud.rewardsScrollbar.value = 1f;
             }
 
+            // Clients apply credits, quota and stats and show the payout exactly as for a desk sale.
+            desk.SellItemsClientRpc(adjustedValue, terminal.groupCredits, itemsToSell.Count, startOfRound.companyBuyingRate);
+
             foreach (var item in itemsToSell)
             {
-                if (item == null || item.NetworkObject == null || !item.NetworkObject.IsSpawned) continue;
-
-                if (NetworkManager.Singleton?.IsHost == true || NetworkManager.Singleton?.IsServer == true)
+                if (item != null && item.NetworkObject != null && item.NetworkObject.IsSpawned)
                     item.NetworkObject.Despawn(true);
-                else
-                    item.gameObject.SetActive(false);
             }
 
             Loader.Log($"[LethalMenu] SUCCESS: Sold {itemsToSell.Count} items for ${adjustedValue}");
@@ -247,7 +254,7 @@ namespace LethalMenu.Cheats
             if (startOfRound.insideShipPositions is { Length: > 0 } && startOfRound.insideShipPositions[0] != null)
                 return startOfRound.insideShipPositions[0].position + Vector3.up * 1.5f;
 
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal != null)
                 return terminal.transform.position + Vector3.up * 0.5f;
 

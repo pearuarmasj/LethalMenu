@@ -13,7 +13,7 @@ namespace LethalMenu.Cheats
         /// Uses Terminal.BuyVehicleServerRpc - RequireOwnership = false.
         public static void BuyFreeVehicle(int vehicleId)
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 Debug.Log("[NetworkCheats] Terminal not found.");
@@ -28,7 +28,7 @@ namespace LethalMenu.Cheats
         /// Gets list of available vehicles.
         public static (int id, string name)[] GetAvailableVehicles()
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null || terminal.buyableVehicles == null)
                 return Array.Empty<(int, string)>();
 

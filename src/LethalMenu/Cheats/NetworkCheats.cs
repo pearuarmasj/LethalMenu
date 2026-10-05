@@ -415,6 +415,12 @@ namespace LethalMenu.Cheats
                     return;
                 }
 
+                if (!IsHost())
+                {
+                    HUDManager.Instance?.DisplayTip("Bomb", "No jetpack on the map; spawning one needs host.");
+                    return;
+                }
+
                 Vector3 spawnPos = targetPlayer.transform.position + Vector3.up * 2f;
                 GameObject obj = UnityEngine.Object.Instantiate(jetpackItem.spawnPrefab, spawnPos, Quaternion.identity);
                 if (obj.TryGetComponent(out Unity.Netcode.NetworkObject netObj))

@@ -7,8 +7,8 @@ using UnityEngine.UI;
 namespace LethalMenu.Cheats
 {
     /// Expands player inventory from 4 slots to a configurable amount.
-    /// The patches are registered in GamePatches.cs and activate based on Settings.
-    /// Requires game restart to take effect when changed.
+    /// The patches below resize the arrays in PlayerControllerB.Awake / HUDManager.Awake, so a change
+    /// takes effect the next time those objects are created (new lobby / game restart).
     public class ItemSlotsCheat : CheatBase
     {
         public override string Name => "Extra Item Slots";

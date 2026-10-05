@@ -20,7 +20,7 @@ namespace LethalMenu.Menu
                     if (newDemiGod != demiGod)
                         Settings.SetDemiGod(localPlayer, newDemiGod);
                 }
-                DrawHackToggle(Hack.SaneMod, "Sane Mod", "Insanity stays at zero");
+                DrawHackToggle(Hack.SaneMod, "Sane Mode", "Insanity stays at zero");
                 DrawHackToggle(Hack.InfiniteStamina, "Infinite Stamina", "Never run out of sprint");
                 DrawHackToggle(Hack.NoFallDamage, "No Fall Damage", "Take no damage from falls");
                 DrawHackToggle(Hack.NoWeight, "No Weight", "Carry unlimited items without slowdown");
@@ -112,7 +112,6 @@ namespace LethalMenu.Menu
                 GUILayout.Label($"  Speed: {Settings.PhantomMoveSpeed:F0}", _labelStyle, GUILayout.Width(100));
                 Settings.PhantomMoveSpeed = GUILayout.HorizontalSlider(Settings.PhantomMoveSpeed, 5f, 50f);
                 GUILayout.EndHorizontal();
-                GUILayout.Label("  Speed is applied when Phantom is switched on", _tooltipStyle);
                 Settings.PhantomTeleportOnExit = GUILayout.Toggle(Settings.PhantomTeleportOnExit, "  Shift on exit: teleport body to camera", _toggleStyle);
             });
 

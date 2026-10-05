@@ -9,7 +9,7 @@ namespace LethalMenu.Cheats
         /// Sets group credits to any value by calling SyncGroupCreditsServerRpc.
         public static void SetCredits(int amount)
         {
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 Debug.Log("[NetworkCheats] Terminal not found.");
@@ -25,7 +25,7 @@ namespace LethalMenu.Cheats
         public static void UnlockShipUpgrade(int unlockableId)
         {
             var startOfRound = StartOfRound.Instance;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (startOfRound == null || terminal == null)
             {
                 Debug.Log("[NetworkCheats] Not in game.");
@@ -40,7 +40,7 @@ namespace LethalMenu.Cheats
         /// Buys items without spending credits.
         public static void FreeItems(int[] itemIds)
         {
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 Debug.Log("[NetworkCheats] Terminal not found.");

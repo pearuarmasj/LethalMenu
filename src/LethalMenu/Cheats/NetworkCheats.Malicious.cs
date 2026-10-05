@@ -17,7 +17,7 @@ namespace LethalMenu.Cheats
         /// May cause IndexOutOfRangeException or other issues on clients.
         public static void AttemptTerminalCrash()
         {
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 Debug.Log("[NetworkCheats] Terminal not found.");
@@ -53,7 +53,7 @@ namespace LethalMenu.Cheats
         {
             var hud = HUDManager.Instance;
             var localPlayer = LethalMenuMod.LocalPlayer;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
 
             if (localPlayer == null) yield break;
 

@@ -317,7 +317,7 @@ namespace LethalMenu.Cheats
         public static void ExperimentalChangeLevel(int levelId)
         {
             var round = StartOfRound.Instance;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (round == null || terminal == null)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "Not in game / no terminal.");
@@ -339,7 +339,7 @@ namespace LethalMenu.Cheats
         public static void ExperimentalSpawnUnlockable(int unlockableId)
         {
             var round = StartOfRound.Instance;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (round == null || terminal == null)
             {
                 HUDManager.Instance?.DisplayTip("Experiment", "Not in game / no terminal.");

@@ -11,6 +11,10 @@ namespace LethalMenu.Theme
         public static GUISkin? Skin { get; private set; }
         private static AssetBundle? _assetBundle;
 
+        // Callers re-request the theme every OnGUI while Skin is null; remember a failed load so it
+        // isn't retried (and logged) several times a frame.
+        private static string? _failedTheme;
+
         public static string[] GetAvailableThemes()
         {
             var prefix = "LethalMenu.Resources.Theme.";
@@ -26,6 +30,8 @@ namespace LethalMenu.Theme
         public static void SetTheme(string themeName)
         {
             if (CurrentName == themeName && Skin != null && _assetBundle != null)
+                return;
+            if (themeName == _failedTheme)
                 return;
 
             var stream = Assembly.GetExecutingAssembly()
@@ -49,9 +55,15 @@ namespace LethalMenu.Theme
             }
             stream.Dispose();
 
-            if (_assetBundle == null) return;
+            Skin = _assetBundle != null ? _assetBundle.LoadAsset<GUISkin>("assets/lethalmenu.guiskin") : null;
+            if (Skin == null)
+            {
+                _failedTheme = themeName;
+                Loader.LogError($"Theme '{themeName}' failed to load");
+                return;
+            }
 
-            Skin = _assetBundle.LoadAsset<GUISkin>("assets/lethalmenu.guiskin");
+            _failedTheme = null;
             CurrentName = themeName;
             Loader.Log($"Loaded theme: {themeName}");
         }

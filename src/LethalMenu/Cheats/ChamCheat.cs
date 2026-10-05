@@ -12,24 +12,14 @@ namespace LethalMenu.Cheats
         public override string Name => "Chams";
         public override Hack HackType => Hack.EnableChams;
 
-        private bool _wasEnabled;
+        public override void OnDisable() => ChamHandler.RemoveAllChams();
 
         public override void OnUpdate()
         {
-            bool now = IsEnabled;
-            if (!now)
-            {
-                if (_wasEnabled)
-                {
-                    ChamHandler.RemoveAllChams();
-                    _wasEnabled = false;
-                }
-                return;
-            }
+            if (!IsEnabled) return;
 
             // Lazy init the cham material on the first frame we're enabled.
             ChamHandler.Setup();
-            _wasEnabled = true;
 
             var local = LethalMenuMod.LocalPlayer;
             if (local == null) return;

@@ -30,6 +30,7 @@ namespace LethalMenu.Cheats
             // Enabled before a local player existed (e.g. restored from config): start once one does.
             if (_player == null) Detach();
             if (_player == null) return;
+            if (_freeFly != null) _freeFly.BaseSpeed = Settings.PhantomMoveSpeed;
 
             var kb = Keyboard.current;
             if (kb == null || Settings.ShowMenu) return;

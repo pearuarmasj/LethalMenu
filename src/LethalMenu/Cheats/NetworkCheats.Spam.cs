@@ -175,7 +175,7 @@ namespace LethalMenu.Cheats
 
         private static IEnumerator SpamTerminalSoundCoroutine(int iterations)
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null) yield break;
 
             for (int i = 0; i < iterations; i++)
@@ -200,7 +200,7 @@ namespace LethalMenu.Cheats
 
         private static IEnumerator SpamTerminalEarrapeCoroutine(int iterations)
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null) yield break;
 
             for (int i = 0; i < iterations; i++)

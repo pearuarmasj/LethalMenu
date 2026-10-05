@@ -38,7 +38,7 @@ namespace LethalMenu.Cheats
         public static void ChangeLevel(int levelId)
         {
             var startOfRound = StartOfRound.Instance;
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (startOfRound == null || terminal == null)
             {
                 Debug.Log("[NetworkCheats] Not in game.");

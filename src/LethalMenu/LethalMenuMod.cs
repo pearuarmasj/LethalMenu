@@ -218,7 +218,8 @@ namespace LethalMenu
                 ToggleCursor(Settings.ShowMenu);
             }
 
-            if (!Settings.ShowMenu)
+            bool typing = LocalPlayer != null && (LocalPlayer.isTypingChat || LocalPlayer.inTerminalMenu);
+            if (!Settings.ShowMenu && !typing)
                 HackExtensions.CheckKeyBinds();
 
             DispatchTransitions();
@@ -321,7 +322,8 @@ namespace LethalMenu
                     }
                     catch (Exception ex)
                     {
-                        Loader.LogError($"[LethalMenu] Menu draw error: {ex}");
+                        if (_loggedCheatErrors.Add($"menu|{ex.GetType().Name}|{ex.Message}"))
+                            Loader.LogError($"[LethalMenu] Menu draw error: {ex}");
                     }
                 }
             }
@@ -356,6 +358,8 @@ namespace LethalMenu
 
         private void UpdateGameState()
         {
+            if (GameInstance != StartOfRound.Instance)
+                Settings.DemiGodPlayers.Clear();
             GameInstance = StartOfRound.Instance;
             if (GameInstance == null) return;
 

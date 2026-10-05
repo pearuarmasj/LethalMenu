@@ -33,10 +33,8 @@ namespace LethalMenu.Cheats
                 return;
             }
 
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            int playerId = localPlayer != null ? (int)localPlayer.playerClientId : 0;
-
-            startOfRound.EndGameServerRpc(playerId);
+            // EndGameServerRpc only honours an already-leaving ship for playerClientId 0 (the host's id).
+            startOfRound.EndGameServerRpc(0);
             Debug.Log("[NetworkCheats] Force ended game.");
         }
 

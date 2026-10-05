@@ -26,16 +26,15 @@ namespace LethalMenu.Cheats
         private float _deviationTimer;
         private float _animationBroadcastTimer;
         private float _instantTeleTimer;
-        private bool _wasEnabled;
+        public override void OnDisable()
+        {
+            _states.Clear();
+            _deviationRotation = Quaternion.identity;
+        }
 
         public override void OnUpdate()
         {
-            if (!IsEnabled)
-            {
-                if (_wasEnabled) { _states.Clear(); _deviationRotation = Quaternion.identity; _wasEnabled = false; }
-                return;
-            }
-            _wasEnabled = true;
+            if (!IsEnabled) return;
 
             var local = LethalMenuMod.LocalPlayer;
             var target = TargetPlayer;

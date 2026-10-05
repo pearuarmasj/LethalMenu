@@ -9,7 +9,7 @@ namespace LethalMenu.Cheats
         /// Plays terminal audio for everyone (trolling).
         public static void PlayTerminalSound(int clipIndex)
         {
-            var terminal = UnityEngine.Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 Debug.Log("[NetworkCheats] Terminal not found.");
