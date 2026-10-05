@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace LethalMenu.Patches
 {
-    /// Old Bird missiles of a directed mech.
+    /// Host-gated pieces of a directed enemy's attack, made to work for a director who is not the host.
     [HarmonyPatch]
-    internal static class DirectiveRadMechPatches
+    internal static class DirectiveHostLogicPatches
     {
         /// A director who is not the host fires missiles that exist on their client only (ShootGunClientRpc
         /// sends nothing from a client). RadMechAI.StartExplosion would explode them locally; send the impact
@@ -35,6 +35,22 @@ namespace LethalMenu.Patches
             if (Vector3.Distance(__instance.previousExplosionPosition, explosionPosition) >= 4f)
                 __instance.SpawnBlastMark(explosionPosition, Quaternion.Euler(forwardRotation));
             return false;
+        }
+
+        /// Tulip Snake leap landing. FlowerSnakeEnemy.StopLeapOnLocalClient only resolves the nav-mesh landing
+        /// point on the host; everyone else takes it from StopLeapClientRpc. A director who is not the host
+        /// leaps locally, so resolve it the same way here.
+        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopLeapOnLocalClient))]
+        [HarmonyPrefix]
+        private static void StopLeapPrefix(FlowerSnakeEnemy __instance, bool landOnGround, ref Vector3 overrideLandingPosition)
+        {
+            if (!landOnGround || DirectiveAuthority.IsRealServer || !__instance.IsOwner || !EnemyDirector.IsDirected(__instance)) return;
+
+            Vector3 position = __instance.transform.position;
+            Vector3 landing = RoundManager.Instance.GetNavMeshPosition(position, default, 15f, __instance.agentMask);
+            if (!RoundManager.Instance.GotNavMeshPositionResult)
+                landing = __instance.ChooseClosestNodeToPosition(position).position;
+            overrideLandingPosition = landing;
         }
     }
 }

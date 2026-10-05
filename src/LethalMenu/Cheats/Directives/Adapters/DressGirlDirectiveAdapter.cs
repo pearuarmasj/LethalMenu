@@ -14,14 +14,15 @@ namespace LethalMenu.Cheats.Directives.Adapters
     /// victim's client into state 1. AfterUpdate keeps hauntingPlayer on the target (the server re-picks it through
     /// ChooseNewHauntingPlayerClientRpc when the haunted player is gone) and keeps it off the local player, so
     /// DressGirlUntargetablePatches (which only act on a haunt aimed at the local player) never have to fight us.
-    /// Limit: the kill fires only when the victim's own client also resolved hauntingPlayer to the victim (derived
-    /// from the shared map seed, not synced); otherwise the chase is harassment only. The mesh is shown locally
-    /// only, as in vanilla.
+    /// The vanilla kill only fires when the victim's own client also resolved hauntingPlayer to the victim (derived
+    /// from the shared map seed, not synced), so Engage delivers the kill itself once she reaches the target
+    /// (DirectiveAuthority.TryStrike, lethal). The mesh is shown locally only, as in vanilla.
     public sealed class DressGirlDirectiveAdapter : DirectiveAdapter<DressGirlAI>
     {
         private const int RoamState = 0;
         private const int ChaseState = 1;
         private const float WalkSpeed = 5.25f;
+        private const float KillReach = 1.5f;
 
         /// The player vanilla had chosen, restored on Release so ownership does not ping-pong afterwards.
         private static readonly ConditionalWeakTable<DressGirlAI, PlayerControllerB> Original = new();
@@ -38,6 +39,8 @@ namespace LethalMenu.Cheats.Directives.Adapters
             }
             enemy.agent.speed = WalkSpeed;
             enemy.SetMovingTowardsTargetPlayer(target);
+            if (Vector3.Distance(enemy.transform.position, target.transform.position) < KillReach)
+                DirectiveAuthority.TryStrike(enemy, target, DirectiveAuthority.LethalDamage, 1f);
         }
 
         public override void AfterUpdate(DressGirlAI enemy, PlayerControllerB? target)

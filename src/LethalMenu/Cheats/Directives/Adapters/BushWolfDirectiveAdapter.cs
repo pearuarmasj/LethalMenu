@@ -7,8 +7,10 @@ namespace LethalMenu.Cheats.Directives.Adapters
     /// targetPlayer + SwitchToBehaviourStateOnLocalClient(2) + SyncTargetPlayerAndAttackServerRpc(playerId) once within
     /// attackDistance with a clear line. State 2 is run entirely by Update on the owner (tongue shot, HitByEnemyServerRpc /
     /// DodgedEnemyHitServerRpc from the victim, drag towards currentHidingSpot); the kill is the victim's own OnCollideWithPlayer
-    /// (dragged and within 7 m of the nest) -> DoKillPlayerAnimationServerRpc. Engage therefore only enters state 1 / 2 and
-    /// then leaves state 2 alone, except for DoAIInterval's 35 s drag timeout which is reproduced here.
+    /// (dragged and within 7 m of the nest) -> DoKillPlayerAnimationServerRpc. Engage enters state 1 / 2 and leaves the
+    /// tongue shot to state 2; once the tongue has landed and reeled the target within MaulReach it kills on the spot
+    /// instead of waiting for the nest (lethal DirectiveAuthority.TryStrike + DoKillPlayerAnimationServerRpc, both
+    /// RequireOwnership = false). DoAIInterval's 35 s drag timeout is reproduced here.
     /// AfterUpdate only re-pins targetPlayer (never movingTowardsTargetPlayer, which the drag logic owns). With no target
     /// (escort) it clears the staring/spotted state that makes Update state 0 stop the fox and forces a walking speed.
     public sealed class BushWolfDirectiveAdapter : DirectiveAdapter<BushWolfEnemy>
@@ -19,6 +21,7 @@ namespace LethalMenu.Cheats.Directives.Adapters
         private const float AttackRangeMargin = 1f;
         private const float DragTimeout = 35f;
         private const float EscortSpeed = 6f;
+        private const float MaulReach = 6f;
 
         public override void Engage(BushWolfEnemy enemy, PlayerControllerB target)
         {
@@ -26,8 +29,16 @@ namespace LethalMenu.Cheats.Directives.Adapters
 
             if (enemy.currentBehaviourStateIndex == AttackState)
             {
-                if (enemy.dragging && !enemy.startedShootingTongue && enemy.shootTongueTimer > DragTimeout)
+                if (!enemy.dragging || enemy.startedShootingTongue) return;
+                if (Vector3.Distance(enemy.transform.position, target.transform.position) < MaulReach)
+                {
+                    if (DirectiveAuthority.TryStrike(enemy, target, DirectiveAuthority.LethalDamage, 2f))
+                        enemy.DoKillPlayerAnimationServerRpc((int)target.playerClientId);
+                }
+                else if (enemy.shootTongueTimer > DragTimeout)
+                {
                     enemy.SwitchToBehaviourState(StalkState);
+                }
                 return;
             }
 

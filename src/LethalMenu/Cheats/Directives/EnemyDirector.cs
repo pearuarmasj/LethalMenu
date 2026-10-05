@@ -82,7 +82,11 @@ namespace LethalMenu.Cheats.Directives
         }
 
         /// Lobby change: the enemies are gone, just forget them.
-        public static void Clear() => Directives.Clear();
+        public static void Clear()
+        {
+            Directives.Clear();
+            DirectiveAuthority.Clear();
+        }
 
         /// Drop destroyed / dead enemies.
         public static void Prune()
@@ -215,6 +219,7 @@ namespace LethalMenu.Cheats.Directives
         {
             Directives.Remove(enemy);
             DirectiveRouting.Forget(enemy);
+            DirectiveAuthority.Forget(enemy);
         }
 
         private static void RequestOwnership(EnemyAI enemy, Directive d)

@@ -3,8 +3,9 @@ using UnityEngine;
 
 namespace LethalMenu.Cheats.Directives.Adapters
 {
-    /// Manticoil. Passive flier with no attack in vanilla (no OnCollideWithPlayer, no damage RPC), so a directed
-    /// Manticoil only harasses: it takes off (behaviour state 1 through SwitchToBehaviourState, which replicates)
+    /// Manticoil. Passive flier with no attack in vanilla (no OnCollideWithPlayer, no damage RPC). Directed, it
+    /// pecks: PeckDamage through DirectiveAuthority.TryStrike once a second while within PeckReach of the target.
+    /// It takes off (behaviour state 1 through SwitchToBehaviourState, which replicates)
     /// and flies at the target / ring point instead of away from players. The DoAIInterval pieces that would undo
     /// this (roamGlide search, avoid-the-player destination, landing) are skipped while directed, so Engage/Follow
     /// only redo its speed ramp (agent.speed 5..19) and stop roamGlide. Update has no re-targeting; AfterUpdate is
@@ -12,11 +13,15 @@ namespace LethalMenu.Cheats.Directives.Adapters
     public sealed class DoublewingDirectiveAdapter : DirectiveAdapter<DoublewingAI>
     {
         private const int FlightState = 1;
+        private const float PeckReach = 2.5f;
+        private const int PeckDamage = 5;
 
         public override void Engage(DoublewingAI enemy, PlayerControllerB target)
         {
             if (!TakeOff(enemy)) return;
             enemy.SetMovingTowardsTargetPlayer(target);
+            if (Vector3.Distance(enemy.transform.position, target.transform.position) < PeckReach)
+                DirectiveAuthority.TryStrike(enemy, target, PeckDamage, 1f);
         }
 
         public override void Follow(DoublewingAI enemy, Vector3 position)

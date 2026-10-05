@@ -7,8 +7,10 @@ namespace LethalMenu.Cheats.Directives.Adapters
     /// 12-22 m with line of sight and a 0.25-1.1 s cooldown, leaps with StartLeapOnLocalClient(dir) +
     /// StartLeapClientRpc(dir). The attack is the victim's own OnCollideWithPlayer -> FSHitPlayerServerRpc, which makes
     /// the snake cling (clingingToPlayer, 30-60 s); the snake never deals damage itself. Engage enters state 1, sends
-    /// FSHitPlayerServerRpc for the target itself once within reach (any client may), and repeats the leap check on
-    /// the host; a non-host owner closes the distance on foot. While leaping, falling
+    /// FSHitPlayerServerRpc for the target itself once within reach (any client may), and repeats the leap check.
+    /// StartLeapClientRpc only goes out from the host; a director who is not the host leaps on their own client
+    /// (the flight is simulated locally on every client anyway), lands on the nav mesh through
+    /// DirectiveHostLogicPatches and pushes the position every frame so the others see the flight. While leaping, falling
     /// from a leap or clinging Engage/Follow do nothing; the snake's own code returns it to state 0 when the cling
     /// ends. Update never re-targets, so AfterUpdate only keeps targetPlayer pointed at the target.
     public sealed class FlowerSnakeDirectiveAdapter : DirectiveAdapter<FlowerSnakeEnemy>
@@ -41,8 +43,6 @@ namespace LethalMenu.Cheats.Directives.Adapters
                 return;
             }
 
-            // The leap (StartLeapClientRpc, nav-mesh landing in StopLeapOnLocalClient) can only be broadcast by the host.
-            if (!enemy.IsServer) return;
             if (distance < Random.Range(12f, 22f) &&
                 enemy.CheckLineOfSightForPosition(target.gameplayCamera.transform.position, 100f, 30, 5f) &&
                 Time.realtimeSinceStartup - enemy.timeOfLastLeap > Random.Range(0.25f, 1.1f))
@@ -54,6 +54,12 @@ namespace LethalMenu.Cheats.Directives.Adapters
                 enemy.StartLeapOnLocalClient(direction);
                 enemy.StartLeapClientRpc(direction);
             }
+        }
+
+        public override void AfterUpdate(FlowerSnakeEnemy enemy, PlayerControllerB? target)
+        {
+            base.AfterUpdate(enemy, target);
+            if (enemy.leaping && !DirectiveAuthority.IsRealServer) enemy.SyncPositionToClients();
         }
 
         public override void Disengage(FlowerSnakeEnemy enemy)

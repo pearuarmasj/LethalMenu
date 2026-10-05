@@ -14,6 +14,9 @@ namespace LethalMenu.Cheats.Directives.Adapters
     /// ownership changes are suppressed for directed enemies, so on a non-host director that block would repeat
     /// forever and state 0 would never run. EnterRoam performs the block's setup itself and marks
     /// previousBehaviourState, which makes Update skip it.
+    /// The vanilla spit only blinds. Directed, a spit that catches the target in its cone (Update's capsule:
+    /// spitRadius ahead, 2.5 m wide, while exitCloakLunge is above 8) also deals SpitDamage through
+    /// DirectiveAuthority.TryStrike, once per lunge.
     /// AfterUpdate clears hidingSpot.gotHidingSpot (Update's state 0 would cloak and hide on it) and keeps the
     /// chase pointed at the target through the base.
     public sealed class StingrayDirectiveAdapter : DirectiveAdapter<StingrayAI>
@@ -22,6 +25,8 @@ namespace LethalMenu.Cheats.Directives.Adapters
         private const int CloakedState = 1;
         private const float LungeRange = 6f;
         private const float LungeCooldown = 4f;
+        private const int SpitDamage = 20;
+        private const float SpitWidth = 2.5f;
 
         public override void Engage(StingrayAI enemy, PlayerControllerB target)
         {
@@ -56,6 +61,17 @@ namespace LethalMenu.Cheats.Directives.Adapters
             enemy.hidingSpot.gotHidingSpot = false;
             if (target == null) return;
             base.AfterUpdate(enemy, target);
+            if (enemy.currentBehaviourStateIndex == RoamState && enemy.hasSpit && enemy.exitCloakLunge > 8f && InSpit(enemy, target))
+                DirectiveAuthority.TryStrike(enemy, target, SpitDamage, LungeCooldown * 0.5f);
+        }
+
+        private static bool InSpit(StingrayAI enemy, PlayerControllerB target)
+        {
+            Vector3 offset = target.transform.position - enemy.transform.position;
+            float ahead = Vector3.Dot(offset, enemy.transform.forward);
+            if (ahead < -SpitWidth || ahead > enemy.spitRadius + SpitWidth) return false;
+            Vector3 onAxis = enemy.transform.forward * Mathf.Clamp(ahead, 0f, enemy.spitRadius);
+            return (offset - onAxis).magnitude < SpitWidth;
         }
 
         public override void Disengage(StingrayAI enemy)

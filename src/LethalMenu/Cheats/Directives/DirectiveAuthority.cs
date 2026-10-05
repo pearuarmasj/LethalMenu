@@ -13,6 +13,10 @@ namespace LethalMenu.Cheats.Directives
         // NetworkBehaviour.IsServer is an auto-property with a private setter; Unity.Netcode is not publicized.
         private static readonly Action<NetworkBehaviour, bool>? SetIsServer = CreateIsServerSetter();
         private static readonly HashSet<EnemyAI> Elevated = new();
+        private static readonly Dictionary<EnemyAI, float> NextStrike = new();
+
+        /// Kills from full health (DamagePlayer clamps health to 0..100).
+        public const int LethalDamage = 100;
 
         public static bool IsRealServer => NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
 
@@ -37,6 +41,27 @@ namespace LethalMenu.Cheats.Directives
             var local = LethalMenuMod.LocalPlayer;
             if (local == null || target == null || target.isPlayerDead) return;
             target.DamagePlayerFromOtherClientServerRpc(damage, direction, (int)local.playerClientId);
+        }
+
+        /// Strike on behalf of `enemy`, pushed away from it, at most once per `cooldown` seconds.
+        public static bool TryStrike(EnemyAI enemy, PlayerControllerB target, int damage, float cooldown)
+        {
+            if (NextStrike.TryGetValue(enemy, out float next) && Time.time < next) return false;
+            NextStrike[enemy] = Time.time + cooldown;
+            Strike(target, damage, Vector3.Normalize(target.transform.position - enemy.transform.position));
+            return true;
+        }
+
+        public static void Forget(EnemyAI enemy)
+        {
+            NextStrike.Remove(enemy);
+            Drop(enemy);
+        }
+
+        public static void Clear()
+        {
+            NextStrike.Clear();
+            Elevated.Clear();
         }
 
         private static Action<NetworkBehaviour, bool>? CreateIsServerSetter()

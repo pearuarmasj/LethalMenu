@@ -43,8 +43,8 @@ namespace LethalMenu.Cheats.Directives.Adapters
 
         public override void Release(ButlerBeesEnemyAI enemy) => Disengage(enemy);
 
-        /// Vanilla TargetClosestPlayer(4 m, line of sight, 180 degrees).
-        public override float SightRange(ButlerBeesEnemyAI enemy) => 4f;
+        /// Vanilla only notices players within 4 m (TargetClosestPlayer); an escort swarm guards a wider radius.
+        public override float SightRange(ButlerBeesEnemyAI enemy) => 25f;
         public override float SightAngle(ButlerBeesEnemyAI enemy) => 180f;
     }
 }
