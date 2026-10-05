@@ -10,6 +10,9 @@ namespace LethalMenu.Menu.Popup
         private int _selectedShipObjectIndex;
         private Vector2 _storageScrollPosition;
         private Vector2 _shipObjectsScrollPosition;
+        private List<(PlaceableShipObject placeable, UnlockableItem item)> _shipObjects = new();
+        private float _nextShipObjectRefresh;
+        private const float ShipObjectRefreshInterval = 1f;
 
         public StorageManagerPopup() : base("Storage", 20009, 620, 560) { }
 
@@ -23,13 +26,21 @@ namespace LethalMenu.Menu.Popup
             }
 
             var stored = GetStoredUnlockables(startOfRound);
-            var shipObjects = GetStorableShipObjects(startOfRound);
+
+            // The scene search is refreshed on Layout events only, so Layout and Repaint see the same list.
+            if (Event.current.type == EventType.Layout && Time.unscaledTime >= _nextShipObjectRefresh)
+            {
+                _shipObjects = GetStorableShipObjects(startOfRound);
+                _nextShipObjectRefresh = Time.unscaledTime + ShipObjectRefreshInterval;
+            }
 
             DrawStoredObjects(startOfRound, stored);
 
             GUILayout.Space(12);
-            DrawShipObjects(startOfRound, shipObjects);
+            DrawShipObjects(startOfRound, _shipObjects);
         }
+
+        protected override void OnOpen() => _nextShipObjectRefresh = 0f;
 
         private void DrawStoredObjects(StartOfRound startOfRound, List<(int index, UnlockableItem item)> stored)
         {

@@ -71,19 +71,34 @@ namespace LethalMenu.Menu
             terminal.itemSalesPercentages = newSales;
         }
 
+        // Build scenes never change at runtime, so the per-scene lookup is cached.
+        private readonly System.Collections.Generic.Dictionary<string, bool> _sceneExistsCache = new();
+
         /// Checks if a scene exists in the game's build.
         private bool SceneExists(string sceneName)
         {
             if (string.IsNullOrEmpty(sceneName)) return false;
+            if (_sceneExistsCache.TryGetValue(sceneName, out bool exists)) return exists;
 
             int sceneCount = UnityEngine.SceneManagement.SceneManager.sceneCountInBuildSettings;
-            for (int i = 0; i < sceneCount; i++)
+            for (int i = 0; i < sceneCount && !exists; i++)
             {
                 string scenePath = UnityEngine.SceneManagement.SceneUtility.GetScenePathByBuildIndex(i);
-                string name = System.IO.Path.GetFileNameWithoutExtension(scenePath);
-                if (name == sceneName) return true;
+                exists = System.IO.Path.GetFileNameWithoutExtension(scenePath) == sceneName;
             }
-            return false;
+
+            _sceneExistsCache[sceneName] = exists;
+            return exists;
+        }
+
+        private static ItemDropship? GetActiveDropship()
+        {
+            foreach (var dropship in LethalMenuMod.ItemDropships)
+            {
+                if (dropship != null && dropship.gameObject.activeInHierarchy)
+                    return dropship;
+            }
+            return null;
         }
 
         /// Injects a moon into the terminal's moonsCatalogueList so it becomes a valid routing destination.
@@ -120,9 +135,8 @@ namespace LethalMenu.Menu
 
         private void DrawTerminalTab()
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             var startOfRound = StartOfRound.Instance;
-            var timeOfDay = TimeOfDay.Instance;
 
             if (terminal == null || startOfRound == null)
             {
@@ -152,24 +166,11 @@ namespace LethalMenu.Menu
             GUILayout.EndHorizontal();
             GUILayout.Space(5);
 
-            // Credits and dropship status
-            GUILayout.BeginHorizontal();
+            // Credits (editing lives in the Network tab) and dropship status
             GUILayout.Label($"Credits: ${terminal.groupCredits}", _labelStyle);
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button("+1k", _buttonStyle, GUILayout.Width(40)))
-            {
-                terminal.groupCredits += 1000;
-                terminal.SyncGroupCreditsServerRpc(terminal.groupCredits, terminal.numberOfItemsInDropship);
-            }
-            if (GUILayout.Button("+10k", _buttonStyle, GUILayout.Width(45)))
-            {
-                terminal.groupCredits += 10000;
-                terminal.SyncGroupCreditsServerRpc(terminal.groupCredits, terminal.numberOfItemsInDropship);
-            }
-            GUILayout.EndHorizontal();
 
             // Dropship status (items + vehicles)
-            var dropship = Object.FindObjectOfType<ItemDropship>();
+            var dropship = GetActiveDropship();
             string dropshipStatus;
             if (dropship == null)
             {
@@ -287,15 +288,10 @@ namespace LethalMenu.Menu
                 // Route buttons
                 GUILayout.BeginHorizontal();
                 GUI.enabled = selectedLevelID >= 0;
-                if (GUILayout.Button("Route", _buttonStyle))
+                if (GUILayout.Button("Route (free)", _buttonStyle))
                 {
                     startOfRound.ChangeLevelServerRpc(selectedLevelID, terminal.groupCredits);
                     Loader.Log($"[Terminal] Routed to {selectedLevel?.PlanetName} (levelID={selectedLevelID})");
-                }
-                if (GUILayout.Button("Route FREE", _buttonStyle))
-                {
-                    startOfRound.ChangeLevelServerRpc(selectedLevelID, terminal.groupCredits);
-                    Loader.Log($"[Terminal] Routed FREE to {selectedLevel?.PlanetName} (levelID={selectedLevelID})");
                 }
                 GUI.enabled = true;
                 GUILayout.EndHorizontal();
@@ -314,15 +310,10 @@ namespace LethalMenu.Menu
                 }
                 if (companyLevelID >= 0)
                 {
-                    if (GUILayout.Button("Company", _buttonStyle))
+                    if (GUILayout.Button("Company (free)", _buttonStyle))
                     {
                         startOfRound.ChangeLevelServerRpc(companyLevelID, terminal.groupCredits);
                         Loader.Log($"[Terminal] Routed to Company (levelID={companyLevelID})");
-                    }
-                    if (GUILayout.Button("Company FREE", _buttonStyle))
-                    {
-                        startOfRound.ChangeLevelServerRpc(companyLevelID, terminal.groupCredits);
-                        Loader.Log($"[Terminal] Routed FREE to Company (levelID={companyLevelID})");
                     }
                 }
                 GUILayout.EndHorizontal();
@@ -399,7 +390,7 @@ namespace LethalMenu.Menu
 
                     GUILayout.BeginHorizontal();
                     GUI.enabled = selectedAllLevelID >= 0 && selectedAllLevel != null;
-                    if (GUILayout.Button($"Route to {selectedAllLevel?.PlanetName ?? "?"}", _buttonStyle))
+                    if (GUILayout.Button($"Route to {selectedAllLevel?.PlanetName ?? "?"} (free)", _buttonStyle))
                     {
                         // Inject moon into catalogue if not present (makes scene load work)
                         if (!selectedInCatalogue && selectedAllLevel != null)
@@ -408,16 +399,6 @@ namespace LethalMenu.Menu
                         }
                         startOfRound.ChangeLevelServerRpc(selectedAllLevelID, terminal.groupCredits);
                         Loader.Log($"[Terminal] Routed (ALL) to {selectedAllLevel?.PlanetName} (levelID={selectedAllLevelID}) [injected={!selectedInCatalogue}]");
-                    }
-                    if (GUILayout.Button("Route FREE", _buttonStyle))
-                    {
-                        // Inject moon into catalogue if not present
-                        if (!selectedInCatalogue && selectedAllLevel != null)
-                        {
-                            InjectMoonIntoCatalogue(terminal, selectedAllLevel);
-                        }
-                        startOfRound.ChangeLevelServerRpc(selectedAllLevelID, terminal.groupCredits);
-                        Loader.Log($"[Terminal] Routed FREE (ALL) to {selectedAllLevel?.PlanetName} (levelID={selectedAllLevelID}) [injected={!selectedInCatalogue}]");
                     }
                     GUI.enabled = true;
                     GUILayout.EndHorizontal();
@@ -588,12 +569,9 @@ namespace LethalMenu.Menu
                             if (hud.loadingText != null)
                                 hud.loadingText.enabled = false;
 
-                            var loadingScreenField = typeof(HUDManager).GetField("LoadingScreen");
-                            if (loadingScreenField?.GetValue(hud) is Animator loadingScreen)
-                                loadingScreen.SetBool("IsLoading", false);
-                            var darkenField = typeof(HUDManager).GetField("loadingDarkenScreen");
-                            if (darkenField?.GetValue(hud) is Behaviour darkenScreen)
-                                darkenScreen.enabled = false;
+                            // Same two calls the game makes when a level finishes loading (StartOfRound / RoundManager).
+                            if (hud.LoadingScreen != null)
+                                hud.LoadingScreen.SetBool("IsLoading", false);
                         }
 
                         Loader.Log("[Terminal] Reset complete - should be back in orbit");
@@ -901,35 +879,6 @@ namespace LethalMenu.Menu
                     ForceDropshipDeliver();
                 }
             });
-
-            // Ship controls
-            DrawSection("Ship", () =>
-            {
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Leave Early", _buttonStyle))
-                {
-                    timeOfDay?.SetShipLeaveEarlyServerRpc();
-                }
-                if (GUILayout.Button("End Round", _buttonStyle))
-                {
-                    startOfRound.EndGameServerRpc(0);
-                }
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Open Doors", _buttonStyle))
-                    Cheats.NetworkCheats.SetShipDoors(false);
-                if (GUILayout.Button("Close Doors", _buttonStyle))
-                    Cheats.NetworkCheats.SetShipDoors(true);
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Lights ON", _buttonStyle))
-                    Cheats.NetworkCheats.ToggleShipLights(true);
-                if (GUILayout.Button("Lights OFF", _buttonStyle))
-                    Cheats.NetworkCheats.ToggleShipLights(false);
-                GUILayout.EndHorizontal();
-            });
         }
 
         private void BuyItems(Terminal terminal, int itemIndex, bool free)
@@ -1063,14 +1012,14 @@ namespace LethalMenu.Menu
 
         private void ForceDropshipDeliver()
         {
-            var dropship = Object.FindObjectOfType<ItemDropship>();
+            var dropship = GetActiveDropship();
             if (dropship == null)
             {
                 Loader.Log("[Terminal] Dropship not available - must be landed on a moon");
                 return;
             }
 
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 Loader.Log("[Terminal] Terminal not found");
@@ -1102,35 +1051,24 @@ namespace LethalMenu.Menu
             else
                 deliveryMsg = "vehicle";
 
-            // Method 1: Use reflection to call private LandShipOnServer
-            var method = typeof(ItemDropship).GetMethod("LandShipOnServer",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // Delivery runs on the server only (ItemDropship.Update returns early otherwise); mirror its
+            // choice between the vehicle and item paths.
+            if (!dropship.IsServer)
+            {
+                Loader.Log("[Terminal] Forcing the dropship requires being host");
+                return;
+            }
 
-            if (method != null)
-            {
-                method.Invoke(dropship, null);
-                Loader.Log($"[Terminal] Forced delivery of {deliveryMsg}");
-            }
+            if (terminal.orderedVehicleFromTerminal != -1)
+                dropship.DeliverVehicleOnServer();
             else
-            {
-                // Method 2: Set timer to trigger delivery on next Update tick
-                var timerField = typeof(ItemDropship).GetField("shipTimer",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (timerField != null)
-                {
-                    timerField.SetValue(dropship, 50f); // Above the 40f threshold
-                    Loader.Log($"[Terminal] Triggered dropship timer for {deliveryMsg}");
-                }
-                else
-                {
-                    Loader.Log("[Terminal] Failed to force delivery - reflection failed");
-                }
-            }
+                dropship.LandShipOnServer();
+            Loader.Log($"[Terminal] Forced delivery of {deliveryMsg}");
         }
 
         private void InstantSpawnOrderedItems()
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             var startOfRound = StartOfRound.Instance;
 
             if (terminal == null || startOfRound == null)
@@ -1215,8 +1153,7 @@ namespace LethalMenu.Menu
 
         private int GetCurrentCredits()
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
-            return terminal?.groupCredits ?? 0;
+            return LethalMenuMod.GameTerminal?.groupCredits ?? 0;
         }
 
         private int GetUpgradePrice(string? unlockableName)

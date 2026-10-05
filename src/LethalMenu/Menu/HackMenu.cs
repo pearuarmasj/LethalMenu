@@ -26,13 +26,11 @@ namespace LethalMenu.Menu
         private const float MinWindowWidth = 400f;
         private const float MinWindowHeight = 300f;
 
-        // Credit editor state
-        private string _creditInput = "10000";
-        private Terminal? _cachedTerminal;
-        
-        // Quota state
+        // Quota editor state (text fields follow the game value only when it changes)
         private string _quotaInput = "130";
         private string _quotaFulfilledInput = "0";
+        private int _lastSeenQuota = int.MinValue;
+        private int _lastSeenQuotaFulfilled = int.MinValue;
 
         // Skin-derived styles (refreshed each frame from GUI.skin)
         private GUIStyle? _windowStyle;
@@ -150,15 +148,27 @@ namespace LethalMenu.Menu
             _storageManager.Draw();
             _entranceTeleporter.Draw();
 
+            // A config reload during this frame cleared the flag: the next Draw re-reads the rect
+            // from Settings, so don't write the stale rect back over the freshly loaded values.
+            if (!_windowRectInitialized) return;
+
             // Keep window on screen
             _windowRect.x = Mathf.Clamp(_windowRect.x, 0, Screen.width - _windowRect.width);
             _windowRect.y = Mathf.Clamp(_windowRect.y, 0, Screen.height - _windowRect.height);
-            
+
             // Update settings with current window state
             Settings.WindowX = _windowRect.x;
             Settings.WindowY = _windowRect.y;
             Settings.WindowWidth = _windowRect.width;
             Settings.WindowHeight = _windowRect.height;
+        }
+
+        /// Re-applies window rect, theme and styles from Settings after Load Config / Reset to Defaults.
+        private void ApplySettingsToMenu()
+        {
+            _windowRectInitialized = false;
+            _stylesInitialized = false;
+            Theme.ThemeLoader.SetTheme(Settings.ThemeName);
         }
         
         private void HandleResize()
@@ -373,15 +383,14 @@ namespace LethalMenu.Menu
             return newValue;
         }
 
-        private void DrawHackToggle(Hack hack, string? tooltip = null)
+        private void DrawHackToggle(Hack hack, string? label = null, string? tooltip = null)
         {
-            string label = hack.GetDisplayName();
             bool enabled = hack.IsEnabled();
             GUILayout.BeginHorizontal();
             bool newValue = GUILayout.Toggle(enabled, "", _toggleStyle, GUILayout.Width(20));
             if (newValue != enabled)
                 hack.SetEnabled(newValue);
-            GUILayout.Label(label, Settings.HackHighlight ? (newValue ? _toggleOnLabelStyle : _toggleOffLabelStyle) : _labelStyle);
+            GUILayout.Label(label ?? hack.GetDisplayName(), Settings.HackHighlight ? (newValue ? _toggleOnLabelStyle : _toggleOffLabelStyle) : _labelStyle);
             if (!string.IsNullOrEmpty(tooltip))
             {
                 GUILayout.FlexibleSpace();
@@ -390,20 +399,14 @@ namespace LethalMenu.Menu
             GUILayout.EndHorizontal();
         }
 
-        private void DrawHackToggle(Hack hack, string label, string? tooltip)
+        private static bool IsLocalHost => LethalMenuMod.LocalPlayer?.IsHost == true;
+
+        /// Draw-time host gate: no side effects, just a label for non-hosts.
+        private bool DrawHostGate()
         {
-            bool enabled = hack.IsEnabled();
-            GUILayout.BeginHorizontal();
-            bool newValue = GUILayout.Toggle(enabled, "", _toggleStyle, GUILayout.Width(20));
-            if (newValue != enabled)
-                hack.SetEnabled(newValue);
-            GUILayout.Label(label, Settings.HackHighlight ? (newValue ? _toggleOnLabelStyle : _toggleOffLabelStyle) : _labelStyle);
-            if (!string.IsNullOrEmpty(tooltip))
-            {
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(tooltip, _tooltipStyle);
-            }
-            GUILayout.EndHorizontal();
+            if (IsLocalHost) return true;
+            GUILayout.Label("Host only.", _labelStyle);
+            return false;
         }
 
         private void DrawHackButton(Hack hack, string? label = null)

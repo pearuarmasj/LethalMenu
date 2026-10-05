@@ -451,6 +451,9 @@ namespace LethalMenu
             int memberCount = 0;
             try { memberCount = lobby.MemberCount; } catch { }
 
+            int maxMembers = 4;
+            try { maxMembers = lobby.MaxMembers; } catch { }
+
             bool isChallenge = false;
             try { isChallenge = lobby.GetData("chal") == "t"; } catch { }
 
@@ -479,6 +482,7 @@ namespace LethalMenu
                 Version = version ?? "",
                 Tag = tag,
                 MemberCount = memberCount,
+                MaxMembers = maxMembers,
                 IsChallenge = isChallenge,
                 IsStarted = isStarted,
                 IsJoinable = isJoinable,

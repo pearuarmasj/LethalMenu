@@ -30,8 +30,11 @@ namespace LethalMenu.Menu.Popup
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Sell Quota", GUILayout.Height(28)))
+            // SellItemsOnServer only runs on the server, so Sell Quota does nothing for clients.
+            GUI.enabled = LethalMenuMod.LocalPlayer?.IsHost == true;
+            if (GUILayout.Button(GUI.enabled ? "Sell Quota" : "Sell Quota (host)", GUILayout.Height(28)))
                 Hack.SellQuota.Execute();
+            GUI.enabled = true;
             if (GUILayout.Button($"Sell All Ship Items ({totalShipItems}, ${rawShipValue})", GUILayout.Height(28)))
                 Cheats.NetworkCheats.SellAllItemsNaturally();
             GUILayout.EndHorizontal();

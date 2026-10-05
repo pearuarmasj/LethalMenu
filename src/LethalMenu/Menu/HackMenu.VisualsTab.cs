@@ -1,5 +1,4 @@
 using UnityEngine;
-using LethalMenu.Patches;
 
 namespace LethalMenu.Menu
 {

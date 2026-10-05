@@ -14,14 +14,9 @@ namespace LethalMenu.Menu
 
         private int _selectedMimicPlayerIndex = 0;
 
-        private bool RequireHost()
-        {
-            if (LethalMenuMod.LocalPlayer?.IsHost == true)
-                return true;
-
-            HUDManager.Instance?.DisplayTip("Host Only", "This action requires host.", false, false, "LCM-Host");
-            return false;
-        }
+        // Remote-player teleports go out as UpdatePlayerPositionRpc; the target's own client is authoritative
+        // for its position, so only other players see the move.
+        private const string RemoteTeleportNote = "Teleporting someone else moves them for everyone but themselves; they keep their own position and snap back when they move.";
 
         private void DrawNetworkTab()
         {
@@ -33,7 +28,7 @@ namespace LethalMenu.Menu
                     GUILayout.Label($"Current Planet: {gameInstance.currentLevel?.PlanetName ?? "Unknown"}", _labelStyle);
                     GUILayout.Label($"Is Host: {Cheats.NetworkCheats.IsHost()}", _labelStyle);
 
-                    var terminal = Object.FindObjectOfType<Terminal>();
+                    var terminal = LethalMenuMod.GameTerminal;
                     if (terminal != null)
                     {
                         GUILayout.Label($"Credits: ${terminal.groupCredits}", _labelStyle);
@@ -72,8 +67,11 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.HearDeadPeople, "Hear Dead People", "Hear dead players' voice chat");
             });
 
-            DrawSection("Credits Exploit", () =>
+            // Terminal.SyncGroupCreditsServerRpc requires ownership of the (server-owned) Terminal, so only the host can set credits.
+            DrawSection("Credits (Host)", () =>
             {
+                if (!DrawHostGate()) return;
+
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Amount:", _labelStyle, GUILayout.Width(60));
                 _creditSetInput = GUILayout.TextField(_creditSetInput, GUILayout.Width(100));
@@ -96,11 +94,19 @@ namespace LethalMenu.Menu
             // Quota (Host)
             DrawSection("Quota (Host)", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
+                if (!DrawHostGate()) return;
 
                 var quotaInfo = Cheats.NetworkCheats.GetQuotaInfo();
-                _quotaInput = quotaInfo.quota.ToString();
-                _quotaFulfilledInput = quotaInfo.fulfilled.ToString();
+                if (quotaInfo.quota != _lastSeenQuota)
+                {
+                    _lastSeenQuota = quotaInfo.quota;
+                    _quotaInput = quotaInfo.quota.ToString();
+                }
+                if (quotaInfo.fulfilled != _lastSeenQuotaFulfilled)
+                {
+                    _lastSeenQuotaFulfilled = quotaInfo.fulfilled;
+                    _quotaFulfilledInput = quotaInfo.fulfilled.ToString();
+                }
 
                 int daysLeft = TimeOfDay.Instance != null ? Mathf.Max(0, TimeOfDay.Instance.daysUntilDeadline) : 0;
 
@@ -134,9 +140,6 @@ namespace LethalMenu.Menu
                     if (int.TryParse(_quotaInput, out int q) && int.TryParse(_quotaFulfilledInput, out int f))
                     {
                         Cheats.NetworkCheats.SetQuota(q, f);
-                        quotaInfo = Cheats.NetworkCheats.GetQuotaInfo();
-                        _quotaInput = quotaInfo.quota.ToString();
-                        _quotaFulfilledInput = quotaInfo.fulfilled.ToString();
                     }
                 }
                 GUILayout.EndHorizontal();
@@ -196,19 +199,23 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Ship Control (Host)", () =>
+            // The ship RPCs below are RequireOwnership = false and work from any client, except
+            // ManuallyEjectPlayersServerRpc and SetShipDoorsOverheatServerRpc (owner-only, i.e. host).
+            DrawSection("Ship Control", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
+                bool isHost = IsLocalHost;
 
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Force Ship Leave", _buttonStyle))
                 {
                     Hack.ForceShipLeave.Execute();
                 }
-                if (GUILayout.Button("Eject All Players", _buttonStyle))
+                GUI.enabled = isHost;
+                if (GUILayout.Button(isHost ? "Eject All Players" : "Eject All (host)", _buttonStyle))
                 {
                     Hack.EjectAllPlayers.Execute();
                 }
+                GUI.enabled = true;
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
@@ -253,19 +260,19 @@ namespace LethalMenu.Menu
                 {
                     Cheats.NetworkCheats.SetShipDoors(true);
                 }
-                if (GUILayout.Button("OVERHEAT", _buttonStyle))
+                GUI.enabled = isHost;
+                if (GUILayout.Button(isHost ? "OVERHEAT" : "OVERHEAT (host)", _buttonStyle))
                 {
                     Cheats.NetworkCheats.OverheatShipDoors();
                 }
+                GUI.enabled = true;
                 GUILayout.EndHorizontal();
             });
 
-            DrawSection("Vehicle Control (Cruiser) (Host)", () =>
+            // Every VehicleController ServerRpc used here is RequireOwnership = false.
+            DrawSection("Vehicle Control (Cruiser)", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
-
-                var vehicles = Object.FindObjectsOfType<VehicleController>(includeInactive: true);
-                int vehicleCount = vehicles?.Length ?? 0;
+                int vehicleCount = LethalMenuMod.Vehicles.Count;
                 GUILayout.Label($"Vehicles on map: {vehicleCount}", _labelStyle);
 
                 if (vehicleCount > 0)
@@ -377,35 +384,35 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            // Player Management (Host)
-            DrawSection("Player Management (Host)", () =>
+            DrawSection("Player Management", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
-
+                // Debug_ReviveAllPlayersServerRpc is owner-only (host).
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Revive All Players", _buttonStyle))
+                GUI.enabled = IsLocalHost;
+                if (GUILayout.Button(GUI.enabled ? "Revive All Players" : "Revive All (host)", _buttonStyle))
                 {
                     Hack.ReviveAllPlayers.Execute();
                 }
-                if (GUILayout.Button("Teleport All To Me", _buttonStyle))
+                GUI.enabled = true;
+                if (GUILayout.Button("Teleport All To Me (others' view)", _buttonStyle))
                 {
                     Hack.TeleportAllToMe.Execute();
                 }
                 GUILayout.EndHorizontal();
+                GUILayout.Label(RemoteTeleportNote, new GUIStyle(_tooltipStyle) { wordWrap = true });
             });
 
-            // Facility Control (Host)
-            DrawSection("Facility Control (Host)", () =>
+            // DoorLock.UnlockDoorServerRpc and TerminalAccessibleObject.SetDoorOpenServerRpc are RequireOwnership = false.
+            DrawSection("Facility Control", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
-
                 GUILayout.Label("Facility Doors:", _labelStyle);
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Unlock All", _buttonStyle))
                 {
                     Hack.UnlockAllDoors.Execute();
                 }
-                if (GUILayout.Button("Lock All", _buttonStyle))
+                // DoorLock.LockDoor has no network sync: it only locks doors on this client.
+                if (GUILayout.Button("Lock All (local)", _buttonStyle))
                 {
                     Cheats.NetworkCheats.LockAllDoors();
                 }
@@ -428,11 +435,9 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            // Timescale (Host)
-            DrawSection("Timescale (Host)", () =>
+            // Time.timeScale is purely local (no host check or RPC involved).
+            DrawSection("Timescale (local)", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
-
                 GUILayout.Label($"Game Speed: {Time.timeScale:F1}x", _labelStyle);
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("0.5x", _buttonStyle)) Cheats.NetworkCheats.SetTimescale(0.5f);
@@ -442,11 +447,10 @@ namespace LethalMenu.Menu
                 GUILayout.EndHorizontal();
             });
 
-            // Player Trolling (Host)
-            DrawSection("Player Trolling (Host)", () =>
+            // MOB uses EnemyAI.ChangeEnemyOwnerServerRpc and ship-object moves use PlaceShipObjectServerRpc
+            // (both RequireOwnership = false). LAG spawns Brackens and BOMB may spawn a jetpack, which only the server can do.
+            DrawSection("Player Trolling", () =>
             {
-                if (!RequireHost()) { GUILayout.Label("Host only.", _labelStyle); return; }
-
                 var mobPlayers = Cheats.NetworkCheats.GetAllPlayers();
                 if (mobPlayers.Length > 0)
                 {
@@ -473,16 +477,19 @@ namespace LethalMenu.Menu
                     {
                         Cheats.NetworkCheats.TeleportPlayerToVoid(mobPlayers[_selectedMimicPlayerIndex]);
                     }
-                    if (GUILayout.Button("BOMB", _buttonStyle, GUILayout.Width(60)))
+                    bool isHost = IsLocalHost;
+                    GUI.enabled = isHost;
+                    if (GUILayout.Button(isHost ? "BOMB" : "BOMB (host)", _buttonStyle, GUILayout.Width(isHost ? 60 : 100)))
                     {
                         Cheats.NetworkCheats.BombPlayer(mobPlayers[_selectedMimicPlayerIndex]);
                     }
-                    if (GUILayout.Button("LAG", _buttonStyle, GUILayout.Width(50)))
+                    if (GUILayout.Button(isHost ? "LAG" : "LAG (host)", _buttonStyle, GUILayout.Width(isHost ? 50 : 90)))
                     {
                         Cheats.NetworkCheats.LagPlayer(mobPlayers[_selectedMimicPlayerIndex]);
                     }
+                    GUI.enabled = true;
                     GUILayout.EndHorizontal();
-                    GUILayout.Label("  VOID=death | BOMB=jetpack | LAG=bracken", _labelStyle);
+                    GUILayout.Label("  VOID=others' view only | BOMB=jetpack | LAG=bracken", _labelStyle);
 
                     GUILayout.Space(5);
                     GUILayout.Label("Spin Player:", _labelStyle);
@@ -592,57 +599,66 @@ namespace LethalMenu.Menu
                     }
                     GUILayout.EndHorizontal();
 
+                    var target = players[_selectedPlayerIndex];
+                    bool targetIsSelf = target == LethalMenuMod.LocalPlayer;
+
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("Heal Player", _buttonStyle))
                     {
-                        Cheats.NetworkCheats.HealPlayer(players[_selectedPlayerIndex]);
+                        Cheats.NetworkCheats.HealPlayer(target);
                     }
+                    bool targetDemiGod = Settings.IsDemiGod(target);
+                    bool newTargetDemiGod = GUILayout.Toggle(targetDemiGod, "Demi-God (keep healed)", _buttonStyle);
+                    if (newTargetDemiGod != targetDemiGod)
+                        Settings.SetDemiGod(target, newTargetDemiGod);
                     if (GUILayout.Button("Force Drop Items", _buttonStyle))
                     {
-                        Cheats.NetworkCheats.ForceDropItems(players[_selectedPlayerIndex]);
+                        Cheats.NetworkCheats.ForceDropItems(target);
                     }
                     GUILayout.EndHorizontal();
 
                     // Teleport options
+                    string othersView = targetIsSelf ? "" : " (others' view)";
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button("TP Me To Player", _buttonStyle))
                     {
                         if (LethalMenuMod.LocalPlayer != null)
-                            Cheats.NetworkCheats.TeleportPlayerToPlayer(LethalMenuMod.LocalPlayer, players[_selectedPlayerIndex]);
+                            Cheats.NetworkCheats.TeleportPlayerToPlayer(LethalMenuMod.LocalPlayer, target);
                     }
-                    if (GUILayout.Button("TP Player To Me", _buttonStyle))
+                    if (GUILayout.Button($"TP Player To Me{othersView}", _buttonStyle))
                     {
                         if (LethalMenuMod.LocalPlayer != null)
-                            Cheats.NetworkCheats.TeleportPlayerToPosition(players[_selectedPlayerIndex], LethalMenuMod.LocalPlayer.transform.position);
-                    }
-                    GUILayout.EndHorizontal();
-
-                    // More teleport options (host only for remote players)
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("TP Random Inside", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerRandom(players[_selectedPlayerIndex], true);
-                    }
-                    if (GUILayout.Button("TP Random Outside", _buttonStyle))
-                    {
-                        Cheats.NetworkCheats.TeleportPlayerRandom(players[_selectedPlayerIndex], false);
+                            Cheats.NetworkCheats.TeleportPlayerToPosition(target, LethalMenuMod.LocalPlayer.transform.position);
                     }
                     GUILayout.EndHorizontal();
 
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("TP To Void (Death)", _buttonStyle))
+                    if (GUILayout.Button($"TP Random Inside{othersView}", _buttonStyle))
                     {
-                        Cheats.NetworkCheats.TeleportPlayerToVoid(players[_selectedPlayerIndex]);
+                        Cheats.NetworkCheats.TeleportPlayerRandom(target, true);
+                    }
+                    if (GUILayout.Button($"TP Random Outside{othersView}", _buttonStyle))
+                    {
+                        Cheats.NetworkCheats.TeleportPlayerRandom(target, false);
+                    }
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button($"TP To Void (Death){othersView}", _buttonStyle))
+                    {
+                        Cheats.NetworkCheats.TeleportPlayerToVoid(target);
                     }
                     if (players.Length >= 2)
                     {
                         int otherIdx = (_selectedPlayerIndex + 1) % players.Length;
-                        if (GUILayout.Button($"Swap w/ {players[otherIdx].playerUsername}", _buttonStyle))
+                        if (GUILayout.Button($"Swap w/ {players[otherIdx].playerUsername} (others' view)", _buttonStyle))
                         {
-                            Cheats.NetworkCheats.SwapPlayerPositions(players[_selectedPlayerIndex], players[otherIdx]);
+                            Cheats.NetworkCheats.SwapPlayerPositions(target, players[otherIdx]);
                         }
                     }
                     GUILayout.EndHorizontal();
+                    if (!targetIsSelf)
+                        GUILayout.Label(RemoteTeleportNote, new GUIStyle(_tooltipStyle) { wordWrap = true });
 
                     // Teleport to ship via teleporter (works on any player)
                     if (GUILayout.Button("TELEPORT TO SHIP (via TP)", _buttonStyle, GUILayout.Height(28)))
@@ -657,7 +673,7 @@ namespace LethalMenu.Menu
                 }
                 else
                 {
-                    GUILayout.Label("No other players found.", _labelStyle);
+                    GUILayout.Label("No players found.", _labelStyle);
                 }
             });
 
@@ -873,17 +889,6 @@ namespace LethalMenu.Menu
                 if (GUILayout.Button("Tentacle Attack", _buttonStyle))
                 {
                     Cheats.NetworkCheats.ForceTentacleAttack();
-                }
-                GUILayout.EndHorizontal();
-            });
-
-            DrawSection("Vehicle Trolling", () =>
-            {
-                GUILayout.BeginHorizontal();
-                DrawHackToggle(Hack.CarHornSpam, "Car Horn Spam", null);
-                if (GUILayout.Button("Explode Vehicles", _buttonStyle))
-                {
-                    Cheats.NetworkCheats.ExplodeAllVehicles();
                 }
                 GUILayout.EndHorizontal();
             });

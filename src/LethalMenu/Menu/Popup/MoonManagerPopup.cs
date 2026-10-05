@@ -24,8 +24,7 @@ namespace LethalMenu.Menu.Popup
             var levels = instance.levels;
             if (levels == null) return;
 
-            var terminal = Object.FindObjectOfType<Terminal>();
-            int credits = terminal?.groupCredits ?? 0;
+            int credits = LethalMenuMod.GameTerminal?.groupCredits ?? 0;
 
             for (int i = 0; i < levels.Length; i++)
             {
@@ -35,9 +34,7 @@ namespace LethalMenu.Menu.Popup
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{level.PlanetName} ({level.currentWeather})", GUILayout.Width(250));
                 int levelId = level.levelID;
-                if (GUILayout.Button("Route", GUILayout.Width(60)))
-                    instance.ChangeLevelServerRpc(levelId, credits);
-                if (GUILayout.Button("Free", GUILayout.Width(50)))
+                if (GUILayout.Button("Route (free)", GUILayout.Width(100)))
                     instance.ChangeLevelServerRpc(levelId, credits);
                 GUILayout.EndHorizontal();
             }

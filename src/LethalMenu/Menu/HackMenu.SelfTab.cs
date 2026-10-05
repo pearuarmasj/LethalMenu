@@ -11,6 +11,16 @@ namespace LethalMenu.Menu
             DrawSection("Player Cheats", () =>
             {
                 DrawHackToggle(Hack.GodMode, "God Mode", "Prevents all damage");
+
+                var localPlayer = LethalMenuMod.LocalPlayer;
+                if (localPlayer != null)
+                {
+                    bool demiGod = Settings.IsDemiGod(localPlayer);
+                    bool newDemiGod = DrawToggle("Demi-God", demiGod, "Keeps you healed to full");
+                    if (newDemiGod != demiGod)
+                        Settings.SetDemiGod(localPlayer, newDemiGod);
+                }
+                DrawHackToggle(Hack.SaneMod, "Sane Mod", "Insanity stays at zero");
                 DrawHackToggle(Hack.InfiniteStamina, "Infinite Stamina", "Never run out of sprint");
                 DrawHackToggle(Hack.NoFallDamage, "No Fall Damage", "Take no damage from falls");
                 DrawHackToggle(Hack.NoWeight, "No Weight", "Carry unlimited items without slowdown");
@@ -28,6 +38,7 @@ namespace LethalMenu.Menu
                 DrawHackToggle(Hack.UnlimitedOxygen, "Unlimited Oxygen", "No drowning");
                 DrawHackToggle(Hack.AntiFlash, "Anti-Flash", "Block stun grenade effects");
                 DrawHackToggle(Hack.NoQuicksand, "No Quicksand", "No sinking/slowing");
+                DrawHackToggle(Hack.NoCooldown, "No Cooldown", "Held item can be used again immediately");
 
                 if (LethalMenuMod.LocalPlayer?.isPlayerDead == true)
                 {
@@ -86,6 +97,7 @@ namespace LethalMenu.Menu
                 }
 
                 DrawHackToggle(Hack.UnlimitedJump, "Unlimited Jump", "Jump in mid-air");
+                DrawHackToggle(Hack.BHop, "BHop", "Hold Space to keep jumping with air momentum");
                 DrawHackToggle(Hack.FastClimb, "Fast Climb", "Climb ladders faster");
                 DrawHackToggle(Hack.TauntSlide, "Taunt Slide", "Emote while moving");
             });
@@ -93,6 +105,15 @@ namespace LethalMenu.Menu
             DrawSection("Vision", () =>
             {
                 DrawHackToggle(Hack.NightVision, "Night Vision", "See in the dark");
+                DrawHackToggle(Hack.LookDown, "Look Down", "Vertical look limit +/-89 deg (vanilla +/-80)");
+
+                DrawHackToggle(Hack.Phantom, "Phantom", "Free-fly camera, body stays put (excludes FreeCam)");
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"  Speed: {Settings.PhantomMoveSpeed:F0}", _labelStyle, GUILayout.Width(100));
+                Settings.PhantomMoveSpeed = GUILayout.HorizontalSlider(Settings.PhantomMoveSpeed, 5f, 50f);
+                GUILayout.EndHorizontal();
+                GUILayout.Label("  Speed is applied when Phantom is switched on", _tooltipStyle);
+                Settings.PhantomTeleportOnExit = GUILayout.Toggle(Settings.PhantomTeleportOnExit, "  Shift on exit: teleport body to camera", _toggleStyle);
             });
 
             DrawSection("Teleport", () =>

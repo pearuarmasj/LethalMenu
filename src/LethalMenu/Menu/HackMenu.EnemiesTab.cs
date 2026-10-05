@@ -40,7 +40,7 @@ namespace LethalMenu.Menu
                     }
                     if (GUILayout.Button("Kill (Del)", _buttonStyle, GUILayout.Width(90)))
                     {
-                        controlledEnemy.KillEnemyOnOwnerClient(false);
+                        Cheats.NetworkCheats.KillEnemy(controlledEnemy);
                         Cheats.EnemyControlCheat.StopControl();
                     }
                     GUILayout.EndHorizontal();

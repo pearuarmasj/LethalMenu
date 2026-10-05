@@ -16,13 +16,14 @@ namespace LethalMenu.Menu
             {
                 DrawHackToggle(Hack.InfiniteBattery, "Infinite Battery", "Items never lose charge");
                 DrawHackToggle(Hack.OneHanded, "One-Handed", "Two-handed items become one-handed");
-                DrawHackToggle(Hack.Reach, "Extended Reach", "Grab items from far away");
-                DrawHackToggle(Hack.LootThroughWalls, "Loot Through Walls", "Grab items through walls");
-                DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "Interact through walls");
+                DrawHackToggle(Hack.Reach, "Extended Reach", "Grab range 30 m");
+                DrawHackToggle(Hack.LootThroughWalls, "Loot Through Walls", "10 km range, ray hits loot only");
+                DrawHackToggle(Hack.InteractThroughWalls, "Interact Through Walls", "10 km range, ray hits interactables only");
+                DrawHackToggle(Hack.InfiniteGrab, "Infinite Grab", "10 km range");
+                GUILayout.Label("  These four share one grab-range setting. Any through-walls toggle forces 10 km and limits the grab ray to its own layer (enable both for loot + interactables).", new GUIStyle(_tooltipStyle) { wordWrap = true });
                 DrawHackToggle(Hack.LootBeforeGameStarts, "Loot Before Start", "Grab items before game starts");
                 DrawHackToggle(Hack.GrabNutcrackerShotgun, "Grab Nutcracker Gun", "Steal shotgun from Nutcracker");
                 DrawHackToggle(Hack.InfiniteScanRange, "Infinite Scan Range", "Q-scanner sees everything on the map");
-                DrawHackToggle(Hack.InfiniteGrab, "Infinite Grab", "Grab items from any distance");
                 DrawHackToggle(Hack.InfiniteDeposit, "Infinite Deposit", "Deposit desk has no item cap");
                 DrawHackToggle(Hack.LootAnyItemBeltBag, "Loot Any Item (Belt Bag)", "Belt bag accepts any grabbable");
                 DrawHackToggle(Hack.LootThroughWallsBeltBag, "Loot Through Walls (Belt Bag)", "Belt bag picks up scrap through walls");
@@ -49,7 +50,7 @@ namespace LethalMenu.Menu
             DrawSection("Item Teleport", () =>
             {
                 var gameInstance = StartOfRound.Instance;
-                var allItems = Object.FindObjectsOfType<GrabbableObject>(includeInactive: true);
+                var allItems = LethalMenuMod.Items;
 
                 int totalItems = 0;
                 int inShipCount = 0;

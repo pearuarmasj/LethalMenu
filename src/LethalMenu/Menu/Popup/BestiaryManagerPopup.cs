@@ -21,7 +21,7 @@ namespace LethalMenu.Menu.Popup
 
         protected override void DrawBody()
         {
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             if (terminal == null)
             {
                 GUILayout.Label("Terminal not available");

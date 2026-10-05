@@ -46,9 +46,9 @@ namespace LethalMenu.Menu.Popup
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{name} [{dist:F0}m]", GUILayout.Width(200));
                 if (GUILayout.Button("Kill", GUILayout.Width(50)))
-                    enemy.KillEnemyOnOwnerClient(true);
+                    Cheats.NetworkCheats.KillEnemy(enemy);
                 if (GUILayout.Button("TP Away", GUILayout.Width(60)))
-                    enemy.transform.position = new Vector3(0, -500, 0);
+                    Cheats.NetworkCheats.TeleportEnemy(enemy, new Vector3(0f, -500f, 0f));
                 GUILayout.EndHorizontal();
             }
         }

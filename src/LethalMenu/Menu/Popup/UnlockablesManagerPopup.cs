@@ -18,7 +18,7 @@ namespace LethalMenu.Menu.Popup
             var unlockables = instance.unlockablesList?.unlockables;
             if (unlockables == null) return;
 
-            var terminal = Object.FindObjectOfType<Terminal>();
+            var terminal = LethalMenuMod.GameTerminal;
             int credits = terminal?.groupCredits ?? 0;
 
             for (int i = 0; i < unlockables.Count; i++)

@@ -26,23 +26,6 @@ namespace LethalMenu.Menu
             EnsureBrowserTextures();
             var lobbies = ServerBrowser.Lobbies;
 
-            // Hot-swap status (if active)
-            if (ServerHotSwap.IsHotSwapping || !string.IsNullOrEmpty(ServerHotSwap.Status))
-            {
-                DrawSection("Hot Swap Status", () =>
-                {
-                    GUILayout.Label($"Status: {ServerHotSwap.Status}", _labelStyle);
-                    if (ServerHotSwap.IsHotSwapping)
-                    {
-                        GUILayout.Label("⚠ EXPERIMENTAL - May cause issues!", _labelStyle);
-                        if (GUILayout.Button("Cancel", _buttonStyle, GUILayout.Height(25)))
-                        {
-                            ServerHotSwap.Cancel();
-                        }
-                    }
-                });
-            }
-
             DrawSection("Server Browser", () =>
             {
                 GUILayout.Label($"Status: {ServerBrowser.StatusMessage}", _labelStyle);
@@ -150,10 +133,9 @@ namespace LethalMenu.Menu
             GUILayout.Label(displayName, _labelStyle, GUILayout.Width(180));
 
             // Player count
-            string playerText = $"{lobby.MemberCount}/4";
-            Color playerColor = lobby.MemberCount >= 4 ? Color.red : (lobby.MemberCount >= 3 ? Color.yellow : Color.green);
+            Color playerColor = lobby.MemberCount >= lobby.MaxMembers ? Color.red : (lobby.MemberCount >= lobby.MaxMembers - 1 ? Color.yellow : Color.green);
             GUIStyle playerStyle = new GUIStyle(_labelStyle) { normal = { textColor = playerColor } };
-            GUILayout.Label(playerText, playerStyle, GUILayout.Width(35));
+            GUILayout.Label(lobby.PlayerCountString, playerStyle, GUILayout.Width(45));
 
             // Tag (if not "none")
             if (!string.IsNullOrEmpty(lobby.Tag) && lobby.Tag != "none")
@@ -208,20 +190,13 @@ namespace LethalMenu.Menu
                 GUILayout.BeginHorizontal();
 
                 // Join button (normal - goes through main menu)
-                bool canJoin = lobby.IsCompatible && lobby.IsJoinable && lobby.MemberCount < 4 && !ServerBrowser.IsInActiveGame;
+                bool canJoin = lobby.IsCompatible && lobby.IsJoinable && lobby.MemberCount < lobby.MaxMembers && !ServerBrowser.IsInActiveGame;
                 GUI.enabled = canJoin;
                 if (GUILayout.Button("Join", _buttonStyle, GUILayout.Height(25), GUILayout.Width(50)))
                 {
                     ServerBrowser.JoinLobby(lobby);
                 }
 
-                // Hot Swap button (experimental - direct switch)
-                bool canHotSwap = canJoin && StartOfRound.Instance != null && !ServerHotSwap.IsHotSwapping;
-                GUI.enabled = canHotSwap;
-                if (GUILayout.Button("Swap", _buttonStyle, GUILayout.Height(25), GUILayout.Width(45)))
-                {
-                    ServerHotSwap.HotSwapTo(lobby.LobbyIdRaw, lobby.OwnerIdRaw);
-                }
                 GUI.enabled = true;
 
                 // Copy ID button

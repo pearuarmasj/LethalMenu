@@ -122,7 +122,7 @@ namespace LethalMenu.Menu
             _expChatMsg = GUILayout.TextField(_expChatMsg, GUILayout.Width(180));
             if (GUILayout.Button("Chat as Target (private)", _buttonStyle, GUILayout.Width(160)) && playerNames.Length > 0)
             {
-                Cheats.NetworkCheats.ExperimentalChatAsPlayer(_expChatMsg, _selectedPlayerIndex);
+                Cheats.NetworkCheats.ExperimentalChatAsPlayer(_expChatMsg, (int)players[_selectedPlayerIndex].playerClientId);
             }
             GUILayout.EndHorizontal();
 

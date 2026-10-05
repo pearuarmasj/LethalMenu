@@ -16,52 +16,6 @@ namespace LethalMenu.Menu
             GUILayout.EndHorizontal();
             GUILayout.Space(5);
 
-            DrawSection("Credits", () =>
-            {
-                // Get or refresh terminal reference
-                if (_cachedTerminal == null)
-                {
-                    _cachedTerminal = Object.FindObjectOfType<Terminal>();
-                }
-
-                int currentCredits = _cachedTerminal?.groupCredits ?? 0;
-                GUILayout.Label($"Current Credits: ${currentCredits}", _labelStyle);
-
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Amount:", _labelStyle, GUILayout.Width(60));
-                _creditInput = GUILayout.TextField(_creditInput, GUILayout.Width(100));
-                GUILayout.EndHorizontal();
-
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Set Credits", _buttonStyle, GUILayout.Height(28)))
-                {
-                    SetCredits();
-                }
-                if (GUILayout.Button("+1000", _buttonStyle, GUILayout.Height(28), GUILayout.Width(60)))
-                {
-                    AddCredits(1000);
-                }
-                if (GUILayout.Button("+10000", _buttonStyle, GUILayout.Height(28), GUILayout.Width(70)))
-                {
-                    AddCredits(10000);
-                }
-                GUILayout.EndHorizontal();
-            });
-
-            DrawSection("Doors", () =>
-            {
-                if (GUILayout.Button("Unlock All Doors", _buttonStyle, GUILayout.Height(28)))
-                {
-                    foreach (var door in LethalMenuMod.DoorLocks)
-                    {
-                        if (door != null && door.isLocked)
-                        {
-                            door.UnlockDoorSyncWithServer();
-                        }
-                    }
-                }
-            });
-
             DrawSection("Ship", () =>
             {
                 DrawHackToggle(Hack.ShipDoorInSpace, "Ship Door In Space", "Open ship door in space");
@@ -125,50 +79,7 @@ namespace LethalMenu.Menu
             // Hazard controls moved to Network tab -> Hazard Control section
         }
 
-        private void SetCredits()
-        {
-            if (_cachedTerminal == null)
-            {
-                _cachedTerminal = Object.FindObjectOfType<Terminal>();
-            }
-
-            if (_cachedTerminal == null) return;
-
-            if (int.TryParse(_creditInput, out int credits))
-            {
-                credits = Mathf.Clamp(credits, 0, 10000000);
-                _cachedTerminal.groupCredits = credits;
-
-                // Try to sync with server if we're the host
-                try
-                {
-                    _cachedTerminal.SyncGroupCreditsServerRpc(credits, _cachedTerminal.numberOfItemsInDropship);
-                }
-                catch
-                {
-                    // Not host or sync failed, local change only
-                }
-            }
-        }
-
         #region Fusebox Control Helpers
-
-        private string GetSwitchName(int index)
-        {
-            // Lethal Company fuseboxes typically have 5 switches controlling different areas
-            string[] switchNames = new[]
-            {
-                "Switch 1 (Main Hall)",
-                "Switch 2 (Back Rooms)",
-                "Switch 3 (Storage)",
-                "Switch 4 (Offices)",
-                "Switch 5 (Basement)"
-            };
-
-            if (index >= 0 && index < switchNames.Length)
-                return switchNames[index];
-            return $"Switch {index + 1}";
-        }
 
         private void ToggleSwitch(BreakerBox box, int switchIndex)
         {
@@ -216,30 +127,6 @@ namespace LethalMenu.Menu
         }
 
         #endregion
-
-        private void AddCredits(int amount)
-        {
-            if (_cachedTerminal == null)
-            {
-                _cachedTerminal = Object.FindObjectOfType<Terminal>();
-            }
-
-            if (_cachedTerminal == null) return;
-
-            int newCredits = Mathf.Clamp(_cachedTerminal.groupCredits + amount, 0, 10000000);
-            _cachedTerminal.groupCredits = newCredits;
-            _creditInput = newCredits.ToString();
-
-            // Try to sync with server if we're the host
-            try
-            {
-                _cachedTerminal.SyncGroupCreditsServerRpc(newCredits, _cachedTerminal.numberOfItemsInDropship);
-            }
-            catch
-            {
-                // Not host or sync failed, local change only
-            }
-        }
 
         #endregion
     }

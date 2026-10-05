@@ -11,6 +11,7 @@ namespace LethalMenu.Menu
         private bool _isCapturingKeyBind;
         private Hack _capturingKeyBind;
         private string _keybindSearch = "";
+        private bool _showChamColors;
 
         private void DrawSettingsTab()
         {
@@ -76,6 +77,11 @@ namespace LethalMenu.Menu
                 DrawColorSetting("Mines", Settings.MineColor, color => Settings.MineColor = color);
                 DrawColorSetting("Turrets", Settings.TurretColor, color => Settings.TurretColor = color);
                 DrawColorSetting("Fusebox", Settings.FuseboxColor, color => Settings.FuseboxColor = color);
+
+                GUILayout.Space(4);
+                _showChamColors = GUILayout.Toggle(_showChamColors, "Cham colors", _buttonStyle);
+                if (_showChamColors)
+                    DrawChamColors();
             });
 
             DrawSection("Config", () =>
@@ -88,12 +94,14 @@ namespace LethalMenu.Menu
                 if (GUILayout.Button("Load Config", _buttonStyle, GUILayout.Height(28)))
                 {
                     Settings.LoadConfig();
+                    ApplySettingsToMenu();
                 }
                 GUILayout.EndHorizontal();
 
                 if (GUILayout.Button("Reset to Defaults", _buttonStyle, GUILayout.Height(28)))
                 {
                     Settings.ResetConfig();
+                    ApplySettingsToMenu();
                 }
 
                 GUILayout.Label(
@@ -195,6 +203,46 @@ namespace LethalMenu.Menu
 
             assign(value);
             GUILayout.EndVertical();
+        }
+
+        private void DrawChamColors()
+        {
+            GUILayout.Label("Single color is used when \"Use single color for all\" is on (Visuals > Chams).", _tooltipStyle);
+            DrawCompactColor("Single", Settings.ChamColor, c => Settings.ChamColor = c);
+            DrawCompactColor("Players", Settings.PlayerChamColor, c => Settings.PlayerChamColor = c);
+            DrawCompactColor("Enemies", Settings.EnemyChamColor, c => Settings.EnemyChamColor = c);
+            DrawCompactColor("Items", Settings.ItemChamColor, c => Settings.ItemChamColor = c);
+            DrawCompactColor("Landmines", Settings.LandmineChamColor, c => Settings.LandmineChamColor = c);
+            DrawCompactColor("Turrets", Settings.TurretChamColor, c => Settings.TurretChamColor = c);
+            DrawCompactColor("Doors", Settings.DoorChamColor, c => Settings.DoorChamColor = c);
+            DrawCompactColor("Big Doors", Settings.BigDoorChamColor, c => Settings.BigDoorChamColor = c);
+            DrawCompactColor("Ship Door", Settings.ShipDoorChamColor, c => Settings.ShipDoorChamColor = c);
+            DrawCompactColor("Breakers", Settings.BreakerChamColor, c => Settings.BreakerChamColor = c);
+            DrawCompactColor("Enemy Vents", Settings.EnemyVentChamColor, c => Settings.EnemyVentChamColor = c);
+            DrawCompactColor("Item Dropship", Settings.ItemDropshipChamColor, c => Settings.ItemDropshipChamColor = c);
+            DrawCompactColor("Cruiser", Settings.CruiserChamColor, c => Settings.CruiserChamColor = c);
+            DrawCompactColor("Mold Spores", Settings.MoldSporeChamColor, c => Settings.MoldSporeChamColor = c);
+            DrawCompactColor("Mineshaft Elevator", Settings.MineshaftElevatorChamColor, c => Settings.MineshaftElevatorChamColor = c);
+            DrawCompactColor("Entrances", Settings.EntranceChamColor, c => Settings.EntranceChamColor = c);
+            DrawCompactColor("Spike Traps", Settings.SpikeRoofTrapChamColor, c => Settings.SpikeRoofTrapChamColor = c);
+            DrawCompactColor("Steam Valves", Settings.SteamValveChamColor, c => Settings.SteamValveChamColor = c);
+        }
+
+        /// One row per color: swatch, name, and R/G/B/A sliders.
+        private void DrawCompactColor(string label, Color value, Action<Color> assign)
+        {
+            GUILayout.BeginHorizontal();
+            var oldColor = GUI.color;
+            GUI.color = value;
+            GUILayout.Box("", GUILayout.Width(18), GUILayout.Height(16));
+            GUI.color = oldColor;
+            GUILayout.Label(label, _labelStyle, GUILayout.Width(130));
+            value.r = GUILayout.HorizontalSlider(value.r, 0f, 1f, GUILayout.Width(45));
+            value.g = GUILayout.HorizontalSlider(value.g, 0f, 1f, GUILayout.Width(45));
+            value.b = GUILayout.HorizontalSlider(value.b, 0f, 1f, GUILayout.Width(45));
+            value.a = GUILayout.HorizontalSlider(value.a, 0f, 1f, GUILayout.Width(45));
+            GUILayout.EndHorizontal();
+            assign(value);
         }
 
         private float DrawColorChannel(string label, float value)
