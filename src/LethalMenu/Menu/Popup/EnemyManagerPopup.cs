@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 namespace LethalMenu.Menu.Popup
@@ -9,6 +10,7 @@ namespace LethalMenu.Menu.Popup
         private int _selectedMimicPlayerIndex;
         private int _spawnCount = 1;
         private int _spawnSideMode;
+        private int _huntTargetIndex;
 
         public EnemyManagerPopup() : base("Enemy Manager", 20002, 400, 400) { }
 
@@ -30,12 +32,45 @@ namespace LethalMenu.Menu.Popup
                 Cheats.NetworkCheats.TeleportAllEnemiesAway();
             GUILayout.EndHorizontal();
 
+            GUILayout.Space(5);
+            var huntTargets = Cheats.NetworkCheats.GetAllPlayers()
+                .Where(Cheats.Directives.DirectiveTargeting.IsValidTarget).ToArray();
+            GameNetcodeStuff.PlayerControllerB? huntTarget = null;
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Hunt target:", GUILayout.Width(80));
+            if (huntTargets.Length > 0)
+            {
+                _huntTargetIndex = Mathf.Clamp(_huntTargetIndex, 0, huntTargets.Length - 1);
+                if (GUILayout.Button("<", GUILayout.Width(25)))
+                    _huntTargetIndex = (_huntTargetIndex - 1 + huntTargets.Length) % huntTargets.Length;
+                huntTarget = huntTargets[_huntTargetIndex];
+                GUILayout.Label(huntTarget.playerUsername ?? "Unknown", GUILayout.Width(120));
+                if (GUILayout.Button(">", GUILayout.Width(25)))
+                    _huntTargetIndex = (_huntTargetIndex + 1) % huntTargets.Length;
+            }
+            else
+            {
+                GUILayout.Label("none (no non-friend players)");
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Escort all", GUILayout.Width(90)))
+                Cheats.Directives.EnemyDirector.EscortAll();
+            GUI.enabled = huntTarget != null;
+            if (GUILayout.Button("Hunt all", GUILayout.Width(90)) && huntTarget != null)
+                Cheats.Directives.EnemyDirector.HuntAll(huntTarget);
+            GUI.enabled = true;
+            if (GUILayout.Button("Release all", GUILayout.Width(90)))
+                Cheats.Directives.EnemyDirector.ReleaseAll();
+            GUILayout.EndHorizontal();
+
             DrawSpawner();
 
             GUILayout.Space(10);
             GUILayout.Label("Enemy List");
 
-            foreach (var enemy in LethalMenuMod.Enemies)
+            foreach (var enemy in LethalMenuMod.Enemies.ToArray())
             {
                 if (enemy == null || enemy.isEnemyDead) continue;
                 var name = enemy.enemyType?.enemyName ?? "Unknown";
@@ -44,8 +79,23 @@ namespace LethalMenu.Menu.Popup
                     : 0f;
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label($"{name} [{dist:F0}m]", GUILayout.Width(200));
-                if (GUILayout.Button("Kill", GUILayout.Width(50)))
+                string directive = Cheats.Directives.EnemyDirector.Describe(enemy);
+                GUILayout.Label(directive.Length > 0 ? $"{name} [{dist:F0}m] ({directive})" : $"{name} [{dist:F0}m]", GUILayout.Width(220));
+                if (Cheats.Directives.EnemyDirector.IsDirected(enemy))
+                {
+                    if (GUILayout.Button("Release", GUILayout.Width(60)))
+                        Cheats.Directives.EnemyDirector.Release(enemy);
+                }
+                else
+                {
+                    if (GUILayout.Button("Escort", GUILayout.Width(55)))
+                        Cheats.Directives.EnemyDirector.Escort(enemy);
+                    GUI.enabled = huntTarget != null;
+                    if (GUILayout.Button("Hunt", GUILayout.Width(45)) && huntTarget != null)
+                        Cheats.Directives.EnemyDirector.Hunt(enemy, huntTarget);
+                    GUI.enabled = true;
+                }
+                if (GUILayout.Button("Kill", GUILayout.Width(40)))
                     Cheats.NetworkCheats.KillEnemy(enemy);
                 if (GUILayout.Button("TP Away", GUILayout.Width(60)))
                     Cheats.NetworkCheats.TeleportEnemy(enemy, new Vector3(0f, -500f, 0f));

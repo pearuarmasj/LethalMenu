@@ -623,6 +623,14 @@ namespace LethalMenu.Menu
                         bool newFriend = DrawToggle("Friend", isFriend, "Escorts ignore friends; friends can't be hunted");
                         if (newFriend != isFriend)
                             Settings.SetFriend(target, newFriend);
+
+                        GUI.enabled = Cheats.Directives.DirectiveTargeting.IsValidTarget(target);
+                        if (GUILayout.Button("Send all enemies", _buttonStyle))
+                        {
+                            int sent = Cheats.Directives.EnemyDirector.HuntAll(target);
+                            HUDManager.Instance?.DisplayTip("Hunt", $"{sent} enemies hunting {target.playerUsername}.");
+                        }
+                        GUI.enabled = true;
                     }
 
                     // Teleport options

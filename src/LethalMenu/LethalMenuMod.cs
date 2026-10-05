@@ -142,10 +142,31 @@ namespace LethalMenu
             // is fully ready) caused injection crashes. Lazy init from Update is safe.
         }
 
+        /// Escort the enemy under the view camera's crosshair.
+        private static void RecruitEscortUnderCrosshair()
+        {
+            var camera = ViewCamera.Current;
+            if (camera == null) return;
+
+            var hits = Physics.RaycastAll(new Ray(camera.transform.position, camera.transform.forward), 100f);
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
+            {
+                var enemy = hit.collider.GetComponent<EnemyAICollisionDetect>()?.mainScript
+                    ?? hit.collider.GetComponentInParent<EnemyAI>();
+                if (enemy == null || enemy.isEnemyDead) continue;
+                if (Cheats.Directives.EnemyDirector.Escort(enemy))
+                    HUDManager.Instance?.DisplayTip("Escort", $"{enemy.enemyType?.enemyName} is escorting you.");
+                return;
+            }
+        }
+
         private void RegisterActionExecutors()
         {
             Hack.DisconnectMod.RegisterExecutor(Cheats.NetworkCheats.DisconnectFromLobby);
             Hack.ReconnectFromClipboard.RegisterExecutor(Cheats.NetworkCheats.ReconnectFromClipboard);
+            Hack.RecruitEscort.RegisterExecutor(RecruitEscortUnderCrosshair);
+            Hack.ReleaseAllDirected.RegisterExecutor(Cheats.Directives.EnemyDirector.ReleaseAll);
             Hack.SelfRevive.RegisterExecutor(Cheats.NetworkCheats.SelfRevive);
             Hack.FakeDeath.RegisterExecutor(Cheats.NetworkCheats.FakeDeath);
             Hack.CancelFakeDeath.RegisterExecutor(Cheats.NetworkCheats.CancelFakeDeath);

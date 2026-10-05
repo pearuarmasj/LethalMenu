@@ -58,5 +58,6 @@ namespace LethalMenu
         EjectAllPlayers, ForceStart, ForceEnd, ReviveAllPlayers, TeleportAllToMe,
         SetCredits, SellQuota,
         DisconnectMod, ReconnectFromClipboard,
+        RecruitEscort, ReleaseAllDirected,
     }
 }
