@@ -16,9 +16,9 @@ namespace LethalMenu.Cheats.Directives.Adapters
     /// scaredMeter (flees from a sprinting target); PlayerIsTargetable (target in the other area) still ends it
     /// and the director re-engages once the routing put them on the same side. While following, it forces
     /// TargetTree null (the state 0 run-to-tree would climb) and a walking agent.speed (state 0 sets 24).
-    /// Uncertain: on the victim's client Update sets Scratching from the distance to the OWNER's player (that
-    /// client's targetPlayer comes from ClientPlayerList[OwnerClientId]), so the scratch only lands while the
-    /// director stands within ~6 m of the puma as well.
+    /// On the victim's client Update sets Scratching from the distance to the OWNER's player (that client's
+    /// targetPlayer comes from ClientPlayerList[OwnerClientId]); ProxyScratch covers the case where the director
+    /// is farther than that.
     public sealed class PumaDirectiveAdapter : DirectiveAdapter<PumaAI>
     {
         private const int RoamState = 0;
@@ -55,7 +55,31 @@ namespace LethalMenu.Cheats.Directives.Adapters
             enemy.timeSpentAttacking = 0f;
             enemy.scaredMeter = 0f;
             base.AfterUpdate(enemy, target);
+            ProxyScratch(enemy, target);
         }
+
+        /// The victim's client only plays the scratch (and so only takes the hit in its OnCollideWithPlayer)
+        /// while the OWNER's player is within 6 m of the puma. When the director is farther away, each scratch
+        /// our client animates (AnimationEventC stamps timeAtLastScratch) that reaches the target is delivered
+        /// through DamagePlayerFromOtherClientServerRpc (RequireOwnership = false) with the vanilla 7 damage.
+        private static void ProxyScratch(PumaAI enemy, PlayerControllerB target)
+        {
+            var local = LethalMenuMod.LocalPlayer;
+            if (local == null || enemy.currentBehaviourStateIndex != AttackState) return;
+            if (Vector3.Distance(enemy.transform.position, local.transform.position) < 6f) return;
+
+            float scratch = enemy.timeAtLastScratch;
+            if (scratch <= 0f || (LastProxied.TryGetValue(enemy, out float done) && done == scratch)) return;
+            if (Vector3.Distance(enemy.transform.position, target.transform.position) > ScratchReach) return;
+
+            LastProxied[enemy] = scratch;
+            Vector3 push = Vector3.Normalize(target.transform.position - enemy.transform.position);
+            target.DamagePlayerFromOtherClientServerRpc(7, push, (int)local.playerClientId);
+            enemy.PumaDamagePlayerRpc((int)target.playerClientId);
+        }
+
+        private const float ScratchReach = 3.2f;
+        private static readonly System.Collections.Generic.Dictionary<PumaAI, float> LastProxied = new();
 
         public override void Disengage(PumaAI enemy)
         {
