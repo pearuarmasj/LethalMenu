@@ -22,10 +22,6 @@ namespace LethalMenu.Cheats
         private GUIStyle? _healthStyle;
 
         private const float SkinPadding = 0.2f;
-        private const float DoorHeight = 2.4f;
-        private const float MainDoorWidth = 2.2f;
-        private const float FireExitWidth = 1.2f;
-        private const float DoorThickness = 0.2f;
 
         private sealed class Body
         {
@@ -84,12 +80,13 @@ namespace LethalMenu.Cheats
 
             if (Hack.DoorESP.IsEnabled())
             {
-                // An entrance is a trigger with no door mesh of its own: a door-shaped box in the door plane.
+                // An EntranceTeleport is a unit cube with a BoxCollider, scaled to the door's exact volume
+                // (its only visible child is a small floor plane).
                 foreach (var entrance in LethalMenuMod.Entrances)
                 {
                     if (entrance == null) continue;
-                    FillDoorCorners(entrance);
-                    DrawESP(camera, entrance, entrance.isEntranceToBuilding ? "Entrance" : "Exit", Settings.DoorColor, cornersFilled: true);
+                    bool boxed = FillBoxColliderCorners(entrance);
+                    DrawESP(camera, entrance, entrance.isEntranceToBuilding ? "Entrance" : "Exit", Settings.DoorColor, boxed);
                 }
             }
 
@@ -97,7 +94,7 @@ namespace LethalMenu.Cheats
             {
                 foreach (var mine in LethalMenuMod.Landmines)
                     if (mine != null && !mine.hasExploded)
-                        DrawESP(camera, PrefabRoot(mine), "Mine", Settings.MineColor);
+                        DrawESP(camera, mine, "Mine", Settings.MineColor);
             }
 
             if (Hack.TurretESP.IsEnabled())
@@ -113,7 +110,10 @@ namespace LethalMenu.Cheats
                         TurretMode.Berserk => "Turret\nBERSERK",
                         _ => "Turret"
                     };
-                    DrawESP(camera, PrefabRoot(turret), mode, Settings.TurretColor);
+                    // The Turret script object carries the game's own box for the whole turret, stand included;
+                    // its meshes sit under a sibling.
+                    bool boxed = FillBoxColliderCorners(turret);
+                    DrawESP(camera, boxed ? turret : PrefabRoot(turret), mode, Settings.TurretColor, boxed);
                 }
             }
 
@@ -183,45 +183,28 @@ namespace LethalMenu.Cheats
             ShadowLabel(distRect, distContent, distColor);
         }
 
-        /// Turret and Landmine scripts sit on a child of their prefab (the gun head, the trigger); the stand
-        /// and casing are siblings. The spawned prefab's NetworkObject is the whole object.
+        /// Some scripts sit on a child of their prefab (SpikeRoofTrap on its trigger, Turret on its hit box)
+        /// with the meshes under siblings. The spawned prefab's NetworkObject is the whole object.
         private static Component PrefabRoot(Component part)
         {
             var root = part.GetComponentInParent<Unity.Netcode.NetworkObject>();
             return root != null ? root : part;
         }
 
-        /// The door an EntranceTeleport stands for. The teleport's transform sits in the door plane and its
-        /// entrancePoint on the floor in front of it, which gives the door's facing and its bottom edge.
-        private void FillDoorCorners(EntranceTeleport entrance)
+        /// Puts the world-space corners of the target's own BoxCollider (an oriented box) in _corners.
+        private bool FillBoxColliderCorners(Component target)
         {
-            Vector3 door = entrance.transform.position;
-            Vector3 normal = entrance.transform.forward;
-            float floor = door.y - DoorHeight / 2f;
-            if (entrance.entrancePoint != null)
-            {
-                Vector3 toPoint = entrance.entrancePoint.position - door;
-                toPoint.y = 0f;
-                if (toPoint.sqrMagnitude > 0.01f) normal = toPoint;
-                floor = entrance.entrancePoint.position.y;
-            }
-            normal.y = 0f;
-            normal.Normalize();
+            if (!target.TryGetComponent(out BoxCollider box)) return false;
 
-            float width = entrance.entranceId == 0 ? MainDoorWidth : FireExitWidth;
-            Vector3 side = Vector3.Cross(Vector3.up, normal) * (width / 2f);
-            Vector3 depth = normal * (DoorThickness / 2f);
-            Vector3 bottom = new Vector3(door.x, floor, door.z);
-            Vector3 top = bottom + Vector3.up * DoorHeight;
-
-            _corners[0] = bottom - side - depth;
-            _corners[1] = bottom + side - depth;
-            _corners[2] = bottom - side + depth;
-            _corners[3] = bottom + side + depth;
-            _corners[4] = top - side - depth;
-            _corners[5] = top + side - depth;
-            _corners[6] = top - side + depth;
-            _corners[7] = top + side + depth;
+            Vector3 c = box.center;
+            Vector3 e = box.size * 0.5f;
+            var t = box.transform;
+            int i = 0;
+            for (int x = -1; x <= 1; x += 2)
+                for (int y = -1; y <= 1; y += 2)
+                    for (int z = -1; z <= 1; z += 2)
+                        _corners[i++] = t.TransformPoint(c + new Vector3(e.x * x, e.y * y, e.z * z));
+            return true;
         }
 
         /// Projects the target's body bounds (or the corners the caller already put in _corners) to a GUI-space
