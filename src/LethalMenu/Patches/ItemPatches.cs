@@ -1,3 +1,4 @@
+using System.Collections;
 using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine;
@@ -20,6 +21,8 @@ namespace LethalMenu.Patches
                 if (__instance.insertedBattery != null)
                 {
                     __instance.insertedBattery.charge = 1f;
+                    // An already-drained battery keeps `empty` set and the item stays unusable otherwise.
+                    __instance.insertedBattery.empty = false;
                 }
             }
         }
@@ -33,10 +36,9 @@ namespace LethalMenu.Patches
         [HarmonyPrefix]
         public static void HitShovelPrefix(Shovel __instance)
         {
-            if (Hack.SuperShovel.IsEnabled() && __instance.playerHeldBy == LethalMenuMod.LocalPlayer)
-            {
-                __instance.shovelHitForce = 100;
-            }
+            if (__instance.playerHeldBy != LethalMenuMod.LocalPlayer) return;
+            // 1 is Shovel.shovelHitForce's vanilla value; restoring it makes the toggle fully reversible.
+            __instance.shovelHitForce = Hack.SuperShovel.IsEnabled() ? 100 : 1;
         }
     }
 
@@ -91,97 +93,91 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// Grab nutcracker's shotgun.
-    [HarmonyPatch(typeof(PlayerControllerB), "BeginGrabObject")]
+    /// Grab nutcracker's shotgun. The game assigns currentlyGrabbingObject inside BeginGrabObject (raycast), so this
+    /// must be a postfix. A gun held by a Nutcracker has grabbable = false and is only released by DropGunClientRpc,
+    /// which the nutcracker's owner requests via DropGunServerRpc (it requires ownership). We take ownership of the
+    /// nutcracker, wait until the ownership change reaches this client, then request the drop; the gun becomes
+    /// grabbable once the RPC round-trips, so the player grabs it with the next click.
+    [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.BeginGrabObject))]
     public static class GrabNutcrackerShotgunPatches
     {
-        [HarmonyPrefix]
-        public static void Prefix(PlayerControllerB __instance)
+        private static NutcrackerEnemyAI? _pending;
+
+        [HarmonyPostfix]
+        public static void Postfix(PlayerControllerB __instance)
         {
             if (!Hack.GrabNutcrackerShotgun.IsEnabled()) return;
-            
-            var field = __instance.GetType().GetField("currentlyGrabbingObject", 
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (field == null) return;
-            
-            var grabbableObject = field.GetValue(__instance) as GrabbableObject;
-            if (grabbableObject == null) return;
-            
-            var shotgun = grabbableObject as ShotgunItem;
-            if (shotgun == null) return;
-            
-            var enemyField = shotgun.GetType().GetField("heldByEnemy",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (enemyField == null) return;
-            
-            var enemy = enemyField.GetValue(shotgun) as EnemyAI;
-            if (enemy == null) return;
-            
-            var nutcracker = enemy as NutcrackerEnemyAI;
-            if (nutcracker == null || nutcracker.gunPoint == null) return;
-            
-            var localPlayer = LethalMenuMod.LocalPlayer;
-            if (localPlayer == null) return;
-            
-            nutcracker.ChangeEnemyOwnerServerRpc(localPlayer.actualClientId);
-            nutcracker.DropGunServerRpc(nutcracker.gunPoint.position);
+            if (__instance != LethalMenuMod.LocalPlayer) return;
+
+            // currentlyGrabbingObject is stale when the raycast missed; only act on what the ray actually hit.
+            var grabbing = __instance.currentlyGrabbingObject;
+            var collider = __instance.hit.collider;
+            if (grabbing == null || collider == null || collider.gameObject != grabbing.gameObject) return;
+
+            if (grabbing is not ShotgunItem shotgun || !shotgun.isHeldByEnemy) return;
+            if (shotgun.heldByEnemy is not NutcrackerEnemyAI nutcracker || nutcracker.gunPoint == null) return;
+            if (_pending == nutcracker) return;
+
+            _pending = nutcracker;
+            if (!nutcracker.IsOwner) nutcracker.ChangeEnemyOwnerServerRpc(__instance.actualClientId);
+            nutcracker.StartCoroutine(DropGunWhenOwner(nutcracker));
+        }
+
+        private static IEnumerator DropGunWhenOwner(NutcrackerEnemyAI nutcracker)
+        {
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while (nutcracker != null && !nutcracker.IsOwner && Time.realtimeSinceStartup < deadline)
+                yield return null;
+
+            if (nutcracker != null && nutcracker.IsOwner && nutcracker.gun != null && nutcracker.gun.isHeldByEnemy)
+                nutcracker.DropGunServerRpc(nutcracker.gunPoint.position);
+
+            _pending = null;
         }
     }
 
-    /// Eggs always explode.
-    [HarmonyPatch]
+    /// Easter eggs are the StunGrenadeItems with chanceToExplode < 100 (the same test the game uses). Every client
+    /// decides locally in ExplodeStunGrenade via the private explodeOnThrow, so both toggles are per-client
+    /// effects: other players still see their own roll. Never: skip the explosion exactly like the vanilla early
+    /// return (clearing activatingItem). Always (or Never off): force explodeOnThrow before the original runs.
+    [HarmonyPatch(typeof(StunGrenadeItem), nameof(StunGrenadeItem.ExplodeStunGrenade))]
     public static class EggsPatches
     {
-        [HarmonyPatch(typeof(StunGrenadeItem), nameof(StunGrenadeItem.SetExplodeOnThrowClientRpc))]
         [HarmonyPrefix]
-        public static bool SetExplodePrefix(StunGrenadeItem __instance)
+        public static bool Prefix(StunGrenadeItem __instance)
         {
-            if (Hack.EggsNeverExplode.IsEnabled() && !Hack.EggsAlwaysExplode.IsEnabled())
+            if (__instance.chanceToExplode >= 100f) return true;
+
+            if (Hack.EggsAlwaysExplode.IsEnabled())
             {
-                if (LethalMenuMod.LocalPlayer?.currentlyHeldObjectServer?.name == "EasterEgg(Clone)")
-                {
-                    return false;
-                }
+                __instance.explodeOnThrow = true;
+                return true;
             }
-            return true;
+
+            if (!Hack.EggsNeverExplode.IsEnabled()) return true;
+
+            if (!__instance.hasExploded && __instance.playerThrownBy != null)
+                __instance.playerThrownBy.activatingItem = false;
+            return false;
         }
     }
 
-    /// Loot before game starts patches.
-    [HarmonyPatch]
+    /// Loot before game starts. BeginGrabObject's only gate is
+    /// `!gameHasStarted && !itemProperties.canBeGrabbedBeforeGameStart && testRoom == null`, so the local player's
+    /// call sees gameHasStarted = true. The finalizer restores it even if the original throws.
+    [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.BeginGrabObject))]
     public static class LootBeforeGameStartsPatches
     {
-        private static readonly System.Collections.Generic.Dictionary<GrabbableObject, bool> ModifiedItems = 
-            new System.Collections.Generic.Dictionary<GrabbableObject, bool>();
-
-        [HarmonyPatch(typeof(PlayerControllerB), "BeginGrabObject")]
         [HarmonyPrefix]
-        public static void BeginGrabPrefix(PlayerControllerB __instance)
+        public static void Prefix(PlayerControllerB __instance, out bool __state)
         {
-            if (!Hack.LootBeforeGameStarts.IsEnabled()) return;
-
-            var field = __instance.GetType().GetField("currentlyGrabbingObject",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (field == null) return;
-
-            var grabbable = field.GetValue(__instance) as GrabbableObject;
-            if (grabbable?.itemProperties == null || grabbable.itemProperties.canBeGrabbedBeforeGameStart) return;
-            if (GameNetworkManager.Instance.gameHasStarted) return;
-
-            ModifiedItems[grabbable] = grabbable.itemProperties.canBeGrabbedBeforeGameStart;
-            grabbable.itemProperties.canBeGrabbedBeforeGameStart = true;
+            var network = GameNetworkManager.Instance;
+            __state = network.gameHasStarted;
+            if (Hack.LootBeforeGameStarts.IsEnabled() && __instance == LethalMenuMod.LocalPlayer)
+                network.gameHasStarted = true;
         }
 
-        [HarmonyPatch(typeof(PlayerControllerB), "DiscardHeldObject")]
-        [HarmonyPrefix]
-        public static void DiscardPrefix(PlayerControllerB __instance)
-        {
-            var heldItem = __instance.currentlyHeldObjectServer;
-            if (heldItem != null && ModifiedItems.TryGetValue(heldItem, out bool original))
-            {
-                heldItem.itemProperties.canBeGrabbedBeforeGameStart = original;
-                ModifiedItems.Remove(heldItem);
-            }
-        }
+        [HarmonyFinalizer]
+        public static void Finalizer(bool __state) => GameNetworkManager.Instance.gameHasStarted = __state;
     }
 }

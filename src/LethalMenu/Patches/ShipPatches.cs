@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Reflection.Emit;
 using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine;
@@ -16,17 +18,25 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// Terminal patches for shoplifter (free items).
-    [HarmonyPatch(typeof(Terminal))]
-    public static class TerminalPatches
+    /// Shoplifter (free purchases). Terminal.LoadNewNodeIfAffordable computes totalCostOfItems and then uses it for
+    /// the affordability check and for `groupCredits -= totalCostOfItems`, all before the credits are synced to the
+    /// server (BuyItemsServerRpc / ChangeLevelServerRpc / BuyShipUnlockableServerRpc / vehicle order), so the
+    /// server only ever sees the unchanged credit value. Every load of the field in that method (items, vehicles,
+    /// moon routing and ship unlockables all share it) is routed through Cost, which reports 0 while enabled.
+    [HarmonyPatch(typeof(Terminal), nameof(Terminal.LoadNewNodeIfAffordable))]
+    public static class ShoplifterPatches
     {
-        [HarmonyPatch("BuyItemsServerRpc")]
-        [HarmonyPrefix]
-        public static void BuyItemsPrefix(Terminal __instance)
+        private static int Cost(int totalCostOfItems) => Hack.Shoplifter.IsEnabled() ? 0 : totalCostOfItems;
+
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (Hack.Shoplifter.IsEnabled())
+            var field = AccessTools.Field(typeof(Terminal), nameof(Terminal.totalCostOfItems));
+            var cost = AccessTools.Method(typeof(ShoplifterPatches), nameof(Cost));
+            foreach (var instr in instructions)
             {
-                __instance.groupCredits = 999999;
+                yield return instr;
+                if (instr.LoadsField(field)) yield return new CodeInstruction(OpCodes.Call, cost);
             }
         }
     }
@@ -81,16 +91,26 @@ namespace LethalMenu.Patches
     [HarmonyPatch]
     public static class OpenShipDoorSpacePatches
     {
-        [HarmonyPatch(typeof(HangarShipDoor), "Update")]
+        /// Only undoes what this patch did: when the toggle turns off, the buttons it force-enabled are disabled once.
+        private static bool _enabledButtons;
+
+        [HarmonyPatch(typeof(HangarShipDoor), nameof(HangarShipDoor.Update))]
         [HarmonyPrefix]
         public static bool HangarDoorUpdatePrefix(HangarShipDoor __instance)
         {
-            if (Hack.ShipDoorInSpace.IsEnabled() && !__instance.buttonsEnabled && StartOfRound.Instance.inShipPhase)
+            if (!StartOfRound.Instance.inShipPhase) return true;
+
+            if (Hack.ShipDoorInSpace.IsEnabled())
             {
-                __instance.SetDoorButtonsEnabled(true);
+                if (!__instance.buttonsEnabled)
+                {
+                    __instance.SetDoorButtonsEnabled(true);
+                    _enabledButtons = true;
+                }
             }
-            else if (!Hack.ShipDoorInSpace.IsEnabled() && __instance.buttonsEnabled && StartOfRound.Instance.inShipPhase)
+            else if (_enabledButtons)
             {
+                _enabledButtons = false;
                 __instance.SetDoorButtonsEnabled(false);
             }
             return true;

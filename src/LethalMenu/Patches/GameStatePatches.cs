@@ -1,22 +1,10 @@
+using Unity.Netcode;
 using GameNetcodeStuff;
 using HarmonyLib;
 using UnityEngine;
 
 namespace LethalMenu.Patches
 {
-    /// Patches for StartOfRound to track game state.
-    [HarmonyPatch(typeof(StartOfRound))]
-    public static class StartOfRoundPatches
-    {
-        [HarmonyPatch("Awake")]
-        [HarmonyPostfix]
-        public static void AwakePostfix(StartOfRound __instance)
-        {
-            LethalMenuMod.GameInstance = __instance;
-            Debug.Log("[LethalMenu] StartOfRound instance captured.");
-        }
-    }
-
     /// Voice patches for hearing everyone.
     [HarmonyPatch(typeof(StartOfRound))]
     public static class VoicePatches
@@ -60,18 +48,26 @@ namespace LethalMenu.Patches
         }
     }
 
-    /// Death notification patches.
-    [HarmonyPatch(typeof(PlayerControllerB), "KillPlayerClientRpc")]
+    /// Death notification patches. KillPlayerClientRpc's prefix and postfix run in both the send and the execute
+    /// stage on the host, and NGO's RPC stage field is not publicly accessible, so the tip is keyed on the state
+    /// change instead: only the execution that actually flips isPlayerDead (once per death, on every client, host
+    /// included) shows it.
+    [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.KillPlayerClientRpc))]
     public static class DeathNotificationPatches
     {
         [HarmonyPrefix]
-        public static void Prefix(PlayerControllerB __instance, int playerId, int causeOfDeath)
+        public static void Prefix(PlayerControllerB __instance, int playerId, out bool __state) =>
+            __state = __instance.playersManager.allPlayerScripts[playerId].isPlayerDead;
+
+        [HarmonyPostfix]
+        public static void Postfix(PlayerControllerB __instance, int playerId, int causeOfDeath, bool __state)
         {
-            if (!Hack.DeathNotifications.IsEnabled()) return;
-            
-            var died = __instance.playersManager.allPlayerObjects[playerId].GetComponent<PlayerControllerB>();
+            if (__state || !Hack.DeathNotifications.IsEnabled()) return;
+
+            var died = __instance.playersManager.allPlayerScripts[playerId];
+            if (!died.isPlayerDead) return;
+
             string causeName = ((CauseOfDeath)causeOfDeath).ToString();
-            
             HUDManager.Instance?.DisplayTip("Death", $"{died.playerUsername} died: {causeName}");
         }
     }

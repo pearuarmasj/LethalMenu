@@ -119,15 +119,4 @@ namespace LethalMenu.Patches
             }
         }
     }
-
-    /// Teleport with items - don't drop items when teleporting.
-    [HarmonyPatch(typeof(PlayerControllerB), "DropAllHeldItems")]
-    public static class TeleportWithItemsPatches
-    {
-        [HarmonyPrefix]
-        public static bool Prefix()
-        {
-            return !Hack.TeleportWithItems.IsEnabled();
-        }
-    }
 }
